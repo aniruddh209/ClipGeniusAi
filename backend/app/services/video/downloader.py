@@ -4,6 +4,7 @@ import shutil
 import asyncio
 from pathlib import Path
 from typing import Dict, Any, Optional
+from urllib.parse import urlparse, parse_qs
 from fastapi import UploadFile, HTTPException
 import yt_dlp
 from app.core.config import settings
@@ -18,6 +19,45 @@ SUPPORTED_MIME_TYPES = [
     "video/x-matroska",
     "application/octet-stream"
 ]
+
+def sanitize_media_url(url: str) -> str:
+    """
+    Sanitizes YouTube and web URLs to avoid playlist metadata requests:
+    - Strips playlist parameters (&list=, &index=, &pp=, &si=) that trigger YouTube bot/sign-in gates
+    - Normalizes youtu.be, /shorts/, /live/ into canonical https://www.youtube.com/watch?v={vid}
+    """
+    raw = url.strip()
+    if not (raw.startswith("http://") or raw.startswith("https://")):
+        return raw
+
+    try:
+        parsed = urlparse(raw)
+        host = (parsed.hostname or "").lower()
+        if "youtube.com" in host or "youtu.be" in host:
+            # 1. Handle youtu.be/<id>
+            if "youtu.be" in host:
+                parts = parsed.path.strip("/").split("/")
+                if parts and parts[0]:
+                    return f"https://www.youtube.com/watch?v={parts[0]}"
+
+            # 2. Handle /shorts/<id> or /live/<id>
+            if "/shorts/" in parsed.path:
+                vid = parsed.path.split("/shorts/")[1].split("/")[0].split("?")[0]
+                if vid:
+                    return f"https://www.youtube.com/watch?v={vid}"
+            if "/live/" in parsed.path:
+                vid = parsed.path.split("/live/")[1].split("/")[0].split("?")[0]
+                if vid:
+                    return f"https://www.youtube.com/watch?v={vid}"
+
+            # 3. Handle standard /watch?v=<id>
+            qs = parse_qs(parsed.query)
+            if "v" in qs and qs["v"] and qs["v"][0]:
+                return f"https://www.youtube.com/watch?v={qs['v'][0]}"
+    except Exception:
+        pass
+
+    return raw
 
 class VideoDownloader:
     @staticmethod
@@ -128,7 +168,7 @@ class VideoDownloader:
         - Extracts high-quality thumbnail frame via FFmpeg
         - Returns structured metadata dictionary
         """
-        clean_url = url.strip()
+        clean_url = sanitize_media_url(url)
         if not (clean_url.startswith("http://") or clean_url.startswith("https://")):
             raise HTTPException(status_code=400, detail="Invalid video URL. Must start with http:// or https://")
 

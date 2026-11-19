@@ -139,18 +139,47 @@ function CreateClipsContent() {
     }
   };
 
+  const cleanYoutubeUrl = (raw: string): string => {
+    try {
+      const u = raw.trim();
+      if (u.includes('youtube.com') || u.includes('youtu.be')) {
+        const urlObj = new URL(u.startsWith('http') ? u : `https://${u}`);
+        if (urlObj.hostname.includes('youtu.be')) {
+          const id = urlObj.pathname.replace(/^\//, '').split('/')[0]?.split('?')[0];
+          if (id) return `https://www.youtube.com/watch?v=${id}`;
+        }
+        if (urlObj.pathname.includes('/shorts/')) {
+          const id = urlObj.pathname.split('/shorts/')[1]?.split('/')[0]?.split('?')[0];
+          if (id) return `https://www.youtube.com/watch?v=${id}`;
+        }
+        if (urlObj.pathname.includes('/live/')) {
+          const id = urlObj.pathname.split('/live/')[1]?.split('/')[0]?.split('?')[0];
+          if (id) return `https://www.youtube.com/watch?v=${id}`;
+        }
+        const v = urlObj.searchParams.get('v');
+        if (v) return `https://www.youtube.com/watch?v=${v}`;
+      }
+    } catch {
+      // ignore
+    }
+    return raw.trim();
+  };
+
   const handleYoutubeSubmit = async () => {
     setUrlError(null);
-    if (!youtubeUrl || !youtubeUrl.trim().startsWith('http')) {
+    const targetUrl = cleanYoutubeUrl(youtubeUrl);
+    setYoutubeUrl(targetUrl);
+    if (!targetUrl || !targetUrl.startsWith('http')) {
       setUrlError('Please enter a valid YouTube or video URL (starting with http:// or https://)');
       return;
     }
 
     setIsDownloadingUrl(true);
     try {
-      const vid = await api.submitYoutubeUrl(youtubeUrl);
+      const vid = await api.submitYoutubeUrl(targetUrl);
       setActiveVideo(vid);
       setIngestMode('upload'); // Switch to view uploaded video
+      window.dispatchEvent(new Event('projects-updated'));
     } catch (err: any) {
       setUrlError(err.message || 'Failed to download from URL.');
     } finally {
@@ -428,7 +457,7 @@ function CreateClipsContent() {
                       <button
                         type="button"
                         onClick={() => {
-                          setYoutubeUrl(cloudUrl);
+                          setYoutubeUrl(cleanYoutubeUrl(cloudUrl));
                           setIngestMode('url');
                         }}
                         className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shrink-0 cursor-pointer shadow-md transition-all whitespace-nowrap"
@@ -455,7 +484,7 @@ function CreateClipsContent() {
                           <button
                             type="button"
                             onClick={() => {
-                              setYoutubeUrl(cloudUrl);
+                              setYoutubeUrl(cleanYoutubeUrl(cloudUrl));
                               setIngestMode('url');
                               setCloudProbeError(null);
                             }}
@@ -558,7 +587,7 @@ function CreateClipsContent() {
                       placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
                       value={youtubeUrl}
                       disabled={isDownloadingUrl}
-                      onChange={(e) => setYoutubeUrl(e.target.value)}
+                      onChange={(e) => setYoutubeUrl(cleanYoutubeUrl(e.target.value))}
                       className="flex-1 bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 disabled:opacity-50"
                     />
                     <Button
