@@ -1,0 +1,958 @@
+'use client';
+
+import React, { useState, useEffect, Suspense } from 'react';
+import Link from 'next/link';
+import { 
+  Scissors, 
+  Sparkles, 
+  Sliders, 
+  Subtitles, 
+  Smartphone, 
+  CheckCircle2, 
+  AlertCircle, 
+  Info,
+  ArrowRight,
+  ArrowLeft,
+  Link as LinkIcon,
+  Play,
+  Film,
+  Crop,
+  Flame,
+  Cpu,
+  Loader2,
+  Gamepad2,
+  Mic,
+  Video,
+  BookOpen,
+  Layers,
+  Tv,
+  Eye,
+  VolumeX,
+  Maximize2,
+  Minimize2,
+  Check,
+  User
+} from 'lucide-react';
+import { DashboardHeader } from '@/components/layout/DashboardHeader';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { VideoUploadZone } from '@/components/video/VideoUploadZone';
+import { TranscriptionPanel } from '@/components/transcription/TranscriptionPanel';
+import { ClipDetectionPanel } from '@/components/video/ClipDetectionPanel';
+import { ReframingStudio } from '@/components/video/ReframingStudio';
+import { SubtitleEditor } from '@/components/video/SubtitleEditor';
+import { PipelineProgressModal } from '@/components/video/PipelineProgressModal';
+import { api } from '@/lib/api';
+import { VideoItem, TranscriptionResponse, CandidateClip } from '@/types';
+import { useRouter, useSearchParams } from 'next/navigation';
+
+function CreateClipsContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const videoIdParam = searchParams.get('video_id');
+
+  // Ingest mode tab: 'upload' or 'url'
+  const [ingestMode, setIngestMode] = useState<'upload' | 'url'>('upload');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [isDownloadingUrl, setIsDownloadingUrl] = useState(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
+
+  // Active uploaded video state
+  const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
+  const [isLoadingParamVideo, setIsLoadingParamVideo] = useState(false);
+  const [currentTranscript, setCurrentTranscript] = useState<TranscriptionResponse | null>(null);
+  const [detectedClips, setDetectedClips] = useState<CandidateClip[]>([]);
+  const [seekTime, setSeekTime] = useState<number | null>(null);
+  const [studioTab, setStudioTab] = useState<'clips' | 'transcript' | 'reframing' | 'subtitles'>('clips');
+
+  // Automatically load project video when navigating from /dashboard/projects?video_id=...
+  useEffect(() => {
+    if (!videoIdParam) return;
+    let isMounted = true;
+    setIsLoadingParamVideo(true);
+    api.getVideo(videoIdParam)
+      .then((vid) => {
+        if (!isMounted || !vid) return;
+        setActiveVideo(vid);
+        setIngestMode('upload');
+        // Fetch any existing clips or transcript for instant preview
+        api.getClips(vid.id).then((res) => {
+          if (isMounted && res && res.clips && res.clips.length > 0) {
+            setDetectedClips(res.clips);
+          }
+        }).catch(() => {});
+        api.getTranscription(vid.id).then((trans) => {
+          if (isMounted && trans) {
+            setCurrentTranscript(trans);
+          }
+        }).catch(() => {});
+      })
+      .catch((err) => {
+        console.warn('Could not load project video from query param:', err);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingParamVideo(false);
+      });
+
+    return () => { isMounted = false; };
+  }, [videoIdParam]);
+
+  // Clip Generation Settings (Wayin.ai Style Categorization & Templates)
+  const [contentType, setContentType] = useState<'gaming' | 'podcast' | 'education' | 'general'>('gaming');
+  const [templateLayout, setTemplateLayout] = useState<'full_screen' | 'streamer_split' | 'streamer_bottom' | 'blur_fit' | 'streamer_pip' | 'smart_auto' | 'center_crop'>('full_screen');
+  const [captionPreset, setCaptionPreset] = useState<'none' | 'bold_yellow' | 'minimal_clean' | 'professional_podcast' | 'creator_style'>('bold_yellow');
+  const [exportQuality, setExportQuality] = useState<'1080p_high' | '1080p_standard'>('1080p_high');
+  const [aspectRatio, setAspectRatio] = useState<'9:16' | '1:1' | '4:5'>('9:16');
+  const [durationRange, setDurationRange] = useState<'auto' | '15-30' | '30-60'>('30-60');
+  const [maxClips, setMaxClips] = useState<number>(5);
+  const [faceTracking, setFaceTracking] = useState(true);
+  const [showFullVideoReframer, setShowFullVideoReframer] = useState(false);
+  const [pipelineJobId, setPipelineJobId] = useState<string | null>(null);
+  const [viralitySensitivity, setViralitySensitivity] = useState(70);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationSuccess, setGenerationSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isGalleryExpanded, setIsGalleryExpanded] = useState(false);
+
+  const handleContentTypeChange = (type: 'gaming' | 'podcast' | 'education' | 'general') => {
+    setContentType(type);
+    if (type === 'gaming') {
+      setTemplateLayout('full_screen');
+    } else if (type === 'podcast') {
+      setTemplateLayout('smart_auto');
+      setCaptionPreset('professional_podcast');
+    } else if (type === 'education') {
+      setTemplateLayout('full_screen');
+      setCaptionPreset('minimal_clean');
+    } else {
+      setTemplateLayout('full_screen');
+      setCaptionPreset('bold_yellow');
+    }
+  };
+
+  const handleYoutubeSubmit = async () => {
+    setUrlError(null);
+    if (!youtubeUrl || !youtubeUrl.trim().startsWith('http')) {
+      setUrlError('Please enter a valid YouTube or video URL (starting with http:// or https://)');
+      return;
+    }
+
+    setIsDownloadingUrl(true);
+    try {
+      const vid = await api.submitYoutubeUrl(youtubeUrl);
+      setActiveVideo(vid);
+      setIngestMode('upload'); // Switch to view uploaded video
+    } catch (err: any) {
+      setUrlError(err.message || 'Failed to download from URL.');
+    } finally {
+      setIsDownloadingUrl(false);
+    }
+  };
+
+  const handleStartGeneration = async () => {
+    if (!activeVideo) {
+      setErrorMessage('Please upload a video before generating clips.');
+      return;
+    }
+
+    setErrorMessage(null);
+    setIsGenerating(true);
+    try {
+      // Trigger 10-step full AI clipping & reframing pipeline with Wayin.ai templates & subtitle settings
+      const res = await api.triggerPipeline({
+        video_id: activeVideo.id,
+        target_aspect_ratio: aspectRatio,
+        duration_range: durationRange,
+        max_clips: maxClips,
+        virality_threshold: viralitySensitivity,
+        reframing_mode: templateLayout,
+        template_layout: templateLayout,
+        content_type: contentType,
+        subtitle_preset: captionPreset,
+        burn_subtitles: captionPreset !== 'none',
+        smart_reframing: faceTracking,
+        whisper_model: 'tiny',
+        export_quality: exportQuality,
+      });
+
+      setPipelineJobId(res.job_id);
+      setGenerationSuccess(true);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to start AI clipping process.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="flex-1 pb-20">
+      <DashboardHeader
+        title="Create Viral Shorts"
+        subtitle="Upload source video, configure AI speech clipping, and export 9:16 vertical cuts."
+        action={
+          <Link
+            href="/dashboard/projects"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-semibold border border-white/10 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back to Projects
+          </Link>
+        }
+      />
+
+      <div className="px-6 sm:px-8 pt-8 max-w-7xl mx-auto space-y-8">
+        {/* Success Alert Banner when generation triggered */}
+        {generationSuccess && (
+          <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-white">AI Clip Generation Queued!</p>
+                <p className="text-xs text-zinc-300">
+                  Faster-Whisper is analyzing speech hooks and FFmpeg is preparing 9:16 vertical cuts for &quot;{activeVideo?.title}&quot;.
+                </p>
+              </div>
+            </div>
+            <Link href="/dashboard/projects">
+              <Button variant="primary" size="sm" className="rounded-xl text-xs whitespace-nowrap">
+                Go to My Projects <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-800/60 text-xs text-rose-300 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+            <button onClick={() => setErrorMessage(null)} className="text-zinc-400 hover:text-white">✕</button>
+          </div>
+        )}
+
+        <div className={`grid grid-cols-1 ${isGalleryExpanded ? 'lg:grid-cols-1' : 'lg:grid-cols-12'} gap-8 items-start`}>
+          {/* Left Column: Upload System & Video Preview */}
+          <div className={`${isGalleryExpanded ? 'w-full' : 'lg:col-span-7'} space-y-6`}>
+            {/* Mode Switcher */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+                <Film className="w-4 h-4 text-purple-400" />
+                Source Video Ingestion
+              </span>
+
+              <div className="flex items-center gap-2">
+                {detectedClips.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsGalleryExpanded(!isGalleryExpanded)}
+                    className="px-2.5 py-1 text-xs font-medium rounded-lg bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white flex items-center gap-1.5 transition-all"
+                    title={isGalleryExpanded ? "Exit full width" : "Expand gallery to full width"}
+                  >
+                    {isGalleryExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5 text-purple-400" />}
+                    <span>{isGalleryExpanded ? 'Compact View' : 'Full Width Gallery'}</span>
+                  </button>
+                )}
+
+                <div className="flex p-1 rounded-xl bg-[#111116] border border-white/[0.06]">
+                  <button
+                    type="button"
+                    onClick={() => setIngestMode('upload')}
+                    className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${
+                      ingestMode === 'upload'
+                        ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Direct Upload
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIngestMode('url')}
+                    className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${
+                      ingestMode === 'url'
+                        ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    YouTube / Web Link
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Ingest Mode 1: Drag-and-Drop & Video Preview System */}
+            {ingestMode === 'upload' ? (
+              <VideoUploadZone
+                initialVideo={activeVideo}
+                seekTime={seekTime}
+                onVideoUploaded={(vid) => {
+                  setActiveVideo(vid);
+                  setGenerationSuccess(false);
+                }}
+                onVideoRemoved={() => {
+                  setActiveVideo(null);
+                  setCurrentTranscript(null);
+                  setDetectedClips([]);
+                  setGenerationSuccess(false);
+                }}
+              />
+            ) : (
+              /* Ingest Mode 2: YouTube / Web URL Download */
+              <Card className="p-6 bg-[#111116] border-white/[0.08] space-y-4">
+                <div className="flex items-center gap-2">
+                  <LinkIcon className="w-4 h-4 text-blue-400" />
+                  <h4 className="text-sm font-bold text-white">Import Video from YouTube or Web URL</h4>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  Enter the URL of an online video, podcast, or interview. yt-dlp will download the media directly into your backend storage.
+                </p>
+
+                <div className="space-y-3">
+                    <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                      value={youtubeUrl}
+                      disabled={isDownloadingUrl}
+                      onChange={(e) => setYoutubeUrl(e.target.value)}
+                      className="flex-1 bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 disabled:opacity-50"
+                    />
+                    <Button
+                      onClick={handleYoutubeSubmit}
+                      isLoading={isDownloadingUrl}
+                      variant="primary"
+                      size="sm"
+                      className="rounded-xl px-5 text-xs whitespace-nowrap"
+                    >
+                      {isDownloadingUrl ? 'Downloading...' : 'Fetch & Save'}
+                    </Button>
+                  </div>
+
+                  {isDownloadingUrl && (
+                    <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-800/40 flex items-center gap-3 text-xs text-purple-200">
+                      <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                      <div>
+                        <p className="font-semibold text-white">Fetching & downloading video streams...</p>
+                        <p className="text-[11px] text-zinc-400">yt-dlp is downloading the video and generating thumbnail preview. This may take a moment depending on video length.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {urlError && (
+                    <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800/50 flex items-start gap-2 text-xs text-rose-300">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
+                      <div>
+                        <span className="font-medium text-rose-200">Fetch Failed: </span>
+                        <span>{urlError}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-[11px] text-zinc-500">
+                    Works with YouTube, Twitch VODs, Vimeo, and direct MP4/WebM HTTP links.
+                  </p>
+                </div>
+              </Card>
+            )}
+
+            {/* AI Studio Tabs: Speech, Moments, Reframing & Subtitles */}
+            {activeVideo && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#111116] border border-white/[0.08] overflow-x-auto">
+                  <button
+                    type="button"
+                    onClick={() => setStudioTab('clips')}
+                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                      studioTab === 'clips'
+                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Flame className="w-3.5 h-3.5" />
+                    AI Moments & Scoring
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStudioTab('transcript')}
+                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                      studioTab === 'transcript'
+                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Cpu className="w-3.5 h-3.5" />
+                    Faster-Whisper Transcript
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStudioTab('reframing')}
+                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                      studioTab === 'reframing'
+                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Face Tracking Reframer
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStudioTab('subtitles')}
+                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                      studioTab === 'subtitles'
+                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                    Subtitle Studio
+                  </button>
+                </div>
+
+                {studioTab === 'clips' && (
+                  <ClipDetectionPanel
+                    videoId={activeVideo.id}
+                    videoTitle={activeVideo.title}
+                    onClipsDetected={(clips) => setDetectedClips(clips)}
+                    onPreviewClip={(clip) => setSeekTime(clip.start_time)}
+                  />
+                )}
+
+                {studioTab === 'transcript' && (
+                  <TranscriptionPanel
+                    videoId={activeVideo.id}
+                    videoTitle={activeVideo.title}
+                    onTranscriptReady={(t) => setCurrentTranscript(t)}
+                    onSeekToTimestamp={(sec) => setSeekTime(sec)}
+                  />
+                )}
+
+                {studioTab === 'reframing' && (
+                  <ReframingStudio
+                    videoId={activeVideo.id}
+                    sourceVideoUrl={activeVideo.video_url ? api.getServerUrl(activeVideo.video_url) : undefined}
+                    clip={detectedClips.length > 0 ? detectedClips[0] : null}
+                    onClose={() => setStudioTab('clips')}
+                  />
+                )}
+
+                {studioTab === 'subtitles' && (
+                  detectedClips.length > 0 ? (
+                    <SubtitleEditor
+                      clip={detectedClips[0]}
+                      videoUrl={activeVideo.video_url ? api.getServerUrl(activeVideo.video_url) : undefined}
+                    />
+                  ) : (
+                    <Card className="p-8 bg-[#111116] border-white/[0.08] text-center space-y-3">
+                      <Subtitles className="w-8 h-8 text-purple-400 mx-auto" />
+                      <h4 className="text-sm font-bold text-white">No Clip Selected for Subtitle Editing</h4>
+                      <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+                        Please detect or select a clip in the &quot;AI Moments &amp; Scoring&quot; tab first to customize its subtitle animation styles.
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setStudioTab('clips')}
+                        className="rounded-xl text-xs mt-2"
+                      >
+                        Go to AI Moments
+                      </Button>
+                    </Card>
+                  )
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Generation Settings & Action */}
+          <div className={`${isGalleryExpanded ? 'w-full' : 'lg:col-span-5'} space-y-6`}>
+            <Card className="border-white/[0.08] bg-[#111116] p-6 space-y-6">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-purple-400" />
+                    Viral Studio Parameters
+                  </h3>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">Inspired by Wayin.ai intelligent clipping & streamer layouts</p>
+                </div>
+                {activeVideo ? (
+                  <Badge variant="success" className="text-[10px]">Video Loaded</Badge>
+                ) : (
+                  <Badge variant="warning" className="text-[10px]">Awaiting Video</Badge>
+                )}
+              </div>
+
+              {/* 1. Content Category Selector */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+                  1. Video Content Type
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: 'gaming', label: 'Gaming & Stream', icon: Gamepad2, desc: 'Reactions & gameplay' },
+                    { id: 'podcast', label: 'Podcast & Talk', icon: Mic, desc: 'Speaking turns' },
+                    { id: 'education', label: 'Education', icon: BookOpen, desc: 'Explanations & key points' },
+                    { id: 'general', label: 'Social & Vlog', icon: Video, desc: 'Action & viral moments' },
+                  ].map((cat) => {
+                    const IconComp = cat.icon;
+                    const isSelected = contentType === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => handleContentTypeChange(cat.id as any)}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? 'border-purple-500 bg-purple-950/40 text-white shadow-md shadow-purple-950/30'
+                            : 'border-white/[0.06] bg-zinc-950/60 text-zinc-400 hover:border-zinc-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <IconComp className={`w-3.5 h-3.5 ${isSelected ? 'text-purple-400' : 'text-zinc-500'}`} />
+                          <span className="text-xs font-bold truncate">{cat.label}</span>
+                        </div>
+                        <span className="text-[9px] text-zinc-500 mt-1 line-clamp-1">{cat.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Visual Layout Template Presets (Wayin.ai inspired) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-purple-400" />
+                      2. Layout Template Presets
+                    </label>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold uppercase">
+                      Wayin Style
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] px-2 py-0.5 rounded-lg bg-zinc-900 border border-white/10 text-white font-mono font-bold">
+                      9:16 Vertical
+                    </span>
+                  </div>
+                </div>
+
+                {/* Wayin.ai Template Cards Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[
+                    {
+                      id: 'full_screen',
+                      title: 'GTA 6 Full',
+                      subtitle: 'Direct 9:16 Action',
+                      badge: 'Full Frame • No Split',
+                      previewType: 'full',
+                    },
+                    {
+                      id: 'streamer_split',
+                      title: 'GTA 6 Top',
+                      subtitle: 'Cam Top 40% + Game 60%',
+                      badge: 'Streamer Split',
+                      previewType: 'top_split',
+                    },
+                    {
+                      id: 'streamer_bottom',
+                      title: 'GTA 6 Cam',
+                      subtitle: 'Game 60% + Cam 40%',
+                      badge: 'Reaction Bottom',
+                      previewType: 'bottom_split',
+                    },
+                    {
+                      id: 'blur_fit',
+                      title: 'GTA 6 Fit',
+                      subtitle: '16:9 Ambient Blur',
+                      badge: 'Blurred Ambient',
+                      previewType: 'blur_fit',
+                    },
+                    {
+                      id: 'streamer_pip',
+                      title: 'Adventure PiP',
+                      subtitle: 'Floating Cam Overlay',
+                      badge: 'Webcam Overlay',
+                      previewType: 'pip',
+                    },
+                    {
+                      id: 'smart_auto',
+                      title: 'Smart Face Follow',
+                      subtitle: 'OpenCV Speaker Track',
+                      badge: 'Auto Speaker',
+                      previewType: 'face_track',
+                    },
+                  ].map((tmpl) => {
+                    const isSelected = templateLayout === tmpl.id;
+                    return (
+                      <div
+                        key={tmpl.id}
+                        onClick={() => setTemplateLayout(tmpl.id as any)}
+                        className={`group relative rounded-2xl p-2.5 transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? 'ring-2 ring-emerald-500 bg-emerald-950/20 shadow-xl shadow-emerald-950/40 border border-emerald-500/50'
+                            : 'border border-white/[0.08] bg-[#111116] hover:border-white/20 hover:bg-zinc-900/60'
+                        }`}
+                      >
+                        {/* 9:16 Miniature Screen Frame */}
+                        <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-black border border-white/10 mb-2 shadow-inner flex flex-col">
+                          {/* Selection indicator matching WayinVideo */}
+                          <div className="absolute top-2 left-2 z-20">
+                            {isSelected ? (
+                              <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/50">
+                                <Check className="w-3 h-3 text-black stroke-[3]" />
+                              </div>
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-black/40 border border-white/20 group-hover:border-white/40" />
+                            )}
+                          </div>
+
+                          {/* Layout Preview Graphic */}
+                          {tmpl.previewType === 'full' && (
+                            /* GTA 6 Full: Full-screen action with centered neon text */
+                            <div className="w-full h-full relative bg-gradient-to-b from-blue-900/40 via-purple-900/30 to-amber-950/40 flex flex-col justify-center items-center p-2 text-center">
+                              <Gamepad2 className="w-6 h-6 text-purple-300/40 mb-1" />
+                              <div className="px-2 py-0.5 rounded-md bg-black/80 border border-pink-500/60 shadow-[0_0_12px_rgba(236,72,153,0.5)]">
+                                <span className="text-[8px] font-black uppercase text-pink-300 tracking-wider">
+                                  WHO IS THIS GUY
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {tmpl.previewType === 'top_split' && (
+                            /* GTA 6 Top: Cam Top 40% + Game 60% */
+                            <div className="w-full h-full flex flex-col">
+                              <div className="h-[40%] bg-gradient-to-b from-purple-900/60 to-zinc-900 border-b border-white/20 flex flex-col items-center justify-center relative p-1">
+                                <User className="w-4 h-4 text-purple-300" />
+                                <span className="text-[7px] font-black bg-black/80 text-white px-1.5 py-0.2 rounded border border-white/20 mt-0.5">
+                                  BOYS
+                                </span>
+                              </div>
+                              <div className="h-[60%] bg-gradient-to-b from-zinc-900 to-black flex items-center justify-center">
+                                <Gamepad2 className="w-5 h-5 text-zinc-600" />
+                              </div>
+                            </div>
+                          )}
+
+                          {tmpl.previewType === 'bottom_split' && (
+                            /* GTA 6 Cam: Game Top 60% + Cam 40% */
+                            <div className="w-full h-full flex flex-col">
+                              <div className="h-[60%] bg-gradient-to-b from-blue-950/60 to-zinc-900 border-b border-white/20 flex flex-col items-center justify-center p-1">
+                                <Gamepad2 className="w-5 h-5 text-blue-300/50 mb-0.5" />
+                                <span className="text-[6px] font-black bg-black/80 text-amber-300 px-1 rounded">
+                                  FIVE-STAR WANTED
+                                </span>
+                              </div>
+                              <div className="h-[40%] bg-gradient-to-b from-purple-900/60 to-black flex items-center justify-center">
+                                <User className="w-4 h-4 text-purple-300" />
+                              </div>
+                            </div>
+                          )}
+
+                          {tmpl.previewType === 'blur_fit' && (
+                            /* GTA 6 Fit: Blurred ambient background with centered 16:9 */
+                            <div className="w-full h-full relative bg-gradient-to-b from-purple-950 via-zinc-900 to-indigo-950 flex items-center justify-center p-1 overflow-hidden">
+                              <div className="w-full h-12 bg-zinc-900 border border-white/30 rounded shadow-2xl flex flex-col items-center justify-center z-10 p-1">
+                                <span className="text-[7px] font-black uppercase text-amber-300 bg-black/80 px-1 rounded">
+                                  16:9 FIT
+                                </span>
+                              </div>
+                              <div className="absolute inset-0 bg-purple-600/10 backdrop-blur-sm pointer-events-none" />
+                            </div>
+                          )}
+
+                          {tmpl.previewType === 'pip' && (
+                            /* Adventure PiP: Full game + floating webcam */
+                            <div className="w-full h-full relative bg-gradient-to-b from-zinc-900 to-black flex items-center justify-center p-1">
+                              <Gamepad2 className="w-6 h-6 text-zinc-600" />
+                              <div className="absolute top-2 right-2 w-7 h-5 bg-purple-900/80 border border-purple-400 rounded flex items-center justify-center shadow-lg">
+                                <User className="w-2.5 h-2.5 text-purple-200" />
+                              </div>
+                            </div>
+                          )}
+
+                          {tmpl.previewType === 'face_track' && (
+                            /* Smart Face Tracking: Focused on speaker */
+                            <div className="w-full h-full relative bg-gradient-to-b from-neutral-900 to-neutral-950 flex flex-col items-center justify-center p-1">
+                              <div className="border border-purple-400/60 rounded-lg p-2 flex flex-col items-center">
+                                <User className="w-5 h-5 text-purple-400" />
+                                <span className="text-[6px] text-purple-300 font-mono mt-0.5">TRACKED</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Title & Description Below Preview */}
+                        <div className="text-left space-y-0.5">
+                          <h4 className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">
+                            {tmpl.title}
+                          </h4>
+                          <p className="text-[10px] text-zinc-400 line-clamp-1">
+                            {tmpl.subtitle}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 3. Subtitle / Caption Styling (with No Caption Option) */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+                    3. Dynamic Subtitles
+                  </label>
+                  <span className="text-[10px] text-zinc-500">Karaoke word sync</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    {
+                      id: 'none',
+                      name: 'No Captions',
+                      sub: 'Clean Video',
+                      color: 'text-zinc-400',
+                      icon: VolumeX,
+                    },
+                    {
+                      id: 'bold_yellow',
+                      name: 'Karaoke Pop',
+                      sub: 'Yellow Glow',
+                      color: 'text-[#FFDD00]',
+                    },
+                    {
+                      id: 'minimal_clean',
+                      name: 'Minimal Clean',
+                      sub: 'Modern White',
+                      color: 'text-white',
+                    },
+                    {
+                      id: 'professional_podcast',
+                      name: 'Boxed Podcast',
+                      sub: 'Purple Badge',
+                      color: 'text-purple-300',
+                    },
+                    {
+                      id: 'creator_style',
+                      name: 'Creator Bold',
+                      sub: 'Impact Uppercase',
+                      color: 'text-amber-400',
+                    },
+                  ].map((style) => {
+                    const isSelected = captionPreset === style.id;
+                    const IconComp = (style as any).icon;
+                    return (
+                      <button
+                        key={style.id}
+                        type="button"
+                        onClick={() => setCaptionPreset(style.id as any)}
+                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-purple-500 bg-purple-950/40 text-white shadow-sm'
+                            : 'border-white/[0.06] bg-zinc-950/60 hover:border-zinc-700 text-zinc-400'
+                        }`}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          {IconComp && <IconComp className="w-3 h-3 text-zinc-400" />}
+                          <span className={`text-[11px] font-black uppercase block ${style.color}`}>
+                            {style.name}
+                          </span>
+                        </div>
+                        <span className="text-[9px] text-zinc-500 block mt-0.5">{style.sub}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 4. Export Quality & Aspect Ratio */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Export Quality */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+                    Export Quality
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: '1080p_high', label: '1080p 60fps', sub: 'Viral HD' },
+                      { id: '1080p_standard', label: '1080p Std', sub: 'Balanced' },
+                    ].map((q) => (
+                      <button
+                        key={q.id}
+                        type="button"
+                        onClick={() => setExportQuality(q.id as any)}
+                        className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                          exportQuality === q.id
+                            ? 'border-purple-500 bg-purple-950/30 text-white font-semibold'
+                            : 'border-white/[0.06] bg-zinc-950/60 text-zinc-400 text-xs'
+                        }`}
+                      >
+                        <span className="text-xs block font-bold">{q.label}</span>
+                        <span className="text-[9px] text-zinc-500 block">{q.sub}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Clips Count Target */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+                    Clips Count Target
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[3, 5, 8, 12].map((cnt) => (
+                      <button
+                        key={cnt}
+                        type="button"
+                        onClick={() => setMaxClips(cnt)}
+                        className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                          maxClips === cnt
+                            ? 'border-purple-500 bg-purple-950/30 text-white font-semibold'
+                            : 'border-white/[0.06] bg-zinc-950/60 text-zinc-400 text-xs'
+                        }`}
+                      >
+                        <span className="text-xs block font-bold">{cnt}</span>
+                        <span className="text-[9px] text-zinc-500 block">clips</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Duration Window */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+                    Duration Target
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: '15-30', label: '15 - 30s', sub: 'Fast Paced' },
+                      { id: '30-60', label: '30 - 60s', sub: 'Deep Story' },
+                    ].map((dur) => (
+                      <button
+                        key={dur.id}
+                        type="button"
+                        onClick={() => setDurationRange(dur.id as any)}
+                        className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                          durationRange === dur.id
+                            ? 'border-purple-500 bg-purple-950/30 text-white font-semibold'
+                            : 'border-white/[0.06] bg-zinc-950/60 text-zinc-400 text-xs'
+                        }`}
+                      >
+                        <span className="text-xs block font-bold">{dur.label}</span>
+                        <span className="text-[9px] text-zinc-500 block">{dur.sub}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. Virality Score Cutoff Slider */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="font-semibold text-zinc-300">Virality Threshold Cutoff</span>
+                  <span className="font-mono text-purple-400 font-bold">{viralitySensitivity}%+</span>
+                </div>
+                <input
+                  type="range"
+                  min="50"
+                  max="95"
+                  value={viralitySensitivity}
+                  onChange={(e) => setViralitySensitivity(Number(e.target.value))}
+                  className="w-full accent-purple-600 bg-zinc-800 h-1.5 rounded-lg appearance-none cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] text-zinc-500">
+                  <span>More Clips (50%)</span>
+                  <span>Strict Viral Only (95%)</span>
+                </div>
+              </div>
+
+              {/* Submit CTA Button */}
+              <div className="pt-2 space-y-2">
+                <Button
+                  onClick={handleStartGeneration}
+                  disabled={!activeVideo || isGenerating}
+                  isLoading={isGenerating}
+                  variant="primary"
+                  size="lg"
+                  className="w-full rounded-xl py-3 text-sm font-bold shadow-xl shadow-purple-600/30 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500"
+                >
+                  <Sparkles className="w-4 h-4 mr-2 text-amber-300" />
+                  {isGenerating
+                    ? 'Transcribing & Rendering Clips...'
+                    : activeVideo
+                    ? `Generate 9:16 Shorts with ${
+                        templateLayout === 'full_screen' || (templateLayout as string) === 'center_crop'
+                          ? 'GTA 6 Full'
+                          : templateLayout === 'streamer_split'
+                          ? 'GTA 6 Top'
+                          : templateLayout === 'streamer_bottom'
+                          ? 'GTA 6 Cam'
+                          : templateLayout === 'blur_fit'
+                          ? 'GTA 6 Fit'
+                          : templateLayout === 'streamer_pip'
+                          ? 'Adventure PiP'
+                          : 'Smart Face Follow'
+                      }`
+                    : 'Upload Video to Generate Clips'}
+                </Button>
+                <p className="text-[10px] text-zinc-500 text-center">
+                  Exports 1080x1920 MP4s with {templateLayout === 'full_screen' ? 'clean full-screen action' : 'chosen viral layout'} &amp; {captionPreset === 'none' ? 'zero captions' : 'speech-synced captions'}.
+                </p>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Full Video Reframing Studio Modal */}
+      {showFullVideoReframer && activeVideo && (
+        <ReframingStudio
+          videoId={activeVideo.id}
+          sourceVideoUrl={activeVideo.video_url || undefined}
+          onClose={() => setShowFullVideoReframer(false)}
+          onReframingComplete={(outputUrl) => {
+            setActiveVideo({
+              ...activeVideo,
+              video_url: outputUrl,
+            });
+          }}
+        />
+      )}
+
+      {/* Real-Time End-to-End AI Pipeline Progress Monitor Modal */}
+      {pipelineJobId && (
+        <PipelineProgressModal
+          jobId={pipelineJobId}
+          onClose={() => setPipelineJobId(null)}
+          onComplete={(completedClips) => {
+            setDetectedClips(completedClips);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+export default function CreateClipsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-purple-500 mx-auto" />
+            <p className="text-sm font-medium text-zinc-400">Loading Clip Studio...</p>
+          </div>
+        </div>
+      }
+    >
+      <CreateClipsContent />
+    </Suspense>
+  );
+}

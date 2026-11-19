@@ -1,0 +1,452 @@
+import { 
+  SystemHealth, 
+  VideoItem, 
+  ClipItem, 
+  TranscriptionResponse, 
+  WhisperModelItem,
+  SubtitleStyleConfig,
+  SubtitleGenerateRequest,
+  SubtitleGenerateResponse,
+  SubtitleBurnRequest,
+  SubtitleBurnResponse,
+  ReframePreviewRequest,
+  ReframePreviewResponse,
+  ReframeRenderRequest,
+  ReframeRenderResponse,
+  FullPipelineRequest,
+  FullPipelineJobResponse,
+  StorageSummaryResponse,
+  StorageCleanupResponse
+} from '@/types';
+
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1';
+export const BACKEND_URL = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
+
+class ApiClient {
+  private baseUrl: string;
+
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl;
+  }
+
+  getServerUrl(path?: string | null): string {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${BACKEND_URL}${cleanPath}`;
+  }
+
+  async checkHealth(): Promise<SystemHealth> {
+    const res = await fetch(`${this.baseUrl}/health`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      throw new Error(`Health check failed: ${res.statusText}`);
+    }
+    return res.json();
+  }
+
+  async getVideos(): Promise<VideoItem[]> {
+    const res = await fetch(`${this.baseUrl}/videos`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch videos: ${res.statusText}`);
+    }
+    return res.json();
+  }
+
+  async getVideo(id: string): Promise<VideoItem> {
+    const res = await fetch(`${this.baseUrl}/videos/${id}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch video: ${res.statusText}`);
+    }
+    return res.json();
+  }
+
+  uploadVideoWithProgress(
+    file: File,
+    onProgress: (percentage: number) => void
+  ): Promise<VideoItem> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      formData.append('file', file);
+
+      xhr.open('POST', `${this.baseUrl}/videos/upload`);
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          onProgress(percent);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data: VideoItem = JSON.parse(xhr.responseText);
+            resolve(data);
+          } catch (e) {
+            reject(new Error('Invalid response from server.'));
+          }
+        } else {
+          try {
+            const errData = JSON.parse(xhr.responseText);
+            reject(new Error(errData.detail || `Upload failed (${xhr.status})`));
+          } catch {
+            reject(new Error(`Server error: ${xhr.statusText || xhr.status}`));
+          }
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(new Error('Network connection error while uploading video.'));
+      };
+
+      xhr.send(formData);
+    });
+  }
+
+  async deleteVideo(videoId: string): Promise<{ id: string; success: boolean; message: string }> {
+    const res = await fetch(`${this.baseUrl}/videos/${videoId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to delete video');
+    }
+    return res.json();
+  }
+
+  async submitYoutubeUrl(url: string): Promise<VideoItem> {
+    const res = await fetch(`${this.baseUrl}/videos/url`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to submit URL');
+    }
+    return res.json();
+  }
+
+  // AI Transcription Methods
+  async getWhisperModels(): Promise<WhisperModelItem[]> {
+    const res = await fetch(`${this.baseUrl}/transcription/models`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      throw new Error('Failed to load available Whisper models');
+    }
+    return res.json();
+  }
+
+  async transcribeVideo(
+    videoId: string,
+    modelSize?: string,
+    language?: string
+  ): Promise<TranscriptionResponse> {
+    const res = await fetch(`${this.baseUrl}/transcription`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        video_id: videoId,
+        model_size: modelSize || undefined,
+        language: language || undefined,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Transcription failed');
+    }
+    return res.json();
+  }
+
+  async getTranscription(videoId: string): Promise<TranscriptionResponse> {
+    const res = await fetch(`${this.baseUrl}/transcription/${videoId}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'No transcript found');
+    }
+    return res.json();
+  }
+
+  async getClips(videoId: string): Promise<{ clips: ClipItem[]; total_clips: number }> {
+    const res = await fetch(`${this.baseUrl}/clips/video/${videoId}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch clips: ${res.statusText}`);
+    }
+    return res.json();
+  }
+
+  async getAllClips(): Promise<ClipItem[]> {
+    const res = await fetch(`${this.baseUrl}/clips`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      return [];
+    }
+    return res.json();
+  }
+
+  // AI Clip Detection Engine Methods
+  async detectClips(
+    videoId: string,
+    durationRange: string = '30-60',
+    maxClips: number = 6,
+    viralityThreshold: number = 55.0
+  ): Promise<{ task_id: string; status: string; progress: number; current_step?: string }> {
+    const res = await fetch(`${this.baseUrl}/clips/detect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        video_id: videoId,
+        duration_range: durationRange,
+        max_clips: maxClips,
+        virality_threshold: viralityThreshold,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Clip detection request failed');
+    }
+    return res.json();
+  }
+
+  async pollClipDetectionTask(taskId: string): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/clips/tasks/${taskId}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to poll task status');
+    }
+    return res.json();
+  }
+
+  async renderClip(clipId: string, aspectRatio: string = '9:16'): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/clips/${clipId}/render?aspect_ratio=${encodeURIComponent(aspectRatio)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Clip rendering failed');
+    }
+    return res.json();
+  }
+
+  async deleteClip(clipId: string): Promise<{ success: boolean; clip_id: string; message: string }> {
+    const res = await fetch(`${this.baseUrl}/clips/${clipId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to delete clip');
+    }
+    return res.json();
+  }
+
+  // Automatic Video Clipping Engine: Batch Cutting Methods
+  async startBatchCut(
+    videoId: string,
+    clipIds?: string[],
+    aspectRatio: string = '9:16'
+  ): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/clips/batch-cut`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        video_id: videoId,
+        clip_ids: clipIds && clipIds.length > 0 ? clipIds : undefined,
+        aspect_ratio: aspectRatio,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to start batch clipping process');
+    }
+    return res.json();
+  }
+
+  async pollBatchCutJob(jobId: string): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/clips/jobs/${jobId}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to poll video cutting job status');
+    }
+    return res.json();
+  }
+
+  async retryFailedClips(jobId: string): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/clips/jobs/${jobId}/retry`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to retry clipping job');
+    }
+    return res.json();
+  }
+
+  async triggerClipGeneration(videoId: string): Promise<{ task_id: string; message: string }> {
+    const res = await fetch(`${this.baseUrl}/clips/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ video_id: videoId }),
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to trigger clip generation: ${res.statusText}`);
+    }
+    return res.json();
+  }
+
+  // --- Subtitles & Animated Captions API ---
+  async getSubtitlePresets(): Promise<Record<string, SubtitleStyleConfig>> {
+    const res = await fetch(`${this.baseUrl}/subtitles/presets`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch subtitle presets: ${res.statusText}`);
+    }
+    return res.json();
+  }
+
+  async generateSubtitles(req: SubtitleGenerateRequest): Promise<SubtitleGenerateResponse> {
+    const res = await fetch(`${this.baseUrl}/subtitles/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to generate subtitles');
+    }
+    return res.json();
+  }
+
+  async burnSubtitles(req: SubtitleBurnRequest): Promise<SubtitleBurnResponse> {
+    const res = await fetch(`${this.baseUrl}/subtitles/burn`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to render subtitles on video');
+    }
+    return res.json();
+  }
+
+  getSubtitleDownloadUrl(clipId: string, format: 'srt' | 'ass'): string {
+    return `${this.baseUrl}/subtitles/download/${clipId}/${format}`;
+  }
+
+  // --- Intelligent Video Reframing API ---
+  async previewReframing(req: ReframePreviewRequest): Promise<ReframePreviewResponse> {
+    const res = await fetch(`${this.baseUrl}/reframing/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to analyze video reframing');
+    }
+    return res.json();
+  }
+
+  async renderReframing(req: ReframeRenderRequest): Promise<ReframeRenderResponse> {
+    const res = await fetch(`${this.baseUrl}/reframing/render`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to render reframed video');
+    }
+    return res.json();
+  }
+
+  // --- Unified 10-Step End-to-End Pipeline API ---
+  async triggerPipeline(req: FullPipelineRequest): Promise<FullPipelineJobResponse> {
+    const res = await fetch(`${this.baseUrl}/clips/pipeline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to trigger full AI pipeline');
+    }
+    return res.json();
+  }
+
+  async pollPipeline(jobId: string): Promise<FullPipelineJobResponse> {
+    try {
+      const res = await fetch(`${this.baseUrl}/clips/pipeline/${jobId}`, {
+        cache: 'no-store',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(err.detail || 'Failed to poll AI pipeline status');
+      }
+      return await res.json();
+    } catch (err: any) {
+      // Gracefully log network drops without throwing to Turbopack
+      console.warn('Temporary pipeline poll delay:', err.message);
+      throw err;
+    }
+  }
+
+  async retryPipeline(jobId: string): Promise<FullPipelineJobResponse> {
+    const res = await fetch(`${this.baseUrl}/clips/pipeline/${jobId}/retry`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to retry pipeline job');
+    }
+    return res.json();
+  }
+
+  // --- Storage Management API ---
+  async getStorageSummary(): Promise<StorageSummaryResponse> {
+    const res = await fetch(`${this.baseUrl}/videos/storage/summary`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch storage summary: ${res.statusText}`);
+    }
+    return res.json();
+  }
+
+  async cleanupStorage(): Promise<StorageCleanupResponse> {
+    const res = await fetch(`${this.baseUrl}/videos/storage/cleanup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to clean up storage');
+    }
+    return res.json();
+  }
+}
+
+export const api = new ApiClient(API_BASE_URL);

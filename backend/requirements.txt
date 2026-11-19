@@ -1,0 +1,15 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.9.0
+pydantic-settings>=2.6.0
+python-multipart>=0.0.12
+motor>=3.6.0
+pymongo>=4.10.0
+httpx>=0.27.2
+python-dotenv>=1.0.1
+numpy>=1.26.0
+yt-dlp>=2024.11.04
+opencv-python-headless>=4.10.0
+scenedetect[opencv]>=0.6.4
+faster-whisper>=1.0.3
+av>=11.0.0,<14.0.0

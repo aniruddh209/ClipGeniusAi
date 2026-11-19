@@ -1,0 +1,64 @@
+# Python Virtual Environments
+venv/
+backend/venv/
+backend/.venv/
+env/
+.env
+
+# Python Bytecode & Caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node & Next.js
+node_modules/
+[fF]rontend/node_modules/
+.next/
+[fF]rontend/.next/
+out/
+[fF]rontend/out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# Large Video, Audio & Media Files (Storage Dirs)
+*.mp4
+*.mkv
+*.mov
+*.avi
+*.webm
+*.wav
+*.mp3
+*.flac
+*.aac
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/outputs/*
+!backend/outputs/.gitkeep
+backend/generated-clips/*
+!backend/generated-clips/.gitkeep
+backend/uploads/thumbnails/*
+!backend/uploads/thumbnails/.gitkeep
+
+# Environment & Local Secrets
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# IDE & OS Metadata
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/
