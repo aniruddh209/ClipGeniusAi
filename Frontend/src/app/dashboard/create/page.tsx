@@ -165,12 +165,28 @@ function CreateClipsContent() {
       setCloudProbeError('Please enter a valid HTTP or HTTPS video URL');
       return;
     }
+
+    // Check if user entered a YouTube or social platform link into Direct Cloud
+    const lower = cloudUrl.toLowerCase();
+    if (lower.includes('youtube.com') || lower.includes('youtu.be') || lower.includes('vimeo.com') || lower.includes('tiktok.com')) {
+      setCloudProbeError(
+        'YouTube and social video platforms serve dynamic HTML players rather than direct raw MP4/WebM streams. Please click below to switch to the "YouTube / Link" tab.'
+      );
+      return;
+    }
+
     setIsProbingCloudUrl(true);
     try {
       const probe = await api.probeUrl(cloudUrl.trim());
-      setCloudProbeResult(probe);
+      if (!probe.is_valid || !probe.is_accessible || probe.error || probe.duration <= 0) {
+        setCloudProbeError(probe.error || 'This URL is not a direct media stream. Direct Cloud Clipping requires a direct MP4/WebM file URL.');
+        setCloudProbeResult(null);
+      } else {
+        setCloudProbeResult(probe);
+      }
     } catch (err: any) {
       setCloudProbeError(err.message || 'Remote stream probing failed. Check URL accessibility or protocol.');
+      setCloudProbeResult(null);
     } finally {
       setIsProbingCloudUrl(false);
     }
@@ -402,16 +418,54 @@ function CreateClipsContent() {
                     <span>SSRF Guard active · Private IP blocking · HTTP Range streaming · No local download</span>
                   </div>
 
-                  {cloudProbeError && (
-                    <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/50 flex items-start gap-2.5 text-xs text-rose-300">
-                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
-                      <div>
-                        <span className="font-semibold text-rose-200">Access Blocked / Failed: </span>
-                        <span>{cloudProbeError}</span>
-                        <p className="text-[11px] text-rose-400/80 mt-1">
-                          If this host restricts range requests or is DRM-protected, you can use the Direct Upload tab instead.
-                        </p>
+                  {/* Smart YouTube / Social Link Banner */}
+                  {(cloudUrl.toLowerCase().includes('youtube.com') || cloudUrl.toLowerCase().includes('youtu.be') || cloudUrl.toLowerCase().includes('vimeo.com')) && (
+                    <div className="p-3.5 rounded-xl bg-purple-950/40 border border-purple-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-purple-200 animate-in fade-in">
+                      <div className="flex items-center gap-2.5">
+                        <Video className="w-4 h-4 text-purple-400 shrink-0" />
+                        <span>Detected video platform link! YouTube videos should be processed via the YouTube Engine.</span>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setYoutubeUrl(cloudUrl);
+                          setIngestMode('url');
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shrink-0 cursor-pointer shadow-md transition-all whitespace-nowrap"
+                      >
+                        Switch to YouTube Tab →
+                      </button>
+                    </div>
+                  )}
+
+                  {cloudProbeError && (
+                    <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/50 flex flex-col gap-2.5 text-xs text-rose-300">
+                      <div className="flex items-start gap-2.5">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
+                        <div>
+                          <span className="font-semibold text-rose-200">Access Blocked / Notice: </span>
+                          <span>{cloudProbeError}</span>
+                          <p className="text-[11px] text-rose-400/80 mt-1">
+                            If this host restricts range requests or is DRM-protected, you can use the Direct Upload tab instead.
+                          </p>
+                        </div>
+                      </div>
+                      {(cloudUrl.toLowerCase().includes('youtube.com') || cloudUrl.toLowerCase().includes('youtu.be') || cloudProbeError.toLowerCase().includes('youtube')) && (
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setYoutubeUrl(cloudUrl);
+                              setIngestMode('url');
+                              setCloudProbeError(null);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-colors cursor-pointer shadow-md"
+                          >
+                            <LinkIcon className="w-3.5 h-3.5" />
+                            <span>Switch to YouTube Import Tab →</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 

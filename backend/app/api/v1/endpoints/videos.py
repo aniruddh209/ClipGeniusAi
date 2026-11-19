@@ -186,6 +186,8 @@ async def register_direct_cloud_video(request: VideoCreateFromUrl):
     try:
         remote_stream_processor.validate_safe_url(request.url)
         probe_meta = await remote_stream_processor.probe_remote_media(request.url)
+        if probe_meta.get("duration", 0.0) <= 0.0:
+            raise ValueError("The remote video stream duration is 0 or could not be verified. Ensure it points to a valid raw media file (MP4/WebM).")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Cannot process cloud video URL: {str(e)}")
 

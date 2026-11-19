@@ -83,14 +83,19 @@ class RemoteStreamProcessor:
     async def probe_remote_media(self, url: str) -> Dict[str, Any]:
         """
         Inspects remote video without downloading:
+        - Rejects social/encrypted player platforms (YouTube, TikTok, Vimeo) with guidance to use the YouTube/Link tab
         - HTTP HEAD checks Content-Length, Content-Type, and Accept-Ranges support
         - FFprobe extracts exact duration, resolution, codecs, and audio tracks over HTTP stream
         """
         safe_url = self.validate_safe_url(url)
-        headers = {
-            "User-Agent": DEFAULT_USER_AGENT,
-            "Accept": "*/*"
-        }
+
+        parsed_url = urlparse(safe_url)
+        host_lower = (parsed_url.hostname or "").lower()
+        if any(d in host_lower for d in ("youtube.com", "youtu.be", "vimeo.com", "tiktok.com", "twitch.tv", "instagram.com", "twitter.com", "x.com")):
+            raise ValueError(
+                "YouTube and social media links serve dynamic HTML web players rather than direct raw MP4/WebM files. "
+                "Please switch to the 'YouTube / Link' tab to import this video, or provide a direct MP4/WebM file URL."
+            )
 
         # 1. HTTP HEAD check using Python standard library
         loop = asyncio.get_event_loop()
@@ -127,14 +132,19 @@ class RemoteStreamProcessor:
         if status_code not in (200, 206, 301, 302, 303, 307, 308):
             raise RuntimeError(f"Remote server returned HTTP status {status_code}")
 
+        content_type = resp_headers.get("Content-Type", "").lower()
+        if "text/html" in content_type:
+            raise ValueError(
+                f"The URL returned an HTML web page ('{content_type}') instead of a direct raw media stream. "
+                "Direct Cloud Clipping requires a direct media URL (e.g. .mp4, .webm). For YouTube or social links, use the 'YouTube / Link' tab."
+            )
+
         accept_ranges = "bytes" in resp_headers.get("Accept-Ranges", "").lower() or status_code == 206
         content_length_str = resp_headers.get("Content-Length", "0")
         try:
             content_length = int(content_length_str)
         except ValueError:
             content_length = 0
-
-        content_type = resp_headers.get("Content-Type", "video/mp4")
 
         # 2. FFprobe remote stream extraction
         ffprobe_cmd = [
@@ -184,6 +194,17 @@ class RemoteStreamProcessor:
                 has_audio = audio_stream is not None
             except Exception as pe:
                 logger.warning(f"Error parsing ffprobe output: {pe}")
+        else:
+            logger.warning(f"FFprobe extraction failed on {safe_url}: {probe_err}")
+            raise RuntimeError(
+                "Could not extract video stream headers from this URL. "
+                "Ensure the remote server allows media streaming and points to an accessible raw MP4/WebM file."
+            )
+
+        if duration <= 0.0:
+            raise RuntimeError(
+                "Remote media reported a duration of 0s. The file may be inaccessible, DRM-protected, or restricted by the host."
+            )
 
         return {
             "url": safe_url,
@@ -194,7 +215,7 @@ class RemoteStreamProcessor:
             "resolution": f"{width}x{height}",
             "fps": fps,
             "has_audio": has_audio,
-            "content_type": content_type,
+            "content_type": content_type or "video/mp4",
             "file_size_bytes": content_length,
             "file_size_mb": round(content_length / (1024 * 1024), 2) if content_length > 0 else 0.0,
             "accept_ranges": accept_ranges,
