@@ -14,6 +14,7 @@
 ## 🚀 Key Features
 
 ### 1. 📥 Omnichannel Video Ingestion
+- **Direct Cloud URL Clipping (Zero-Download)**: Paste any accessible MP4/WebM URL (e.g. cloud storage, CDN, direct HTTP video). ClipGenius inspects the stream with FFprobe, extracts only the 16kHz audio stream over HTTP for speech transcription, and slices/reframes final 9:16 clips via HTTP Range requests without ever downloading the original long-form video to local computer storage. Protected by strict SSRF guards against private IP ranges and loopback requests.
 - **YouTube & Web Link Import**: Instant streaming download using `yt-dlp` supporting YouTube videos, shorts, podcasts, Twitch VODs, and direct MP4/WebM URLs.
 - **Direct Local Upload**: Drag-and-drop ingestion with instant client-side validation and metadata extraction via `ffprobe` (resolution, FPS, bitrate, audio channels).
 

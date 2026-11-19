@@ -16,6 +16,26 @@ class VideoStatus(str, Enum):
 class VideoSourceType(str, Enum):
     FILE_UPLOAD = "upload"
     YOUTUBE_URL = "youtube_url"
+    DIRECT_CLOUD_URL = "direct_cloud_url"
+
+class ProbeUrlRequest(BaseModel):
+    url: str
+
+class ProbeUrlResponse(BaseModel):
+    url: str
+    is_valid: bool = True
+    is_accessible: bool = True
+    title: Optional[str] = "Cloud Remote Video"
+    duration: float = 0.0
+    duration_formatted: str = "0:00"
+    resolution: str = "1920x1080"
+    fps: float = 30.0
+    has_audio: bool = True
+    content_type: str = "video/mp4"
+    file_size_mb: float = 0.0
+    direct_range_supported: bool = True
+    supports_range_requests: bool = True
+    error: Optional[str] = None
 
 class VideoCreateFromUrl(BaseModel):
     url: str

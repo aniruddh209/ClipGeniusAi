@@ -1,10 +1,15 @@
 import os
+import io
+import re
 import uuid
 import asyncio
+import zipfile
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from pathlib import Path
+from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException, BackgroundTasks, status
+from fastapi.responses import StreamingResponse
 from app.core.config import settings
 from app.core.logging import logger
 from app.core.database import get_database
@@ -217,23 +222,30 @@ async def detect_clips_endpoint(
 
 @router.get("", response_model=List[CandidateClip])
 async def list_all_clips():
-    """Lists all candidate / generated clips across all projects in descending order."""
+    """Lists all candidate / generated clips across all valid projects in descending order."""
     db = get_database()
     clips = []
     if db is not None:
         try:
-            cursor = db.clips.find().sort("virality_score", -1)
+            # 1. Fetch valid project IDs
+            valid_videos = await db.videos.find({}, {"id": 1}).to_list(length=1000)
+            valid_video_ids = [v["id"] for v in valid_videos]
+            if not valid_video_ids:
+                # No projects exist -> clean up any stale orphan clips
+                await db.clips.delete_many({})
+                return []
+
+            # Purge any orphan clips whose parent video no longer exists
+            await db.clips.delete_many({"video_id": {"$nin": valid_video_ids}})
+
+            cursor = db.clips.find({"video_id": {"$in": valid_video_ids}}).sort("virality_score", -1)
             docs = await cursor.to_list(length=100)
             clips = [CandidateClip(**d) for d in docs]
+            return clips
         except Exception as e:
             logger.warning(f"MongoDB list_all_clips error: {e}")
 
-    if not clips:
-        for vid_clips in _in_memory_clips_by_video.values():
-            for c in vid_clips:
-                clips.append(CandidateClip(**c))
-
-    return clips
+    return []
 
 @router.get("/tasks/{task_id}", response_model=ClipDetectionTaskResponse)
 async def get_task_status(task_id: str):
@@ -821,9 +833,16 @@ async def _run_full_end_to_end_pipeline(
         job["current_step"] = f"2. Extracting 16kHz mono audio stream via FFmpeg{audio_dur_label}..."
         job["updated_at"] = datetime.utcnow()
 
-        audio_path = str(Path(source_path).with_suffix(".wav"))
-        if not os.path.exists(audio_path):
-            await ffmpeg_editor.extract_audio(source_path, audio_path, max_duration=max_audio_sec)
+        is_remote_cloud = source_path.startswith("http://") or source_path.startswith("https://")
+        if is_remote_cloud:
+            audio_path = str(settings.UPLOAD_DIR / f"{video_id}_temp_audio.wav")
+            if not os.path.exists(audio_path):
+                from app.services.video.remote_stream_processor import remote_stream_processor
+                await remote_stream_processor.extract_remote_audio_stream(source_path, audio_path, max_duration=max_audio_sec)
+        else:
+            audio_path = str(Path(source_path).with_suffix(".wav"))
+            if not os.path.exists(audio_path):
+                await ffmpeg_editor.extract_audio(source_path, audio_path, max_duration=max_audio_sec)
 
         # STEP 2: Speech Transcription (Faster-Whisper)
         job["progress"] = 30
@@ -853,6 +872,7 @@ async def _run_full_end_to_end_pipeline(
         if not transcript_doc:
             trans_res = await whisper_transcriber.transcribe_video(
                 video_path=source_path,
+                audio_path=audio_path,
                 model_size=whisper_model,
                 max_duration=max_audio_sec,
                 progress_callback=_on_whisper_progress
@@ -902,14 +922,21 @@ async def _run_full_end_to_end_pipeline(
             clip_len = min(total_duration, 35.0) if total_duration > 10 else total_duration
             needed = max_clips - len(candidate_clips)
             covered = [(c.start_time, c.end_time) for c in candidate_clips]
-            step = max(clip_len, total_duration / (max_clips + 2))
+            
+            if total_duration > clip_len and needed > 1:
+                step = max(6.0, (total_duration - clip_len) / float(needed))
+            else:
+                step = max(5.0, clip_len)
 
             curr_sec = 0.0
             idx = len(candidate_clips)
-            while curr_sec + clip_len <= total_duration and len(candidate_clips) < max_clips:
+            while curr_sec < total_duration and len(candidate_clips) < max_clips:
                 c_start = round(curr_sec, 2)
                 c_end = round(min(total_duration, c_start + clip_len), 2)
-                overlaps = any(max(c_start, s) < min(c_end, e) - 5.0 for s, e in covered)
+                if c_end - c_start < 4.0 and total_duration >= 4.0:
+                    break
+                # Check for significant overlap with existing covered moments
+                overlaps = any(abs(c_start - s) < 4.0 and abs(c_end - e) < 4.0 for s, e in covered)
                 if not overlaps:
                     c_id = f"clip_{uuid.uuid4().hex[:10]}"
                     fallback_clip = CandidateClip(
@@ -988,8 +1015,21 @@ async def _run_full_end_to_end_pipeline(
             thumb_path = str(settings.THUMBNAIL_DIR / thumb_filename)
 
             try:
-                # 8. Intelligent Video Reframing (Face Tracking or Center Crop)
-                if smart_reframing:
+                # 8. Intelligent Video Reframing (Direct Remote HTTP Range or Local File)
+                if is_remote_cloud:
+                    from app.services.video.remote_stream_processor import remote_stream_processor
+                    v_meta = video_doc.get("metadata", {}) if isinstance(video_doc.get("metadata"), dict) else {}
+                    await remote_stream_processor.cut_and_reframe_remote_segment(
+                        url=source_path,
+                        start_time=clip.start_time,
+                        end_time=clip.end_time,
+                        output_video_path=cut_path,
+                        template_layout=reframing_mode,
+                        aspect_ratio=target_aspect_ratio,
+                        source_w=v_meta.get("width", 1280),
+                        source_h=v_meta.get("height", 720)
+                    )
+                elif smart_reframing:
                     await video_reframer.render_reframed_video(
                         input_video_path=source_path,
                         output_video_path=cut_path,
@@ -1000,12 +1040,14 @@ async def _run_full_end_to_end_pipeline(
                         manual_offset=0.5
                     )
                 else:
-                    await ffmpeg_editor.cut_clip(
+                    await video_reframer.render_reframed_video(
                         input_video_path=source_path,
                         output_video_path=cut_path,
                         start_time=clip.start_time,
                         end_time=clip.end_time,
-                        aspect_ratio=target_aspect_ratio
+                        aspect_ratio=aspect_enum,
+                        mode=CropMode.FULL_SCREEN,
+                        manual_offset=0.5
                     )
 
                 # Generate thumbnail
@@ -1208,4 +1250,174 @@ async def generate_clips_alias(
     """Backward compatibility alias routing to full pipeline."""
     res = await trigger_full_pipeline(request, background_tasks)
     return {"task_id": res.job_id, "job_id": res.job_id, "message": "Pipeline triggered successfully"}
+
+# -------------------------------------------------------------
+# Direct Cloud Video ZIP Export & Clip Timestamp Editing CRUD
+# -------------------------------------------------------------
+
+class ClipUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    start_time: Optional[float] = None
+    end_time: Optional[float] = None
+
+@router.patch("/{clip_id}", response_model=CandidateClip)
+async def update_clip_timestamps(clip_id: str, request: ClipUpdateRequest):
+    """
+    Edits clip timestamps or title, and automatically re-renders the 9:16 short.
+    """
+    db = get_database()
+    clip_doc = None
+    if db is not None:
+        try:
+            clip_doc = await db.clips.find_one({"id": clip_id})
+        except Exception:
+            pass
+
+    if not clip_doc:
+        raise HTTPException(status_code=404, detail=f"Clip '{clip_id}' not found.")
+
+    video_id = clip_doc.get("video_id")
+    video_doc = await db.videos.find_one({"id": video_id}) if db is not None else None
+    if not video_doc:
+        raise HTTPException(status_code=404, detail="Parent video not found.")
+
+    source_path = video_doc.get("file_path", "")
+    new_start = request.start_time if request.start_time is not None else float(clip_doc.get("start_time", 0.0))
+    new_end = request.end_time if request.end_time is not None else float(clip_doc.get("end_time", 0.0))
+    if new_end <= new_start:
+        raise HTTPException(status_code=400, detail="End time must be greater than start time.")
+
+    new_duration = round(new_end - new_start, 2)
+    aspect_slug = clip_doc.get("aspect_ratio", "9:16").replace(":", "x")
+    cut_filename = f"{clip_id}_{aspect_slug}.mp4"
+    cut_path = str(settings.GENERATED_CLIPS_DIR / cut_filename)
+    thumb_filename = f"{clip_id}_{aspect_slug}.jpg"
+    thumb_path = str(settings.THUMBNAIL_DIR / thumb_filename)
+
+    is_remote = source_path.startswith("http://") or source_path.startswith("https://")
+    try:
+        if is_remote:
+            from app.services.video.remote_stream_processor import remote_stream_processor
+            v_meta = video_doc.get("metadata", {}) if isinstance(video_doc.get("metadata"), dict) else {}
+            await remote_stream_processor.cut_and_reframe_remote_segment(
+                url=source_path,
+                start_time=new_start,
+                end_time=new_end,
+                output_video_path=cut_path,
+                template_layout="full_screen",
+                aspect_ratio=clip_doc.get("aspect_ratio", "9:16"),
+                source_w=v_meta.get("width", 1280),
+                source_h=v_meta.get("height", 720)
+            )
+        else:
+            await video_reframer.render_reframed_video(
+                input_video_path=source_path,
+                output_video_path=cut_path,
+                start_time=new_start,
+                end_time=new_end,
+                aspect_ratio=ReframingAspectRatio.VERTICAL_9_16,
+                mode=CropMode.FULL_SCREEN,
+                manual_offset=0.5
+            )
+
+        await ffmpeg_editor.generate_thumbnail(
+            video_path=cut_path,
+            output_image_path=thumb_path,
+            timestamp_sec=0.5
+        )
+    except Exception as render_err:
+        logger.error(f"Failed to re-render clip {clip_id}: {render_err}")
+        raise HTTPException(status_code=500, detail=f"Re-rendering failed: {render_err}")
+
+    update_fields = {
+        "start_time": new_start,
+        "end_time": new_end,
+        "duration": new_duration,
+        "video_url": f"/generated-clips/{cut_filename}",
+        "preview_url": f"/generated-clips/{cut_filename}",
+        "download_url": f"/generated-clips/{cut_filename}",
+        "thumbnail_url": f"/uploads/thumbnails/{thumb_filename}",
+        "updated_at": datetime.utcnow()
+    }
+    if request.title:
+        update_fields["title"] = request.title
+
+    clip_doc.update(update_fields)
+    if db is not None:
+        await db.clips.update_one({"id": clip_id}, {"$set": update_fields})
+
+    return CandidateClip(**clip_doc)
+
+@router.delete("/{clip_id}")
+async def delete_single_clip(clip_id: str):
+    """
+    Deletes a single candidate or generated clip and removes its video files from disk.
+    """
+    db = get_database()
+    clip_doc = None
+    if db is not None:
+        clip_doc = await db.clips.find_one({"id": clip_id})
+        if clip_doc:
+            await db.clips.delete_one({"id": clip_id})
+            # Update video clips count
+            vid = clip_doc.get("video_id")
+            if vid:
+                cnt = await db.clips.count_documents({"video_id": vid})
+                await db.videos.update_one({"id": vid}, {"$set": {"clips_count": cnt}})
+
+    # Remove physical files from disk
+    if settings.GENERATED_CLIPS_DIR.exists():
+        for f in settings.GENERATED_CLIPS_DIR.glob(f"{clip_id}*"):
+            try:
+                f.unlink()
+            except Exception:
+                pass
+
+    if settings.THUMBNAIL_DIR.exists():
+        for f in settings.THUMBNAIL_DIR.glob(f"{clip_id}*"):
+            try:
+                f.unlink()
+            except Exception:
+                pass
+
+    return {"success": True, "clip_id": clip_id, "message": "Clip deleted successfully."}
+
+@router.get("/video/{video_id}/download-zip")
+async def download_all_clips_zip(video_id: str):
+    """
+    Bundles all rendered clips for a video project into a single ZIP file for 1-click download.
+    """
+    db = get_database()
+    clips = []
+    if db is not None:
+        try:
+            clips = await db.clips.find({"video_id": video_id}).to_list(length=100)
+        except Exception as e:
+            logger.warning(f"MongoDB clip lookup: {e}")
+
+    if not clips:
+        raise HTTPException(status_code=404, detail="No clips found for this video project.")
+
+    zip_buffer = io.BytesIO()
+    found_count = 0
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for c in clips:
+            cid = c.get("id")
+            ctitle = re.sub(r'[^a-zA-Z0-9_-]', '_', c.get("title", f"clip_{cid}"))
+            mp4_candidates = list(settings.GENERATED_CLIPS_DIR.glob(f"{cid}*.mp4"))
+            if mp4_candidates:
+                best_file = mp4_candidates[0]
+                zip_file.write(best_file, arcname=f"{ctitle}_{cid}.mp4")
+                found_count += 1
+
+    if found_count == 0:
+        raise HTTPException(status_code=400, detail="No rendered video files available to zip. Render clips first.")
+
+    zip_buffer.seek(0)
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename=ClipGenius_{video_id}_Shorts.zip"}
+    )
+
 

@@ -1,7 +1,11 @@
 import os
+import uuid
 from datetime import datetime
 from typing import List, Optional
 from pathlib import Path
+from urllib.parse import urlparse
+import subprocess
+
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks, status
 from app.core.config import settings
 from app.core.logging import logger
@@ -12,10 +16,13 @@ from app.models.video import (
     VideoSourceType, 
     VideoCreateFromUrl,
     VideoDeleteResponse,
-    VideoMetadata
+    VideoMetadata,
+    ProbeUrlRequest,
+    ProbeUrlResponse
 )
 from app.services.video.downloader import video_downloader
 from app.services.video.ffmpeg_editor import ffmpeg_editor
+from app.services.video.remote_stream_processor import remote_stream_processor
 
 router = APIRouter()
 
@@ -128,6 +135,119 @@ async def import_video_from_url(payload: VideoCreateFromUrl):
 
     return VideoResponse(**video_doc)
 
+@router.post("/probe-url", response_model=ProbeUrlResponse)
+async def probe_video_url(request: ProbeUrlRequest):
+    """
+    Validates and inspects a remote video URL with SSRF protection.
+    Checks whether remote server supports HTTP Range-based seeking.
+    """
+    try:
+        remote_stream_processor.validate_safe_url(request.url)
+        res = await remote_stream_processor.probe_remote_media(request.url)
+        
+        parsed = urlparse(request.url)
+        path_name = Path(parsed.path).stem
+        raw_title = path_name if path_name else parsed.netloc
+        title = raw_title.replace("_", " ").replace("-", " ").title()
+        if not title:
+            title = "Cloud Direct Video Stream"
+
+        return ProbeUrlResponse(
+            url=request.url,
+            is_valid=True,
+            is_accessible=True,
+            title=title,
+            duration=res["duration"],
+            duration_formatted=res["duration_formatted"],
+            resolution=res["resolution"],
+            fps=res["fps"],
+            has_audio=res["has_audio"],
+            content_type=res["content_type"],
+            file_size_mb=res["file_size_mb"],
+            direct_range_supported=res["direct_range_supported"],
+            supports_range_requests=res["direct_range_supported"]
+        )
+    except Exception as e:
+        logger.warning(f"Probe URL failed for {request.url}: {e}")
+        return ProbeUrlResponse(
+            url=request.url,
+            is_valid=False,
+            is_accessible=False,
+            error=str(e),
+            direct_range_supported=False,
+            supports_range_requests=False
+        )
+
+@router.post("/direct-cloud-register", response_model=VideoResponse)
+async def register_direct_cloud_video(request: VideoCreateFromUrl):
+    """
+    Registers a remote cloud video for direct processing without local client downloading.
+    """
+    try:
+        remote_stream_processor.validate_safe_url(request.url)
+        probe_meta = await remote_stream_processor.probe_remote_media(request.url)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Cannot process cloud video URL: {str(e)}")
+
+    video_id = f"cld_{uuid.uuid4().hex[:10]}"
+    parsed = urlparse(request.url)
+    raw_title = Path(parsed.path).stem or parsed.netloc
+    title = raw_title.replace("_", " ").replace("-", " ").title()
+
+    # Generate placeholder/stream thumbnail
+    thumb_filename = f"{video_id}.jpg"
+    thumb_path = settings.THUMBNAIL_DIR / thumb_filename
+    settings.THUMBNAIL_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        subprocess.run([
+            "ffmpeg", "-headers", "User-Agent: Mozilla/5.0\r\n",
+            "-y", "-ss", "1.0", "-i", request.url,
+            "-frames:v", "1", "-q:v", "2", str(thumb_path)
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+    except Exception:
+        pass
+
+    video_doc = {
+        "id": video_id,
+        "title": title,
+        "original_filename": Path(parsed.path).name or "cloud_stream.mp4",
+        "stored_filename": f"{video_id}_remote",
+        "source_type": VideoSourceType.DIRECT_CLOUD_URL,
+        "source_url": request.url,
+        "file_path": request.url,
+        "file_size_mb": probe_meta.get("file_size_mb", 0.0),
+        "duration": probe_meta.get("duration", 0.0),
+        "video_url": request.url,
+        "thumbnail_url": f"/uploads/thumbnails/{thumb_filename}" if thumb_path.exists() else None,
+        "metadata": {
+            "duration": probe_meta.get("duration", 0.0),
+            "width": probe_meta.get("width", 1920),
+            "height": probe_meta.get("height", 1080),
+            "fps": probe_meta.get("fps", 30.0),
+            "aspect_ratio": "16:9",
+            "video_codec": "h264",
+            "audio_codec": "aac",
+            "size_mb": probe_meta.get("file_size_mb", 0.0)
+        },
+        "status": VideoStatus.READY,
+        "progress_percentage": 100,
+        "current_step": "Direct cloud video ready for AI clipping",
+        "transcript_available": False,
+        "clips_count": 0,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+
+    db = get_database()
+    if db is not None:
+        try:
+            await db.videos.insert_one(dict(video_doc))
+        except Exception as e:
+            logger.warning(f"Error persisting cloud video to MongoDB: {e}")
+
+    _in_memory_videos[video_id] = video_doc
+    return VideoResponse(**video_doc)
+
 @router.get("", response_model=List[VideoResponse])
 async def list_videos():
     """Lists all uploaded/processed videos in descending order of creation."""
@@ -139,11 +259,15 @@ async def list_videos():
             valid_videos = []
             for d in docs:
                 try:
+                    # Dynamically query real clips count from MongoDB
+                    vid = d.get("id")
+                    if vid:
+                        actual_clips = await db.clips.count_documents({"video_id": vid})
+                        d["clips_count"] = actual_clips
                     valid_videos.append(VideoResponse(**d))
                 except Exception as parse_err:
                     logger.debug(f"Skipping malformed video doc {d.get('id')}: {parse_err}")
-            if valid_videos:
-                return valid_videos
+            return valid_videos
         except Exception as e:
             logger.warning(f"MongoDB fetch failed: {e}. Falling back to cache.")
 

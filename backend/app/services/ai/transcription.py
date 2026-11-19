@@ -35,6 +35,7 @@ class WhisperTranscriber:
     async def transcribe_video(
         self,
         video_path: str,
+        audio_path: Optional[str] = None,
         model_size: Optional[str] = None,
         language: Optional[str] = None,
         max_duration: Optional[float] = None,
@@ -49,20 +50,33 @@ class WhisperTranscriber:
         5. Structure segments, words, and speaker turns
         """
         model_name = model_size or self.default_model
-        video_p = Path(video_path)
-        if not video_p.exists():
-            raise FileNotFoundError(f"Video file not found at {video_path}")
 
-        # Step 1: Extract 16kHz mono WAV audio
-        if progress_callback:
-            progress_callback("Extracting 16kHz audio with FFmpeg...", 15)
+        # Step 1: Resolve or extract 16kHz mono WAV audio
+        target_audio = audio_path
+        if not target_audio or not os.path.exists(target_audio):
+            is_url = str(video_path).startswith("http://") or str(video_path).startswith("https://")
+            if is_url:
+                from app.services.video.remote_stream_processor import remote_stream_processor
+                from app.core.config import settings
+                target_audio = str(settings.UPLOAD_DIR / f"temp_{uuid.uuid4().hex[:8]}.wav")
+                await remote_stream_processor.extract_remote_audio_stream(str(video_path), target_audio, max_duration=max_duration)
+            else:
+                video_p = Path(video_path)
+                if not video_p.exists():
+                    raise FileNotFoundError(f"Video file not found at {video_path}")
 
-        audio_path = video_p.with_suffix(".wav")
-        try:
-            await ffmpeg_editor.extract_audio(str(video_p), str(audio_path), max_duration=max_duration)
-        except Exception as e:
-            logger.error(f"Audio extraction failed for {video_path}: {e}")
-            raise RuntimeError(f"FFmpeg failed to extract audio track: {e}")
+                if progress_callback:
+                    progress_callback("Extracting 16kHz audio with FFmpeg...", 15)
+
+                target_audio = str(video_p.with_suffix(".wav"))
+                try:
+                    await ffmpeg_editor.extract_audio(str(video_p), target_audio, max_duration=max_duration)
+                except Exception as e:
+                    logger.error(f"Audio extraction failed for {video_path}: {e}")
+                    raise RuntimeError(f"FFmpeg failed to extract audio track: {e}")
+        else:
+            if progress_callback:
+                progress_callback("Using extracted audio stream...", 20)
 
         # Step 2: Load Faster-Whisper model
         if progress_callback:
@@ -89,7 +103,7 @@ class WhisperTranscriber:
                 transcribe_kwargs["language"] = language
 
             segments_gen, info = model.transcribe(
-                str(audio_path),
+                str(target_audio),
                 **transcribe_kwargs
             )
 
@@ -168,10 +182,10 @@ class WhisperTranscriber:
             logger.error(f"Whisper inference error: {e}")
             raise e
         finally:
-            # Clean up temporary extracted WAV file
-            if audio_path.exists():
+            # Clean up temporary auto-generated WAV file if caller did not supply audio_path
+            if not audio_path and target_audio and os.path.exists(target_audio):
                 try:
-                    audio_path.unlink()
+                    os.remove(target_audio)
                 except Exception:
                     pass
 

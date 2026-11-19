@@ -37,35 +37,77 @@ export default function DashboardPage() {
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [clips, setClips] = useState<ClipItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null);
+  const [deletingClipId, setDeletingClipId] = useState<string | null>(null);
+
+  const loadRealData = async () => {
+    setIsLoading(true);
+    try {
+      const [liveVideos, liveClips] = await Promise.all([
+        api.getVideos().catch(() => []),
+        api.getAllClips().catch(() => [])
+      ]);
+      const validVideos = liveVideos || [];
+      // If no videos exist, strictly force clips to empty list so no ghost clips appear
+      const validClips = validVideos.length === 0 ? [] : (liveClips || []);
+      setVideos(validVideos);
+      setClips(validClips);
+    } catch (e) {
+      console.error('Error loading dashboard data:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let isMounted = true;
-    async function loadRealData() {
-      setIsLoading(true);
-      try {
-        const [liveVideos, liveClips] = await Promise.all([
-          api.getVideos().catch(() => []),
-          api.getAllClips().catch(() => [])
-        ]);
-        if (isMounted) {
-          setVideos(liveVideos || []);
-          setClips(liveClips || []);
-        }
-      } catch (e) {
-        console.error('Error loading dashboard data:', e);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    }
     loadRealData();
-    return () => { isMounted = false; };
+    const handleUpdate = () => loadRealData();
+    window.addEventListener('projects-updated', handleUpdate);
+    return () => window.removeEventListener('projects-updated', handleUpdate);
   }, []);
 
-  // Compute live statistics from real database records
+  const handleDeleteVideo = async (videoId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to permanently delete this project and all its clips?')) return;
+    setDeletingVideoId(videoId);
+    try {
+      await api.deleteVideo(videoId);
+      const updatedVideos = videos.filter(v => v.id !== videoId);
+      setVideos(updatedVideos);
+      const updatedClips = updatedVideos.length === 0 ? [] : clips.filter(c => c.video_id !== videoId);
+      setClips(updatedClips);
+      window.dispatchEvent(new Event('projects-updated'));
+    } catch (err: any) {
+      alert(`Deletion error: ${err.message}`);
+    } finally {
+      setDeletingVideoId(null);
+    }
+  };
+
+  const handleDeleteClip = async (clipId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!confirm('Are you sure you want to permanently delete this clip?')) return;
+    setDeletingClipId(clipId);
+    try {
+      await api.deleteClip(clipId);
+      setClips(prev => prev.filter(c => c.id !== clipId));
+      if (activeClipModal?.id === clipId) {
+        setActiveClipModal(null);
+      }
+      window.dispatchEvent(new Event('projects-updated'));
+    } catch (err: any) {
+      alert(`Clip deletion error: ${err.message}`);
+    } finally {
+      setDeletingClipId(null);
+    }
+  };
+
+  // Compute live statistics from real database records (0 if no videos)
   const totalVideos = videos.length;
-  const totalClips = clips.length;
-  const avgVirality = clips.length > 0
-    ? (clips.reduce((acc, c) => acc + (c.virality_score || c.overall_score || 0), 0) / clips.length).toFixed(1)
+  const displayedClips = totalVideos === 0 ? [] : clips;
+  const totalClips = displayedClips.length;
+  const avgVirality = displayedClips.length > 0
+    ? (displayedClips.reduce((acc, c) => acc + (c.virality_score || c.overall_score || 0), 0) / displayedClips.length).toFixed(1)
     : '0.0';
   const totalSeconds = videos.reduce((acc, v) => acc + (v.duration || 0), 0);
   const hoursFootage = (totalSeconds / 3600).toFixed(1);
@@ -156,7 +198,7 @@ export default function DashboardPage() {
             <div>
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <Flame className="w-4 h-4 text-amber-400" />
-                AI-Selected Viral Shorts ({clips.length})
+                AI-Selected Viral Shorts ({displayedClips.length})
               </h2>
               <p className="text-xs text-zinc-400 mt-0.5">
                 Real clips scored for retention, reframed with OpenCV face-tracking, and captioned.
@@ -173,12 +215,12 @@ export default function DashboardPage() {
               <Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-400 mb-2" />
               Loading real clips from database...
             </div>
-          ) : clips.length === 0 ? (
+          ) : displayedClips.length === 0 ? (
             <div className="p-10 rounded-2xl bg-[#111116] border border-white/[0.06] text-center space-y-3">
               <Scissors className="w-8 h-8 text-zinc-600 mx-auto" />
               <p className="text-sm font-semibold text-white">No generated clips yet</p>
               <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-                Upload or import a YouTube video in Create Clips to automatically generate high-retention 9:16 vertical shorts.
+                Upload or import a YouTube or direct cloud video in Create Clips to automatically generate high-retention 9:16 vertical shorts.
               </p>
               <Link href="/dashboard/create">
                 <Button size="sm" variant="primary" className="rounded-xl text-xs mt-2">
@@ -188,7 +230,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {clips.slice(0, 6).map((clip) => {
+              {displayedClips.slice(0, 6).map((clip) => {
                 const thumb = clip.thumbnail_url
                   ? clip.thumbnail_url.startsWith('http')
                     ? clip.thumbnail_url
@@ -275,6 +317,18 @@ export default function DashboardPage() {
                             <Download className="w-3.5 h-3.5" />
                           </a>
                         )}
+                        <button
+                          onClick={(e) => handleDeleteClip(clip.id, e)}
+                          disabled={deletingClipId === clip.id}
+                          className="p-2 rounded-xl bg-zinc-800 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-400 border border-transparent hover:border-rose-900/40 transition-colors"
+                          title="Delete Clip"
+                        >
+                          {deletingClipId === clip.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -356,11 +410,25 @@ export default function DashboardPage() {
                             </Badge>
                           </td>
                           <td className="px-5 py-4 text-right">
-                            <Link href="/dashboard/create">
-                              <Button size="sm" variant="ghost" className="text-xs hover:text-purple-300">
-                                Clip Video →
-                              </Button>
-                            </Link>
+                            <div className="flex items-center justify-end gap-2">
+                              <Link href="/dashboard/create">
+                                <Button size="sm" variant="ghost" className="text-xs hover:text-purple-300">
+                                  Clip Video →
+                                </Button>
+                              </Link>
+                              <button
+                                onClick={(e) => handleDeleteVideo(vid.id, e)}
+                                disabled={deletingVideoId === vid.id}
+                                className="p-1.5 rounded-lg border border-white/10 text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors"
+                                title="Delete project and all its clips"
+                              >
+                                {deletingVideoId === vid.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -421,6 +489,20 @@ export default function DashboardPage() {
             )}
 
             <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDeleteClip(activeClipModal.id)}
+                disabled={deletingClipId === activeClipModal.id}
+                className="rounded-xl text-xs text-rose-400 border-rose-900/40 hover:bg-rose-950/40"
+              >
+                {deletingClipId === activeClipModal.id ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5 mr-1" />
+                )}
+                Delete
+              </Button>
               {activeClipModal.download_url && (
                 <a
                   href={api.getServerUrl(activeClipModal.download_url)}

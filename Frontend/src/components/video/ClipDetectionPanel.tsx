@@ -32,6 +32,7 @@ import {
   HelpCircle,
   Star,
   Crop,
+  Edit3,
   X
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -80,6 +81,45 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
   const [subtitleModalClip, setSubtitleModalClip] = useState<CandidateClip | null>(null);
   const [reframeModalClip, setReframeModalClip] = useState<CandidateClip | null>(null);
   const [previewingClip, setPreviewingClip] = useState<CandidateClip | null>(null);
+
+  // Edit Timestamps Modal state
+  const [editingClip, setEditingClip] = useState<CandidateClip | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editStartTime, setEditStartTime] = useState(0);
+  const [editEndTime, setEditEndTime] = useState(0);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const handleOpenEdit = (clip: CandidateClip) => {
+    setEditingClip(clip);
+    setEditTitle(clip.title);
+    setEditStartTime(clip.start_time);
+    setEditEndTime(clip.end_time);
+  };
+
+  const handleSaveClipEdit = async () => {
+    if (!editingClip) return;
+    if (editEndTime <= editStartTime) {
+      alert('End time must be greater than start time');
+      return;
+    }
+    setIsSavingEdit(true);
+    try {
+      const updated = await api.updateClip(editingClip.id, {
+        title: editTitle,
+        start_time: editStartTime,
+        end_time: editEndTime
+      });
+      setClips((prev) => prev.map((c) => c.id === editingClip.id ? updated : c));
+      if (onClipsDetected) {
+        onClipsDetected(clips.map((c) => c.id === editingClip.id ? updated : c));
+      }
+      setEditingClip(null);
+    } catch (err: any) {
+      alert(`Failed to update clip: ${err.message}`);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
 
   // Fetch already detected clips on initial load
   useEffect(() => {
@@ -426,20 +466,32 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
               ))}
             </div>
 
-            {/* Sort by Dropdown */}
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              <ArrowDownUp className="w-3.5 h-3.5 text-zinc-500" />
-              <span className="text-[11px] text-zinc-400 font-medium">Sort by:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+            {/* Download All as ZIP & Sort by Dropdown */}
+            <div className="flex flex-wrap items-center gap-2.5 self-end sm:self-auto">
+              <a
+                href={api.getClipsZipDownloadUrl(videoId)}
+                download={`${(videoTitle || 'clips').replace(/[^a-zA-Z0-9_-]/g, '_')}_all_shorts.zip`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-semibold transition-all shadow-sm"
+                title="Download all rendered shorts as a single ZIP archive"
               >
-                <option value="score_desc">Quality Score (High to Low)</option>
-                <option value="score_asc">Quality Score (Low to High)</option>
-                <option value="duration_desc">Duration (Longest First)</option>
-                <option value="duration_asc">Duration (Shortest First)</option>
-              </select>
+                <Download className="w-3.5 h-3.5" />
+                <span>Download All (ZIP)</span>
+              </a>
+
+              <div className="flex items-center gap-1.5">
+                <ArrowDownUp className="w-3.5 h-3.5 text-zinc-500" />
+                <span className="text-[11px] text-zinc-400 font-medium">Sort by:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+                >
+                  <option value="score_desc">Quality Score (High to Low)</option>
+                  <option value="score_asc">Quality Score (Low to High)</option>
+                  <option value="duration_desc">Duration (Longest First)</option>
+                  <option value="duration_asc">Duration (Shortest First)</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -688,6 +740,16 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                       </Button>
 
                       <Button
+                        onClick={() => handleOpenEdit(clip)}
+                        size="sm"
+                        variant="outline"
+                        className="rounded-xl px-2.5 py-1.5 text-xs border-white/[0.08] hover:bg-white/[0.08] text-zinc-400 hover:text-white"
+                        title="Edit Clip Timestamps & Title"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-purple-400" />
+                      </Button>
+
+                      <Button
                         onClick={() => handleCopyTranscript(clip)}
                         size="sm"
                         variant="outline"
@@ -803,6 +865,88 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                   <Download className="w-3.5 h-3.5 mr-1" /> Download Short
                 </a>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Edit Clip Timestamps & Title Modal */}
+      {editingClip && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#111116] border border-white/[0.1] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl p-6 space-y-5 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+              <div className="flex items-center gap-2">
+                <Edit3 className="w-4 h-4 text-purple-400" />
+                <h3 className="text-sm font-bold text-white">Edit Clip Timestamps</h3>
+              </div>
+              <button
+                onClick={() => setEditingClip(null)}
+                className="text-zinc-400 hover:text-white p-1 text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block text-zinc-400 font-medium mb-1.5">Clip Title</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full bg-zinc-950 border border-white/[0.1] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-400 font-medium mb-1.5">Start Time (sec)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={editStartTime}
+                    onChange={(e) => setEditStartTime(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-zinc-950 border border-white/[0.1] rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-purple-500"
+                  />
+                  <span className="text-[10px] text-zinc-500 mt-1 block font-mono">
+                    {formatDuration(editStartTime)}
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-zinc-400 font-medium mb-1.5">End Time (sec)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={editEndTime}
+                    onChange={(e) => setEditEndTime(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-zinc-950 border border-white/[0.1] rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-purple-500"
+                  />
+                  <span className="text-[10px] text-zinc-500 mt-1 block font-mono">
+                    {formatDuration(editEndTime)} ({Math.max(0, Math.round(editEndTime - editStartTime))}s duration)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-white/[0.08]">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setEditingClip(null)}
+                className="flex-1 rounded-xl text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleSaveClipEdit}
+                isLoading={isSavingEdit}
+                className="flex-1 rounded-xl text-xs"
+              >
+                Save &amp; Re-render
+              </Button>
             </div>
           </div>
         </div>

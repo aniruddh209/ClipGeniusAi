@@ -196,6 +196,7 @@ export default function MyProjectsPage() {
       }
       const storage = await api.getStorageSummary().catch(() => null);
       if (storage) setStorageInfo(storage);
+      window.dispatchEvent(new Event('projects-updated'));
     } catch (err: any) {
       alert(`Clip deletion error: ${err.message}`);
     } finally {
@@ -224,6 +225,7 @@ export default function MyProjectsPage() {
       }
       const storage = await api.getStorageSummary().catch(() => null);
       if (storage) setStorageInfo(storage);
+      window.dispatchEvent(new Event('projects-updated'));
     } catch (err: any) {
       alert(`Deletion error: ${err.message}`);
     } finally {

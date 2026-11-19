@@ -250,6 +250,23 @@ export interface StorageCleanupResponse {
   message: string;
 }
 
+export interface ProbeUrlResponse {
+  url: string;
+  is_valid: boolean;
+  is_accessible: boolean;
+  title?: string;
+  duration: number;
+  duration_formatted: string;
+  resolution: string;
+  fps: number;
+  has_audio: boolean;
+  content_type: string;
+  file_size_mb: number;
+  direct_range_supported: boolean;
+  supports_range_requests: boolean;
+  error?: string;
+}
+
 export interface UserPreferences {
   name: string;
   email: string;

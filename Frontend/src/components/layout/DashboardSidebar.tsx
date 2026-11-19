@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -18,9 +18,27 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
+import { api } from '@/lib/api';
 
 export const DashboardSidebar: React.FC = () => {
   const pathname = usePathname();
+  const [projectCount, setProjectCount] = useState<number | null>(null);
+
+  const fetchProjectCount = async () => {
+    try {
+      const vids = await api.getVideos();
+      setProjectCount(Array.isArray(vids) ? vids.length : 0);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    fetchProjectCount();
+    const handleUpdate = () => fetchProjectCount();
+    window.addEventListener('projects-updated', handleUpdate);
+    return () => window.removeEventListener('projects-updated', handleUpdate);
+  }, []);
 
   const navItems = [
     {
@@ -39,7 +57,7 @@ export const DashboardSidebar: React.FC = () => {
       label: 'My Projects',
       href: '/dashboard/projects',
       icon: Film,
-      badge: '4',
+      badge: projectCount !== null ? projectCount.toString() : undefined,
     },
     {
       label: 'Settings',

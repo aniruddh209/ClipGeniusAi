@@ -31,7 +31,8 @@ import {
   Maximize2,
   Minimize2,
   Check,
-  User
+  User,
+  Globe
 } from 'lucide-react';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { Button } from '@/components/ui/Button';
@@ -44,7 +45,7 @@ import { ReframingStudio } from '@/components/video/ReframingStudio';
 import { SubtitleEditor } from '@/components/video/SubtitleEditor';
 import { PipelineProgressModal } from '@/components/video/PipelineProgressModal';
 import { api } from '@/lib/api';
-import { VideoItem, TranscriptionResponse, CandidateClip } from '@/types';
+import { VideoItem, TranscriptionResponse, CandidateClip, ProbeUrlResponse } from '@/types';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function CreateClipsContent() {
@@ -52,11 +53,18 @@ function CreateClipsContent() {
   const searchParams = useSearchParams();
   const videoIdParam = searchParams.get('video_id');
 
-  // Ingest mode tab: 'upload' or 'url'
-  const [ingestMode, setIngestMode] = useState<'upload' | 'url'>('upload');
+  // Ingest mode tab: 'upload' | 'direct_cloud' | 'url'
+  const [ingestMode, setIngestMode] = useState<'upload' | 'direct_cloud' | 'url'>('upload');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [isDownloadingUrl, setIsDownloadingUrl] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
+
+  // Direct Cloud URL (Zero-Download Range-Seeking)
+  const [cloudUrl, setCloudUrl] = useState('');
+  const [isProbingCloudUrl, setIsProbingCloudUrl] = useState(false);
+  const [cloudProbeResult, setCloudProbeResult] = useState<ProbeUrlResponse | null>(null);
+  const [cloudProbeError, setCloudProbeError] = useState<string | null>(null);
+  const [isRegisteringCloud, setIsRegisteringCloud] = useState(false);
 
   // Active uploaded video state
   const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
@@ -147,6 +155,39 @@ function CreateClipsContent() {
       setUrlError(err.message || 'Failed to download from URL.');
     } finally {
       setIsDownloadingUrl(false);
+    }
+  };
+
+  const handleAnalyzeCloudUrl = async () => {
+    setCloudProbeError(null);
+    setCloudProbeResult(null);
+    if (!cloudUrl || !cloudUrl.trim().startsWith('http')) {
+      setCloudProbeError('Please enter a valid HTTP or HTTPS video URL');
+      return;
+    }
+    setIsProbingCloudUrl(true);
+    try {
+      const probe = await api.probeUrl(cloudUrl.trim());
+      setCloudProbeResult(probe);
+    } catch (err: any) {
+      setCloudProbeError(err.message || 'Remote stream probing failed. Check URL accessibility or protocol.');
+    } finally {
+      setIsProbingCloudUrl(false);
+    }
+  };
+
+  const handleRegisterDirectCloud = async () => {
+    if (!cloudUrl) return;
+    setIsRegisteringCloud(true);
+    setCloudProbeError(null);
+    try {
+      const vid = await api.registerDirectCloudVideo(cloudUrl.trim());
+      setActiveVideo(vid);
+      window.dispatchEvent(new Event('projects-updated'));
+    } catch (err: any) {
+      setCloudProbeError(err.message || 'Failed to register cloud video project');
+    } finally {
+      setIsRegisteringCloud(false);
     }
   };
 
@@ -269,6 +310,18 @@ function CreateClipsContent() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setIngestMode('direct_cloud')}
+                    className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                      ingestMode === 'direct_cloud'
+                        ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Globe className="w-3 h-3" />
+                    <span>Direct Cloud URL</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setIngestMode('url')}
                     className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${
                       ingestMode === 'url'
@@ -276,14 +329,14 @@ function CreateClipsContent() {
                         : 'text-zinc-400 hover:text-white'
                     }`}
                   >
-                    YouTube / Web Link
+                    YouTube / Link
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Ingest Mode 1: Drag-and-Drop & Video Preview System */}
-            {ingestMode === 'upload' ? (
+            {ingestMode === 'upload' && (
               <VideoUploadZone
                 initialVideo={activeVideo}
                 seekTime={seekTime}
@@ -298,8 +351,143 @@ function CreateClipsContent() {
                   setGenerationSuccess(false);
                 }}
               />
-            ) : (
-              /* Ingest Mode 2: YouTube / Web URL Download */
+            )}
+
+            {/* Ingest Mode 2: Direct Cloud URL (Range-Seeking Stream Processing) */}
+            {ingestMode === 'direct_cloud' && (
+              <Card className="p-6 bg-[#111116] border-white/[0.08] space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-950/50 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                      <Globe className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        Direct Cloud Video Stream
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          Zero Full Download
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-zinc-400">
+                        Process remote MP4/WebM videos directly via HTTP Range requests without downloading the full video.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://example.com/video.mp4 (e.g. https://www.w3schools.com/html/mov_bbb.mp4)"
+                      value={cloudUrl}
+                      disabled={isProbingCloudUrl || isRegisteringCloud}
+                      onChange={(e) => setCloudUrl(e.target.value)}
+                      className="flex-1 bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 disabled:opacity-50 font-mono"
+                    />
+                    <Button
+                      onClick={handleAnalyzeCloudUrl}
+                      isLoading={isProbingCloudUrl}
+                      variant="primary"
+                      size="sm"
+                      className="rounded-xl px-5 text-xs whitespace-nowrap bg-purple-600 hover:bg-purple-500"
+                    >
+                      {isProbingCloudUrl ? 'Analyzing...' : 'Analyze Video'}
+                    </Button>
+                  </div>
+
+                  {/* Security Guard Notice */}
+                  <div className="flex items-center gap-2 text-[11px] text-zinc-500">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span>SSRF Guard active · Private IP blocking · HTTP Range streaming · No local download</span>
+                  </div>
+
+                  {cloudProbeError && (
+                    <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/50 flex items-start gap-2.5 text-xs text-rose-300">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
+                      <div>
+                        <span className="font-semibold text-rose-200">Access Blocked / Failed: </span>
+                        <span>{cloudProbeError}</span>
+                        <p className="text-[11px] text-rose-400/80 mt-1">
+                          If this host restricts range requests or is DRM-protected, you can use the Direct Upload tab instead.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Probed Remote Media Card */}
+                  {cloudProbeResult && (
+                    <div className="p-4 rounded-xl bg-zinc-900/90 border border-white/[0.1] space-y-4 animate-in fade-in duration-200">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block">
+                            Remote Media Validated
+                          </span>
+                          <h5 className="text-sm font-bold text-white mt-0.5 line-clamp-1">
+                            {cloudProbeResult.title || 'Cloud Remote Video'}
+                          </h5>
+                          <span className="text-[11px] text-zinc-400 font-mono break-all line-clamp-1 mt-0.5">
+                            {cloudProbeResult.url}
+                          </span>
+                        </div>
+                        <Badge variant="success" className="text-[10px] shrink-0">
+                          {cloudProbeResult.direct_range_supported ? 'Range Seeking Ready' : 'Stream Ready'}
+                        </Badge>
+                      </div>
+
+                      {/* Video Stream Specs */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-white/[0.04]">
+                          <span className="text-[10px] text-zinc-500 block">Duration</span>
+                          <span className="font-semibold text-white font-mono">{cloudProbeResult.duration_formatted} ({cloudProbeResult.duration}s)</span>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-white/[0.04]">
+                          <span className="text-[10px] text-zinc-500 block">Resolution &amp; FPS</span>
+                          <span className="font-semibold text-white font-mono">{cloudProbeResult.resolution} @ {cloudProbeResult.fps}fps</span>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-white/[0.04]">
+                          <span className="text-[10px] text-zinc-500 block">File Size</span>
+                          <span className="font-semibold text-white font-mono">{cloudProbeResult.file_size_mb} MB</span>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-white/[0.04]">
+                          <span className="text-[10px] text-zinc-500 block">Audio Track</span>
+                          <span className="font-semibold text-emerald-400 font-mono">{cloudProbeResult.has_audio ? '16kHz Audio Stream' : 'None'}</span>
+                        </div>
+                      </div>
+
+                      {/* Live Online HTML5 Video Player */}
+                      <div className="relative rounded-xl overflow-hidden aspect-video max-h-52 w-full bg-black border border-white/[0.06]">
+                        <video
+                          src={cloudProbeResult.url}
+                          controls
+                          playsInline
+                          preload="metadata"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[11px] text-zinc-400">
+                          Stream verified. Click to register and configure your AI clips.
+                        </span>
+                        <Button
+                          onClick={handleRegisterDirectCloud}
+                          isLoading={isRegisteringCloud}
+                          variant="primary"
+                          size="sm"
+                          className="rounded-xl px-5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-950/60"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Start Direct Cloud Clipping
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
+
+            {/* Ingest Mode 3: YouTube / Web URL Download */}
+            {ingestMode === 'url' && (
               <Card className="p-6 bg-[#111116] border-white/[0.08] space-y-4">
                 <div className="flex items-center gap-2">
                   <LinkIcon className="w-4 h-4 text-blue-400" />

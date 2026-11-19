@@ -16,7 +16,9 @@ import {
   FullPipelineRequest,
   FullPipelineJobResponse,
   StorageSummaryResponse,
-  StorageCleanupResponse
+  StorageCleanupResponse,
+  ProbeUrlResponse,
+  CandidateClip
 } from '@/types';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1';
@@ -421,6 +423,53 @@ class ApiClient {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
       throw new Error(err.detail || 'Failed to retry pipeline job');
+    }
+    return res.json();
+  }
+
+  // --- Direct Cloud URL & Range-Based Remote Media API ---
+  async probeUrl(url: string): Promise<ProbeUrlResponse> {
+    const res = await fetch(`${this.baseUrl}/videos/probe-url`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to probe remote media URL');
+    }
+    return res.json();
+  }
+
+  async registerDirectCloudVideo(url: string): Promise<VideoItem> {
+    const res = await fetch(`${this.baseUrl}/videos/direct-cloud-register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to register cloud video');
+    }
+    return res.json();
+  }
+
+  getClipsZipDownloadUrl(videoId: string): string {
+    return `${this.baseUrl}/clips/video/${videoId}/download-zip`;
+  }
+
+  async updateClip(
+    clipId: string, 
+    data: { title?: string; start_time?: number; end_time?: number }
+  ): Promise<CandidateClip> {
+    const res = await fetch(`${this.baseUrl}/clips/${clipId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to update clip');
     }
     return res.json();
   }
