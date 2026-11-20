@@ -15,6 +15,7 @@ import httpx
 from app.core.config import settings
 from app.core.logging import logger
 from app.core.database import get_database
+from app.services.downloader.security import validate_download_url, validate_disk_space, sanitize_safe_filename
 
 DownloadStatus = Literal[
     "queued",
@@ -132,9 +133,9 @@ class HighPerformanceDownloadEngine:
     async def probe_url(self, url: str) -> Dict[str, Any]:
         """
         Detects server capabilities, HTTP range support, expected content length,
-        mime-type, ETag, and media decodability
+        mime-type, ETag, and media decodability. Validates against SSRF.
         """
-        clean_url = url.strip()
+        clean_url = validate_download_url(url)
         headers = {
             "User-Agent": "Mozilla/5.0 (ClipGenius Downloader/2.0; High-Performance Engine)",
             "Accept": "*/*",
@@ -231,7 +232,7 @@ class HighPerformanceDownloadEngine:
         """
         Registers a new download job in queued state
         """
-        clean_url = url.strip()
+        clean_url = validate_download_url(url)
 
         # Deduplication check: avoid duplicate download jobs for the same URL
         async with self._lock:
@@ -260,6 +261,7 @@ class HighPerformanceDownloadEngine:
             target_dir = settings.DOWNLOADS_DIR
 
         target_dir.mkdir(parents=True, exist_ok=True)
+        validate_disk_space(target_dir, required_bytes=0)
 
         job = {
             "job_id": job_id,
@@ -356,6 +358,10 @@ class HighPerformanceDownloadEngine:
             etag = probe_info.get("etag")
             last_modified = probe_info.get("last_modified")
             ext = probe_info.get("ext", "mp4")
+
+            # Check available disk space before streaming
+            if total_bytes > 0:
+                validate_disk_space(target_dir, required_bytes=total_bytes)
 
             # Check if partial file exists on disk
             existing_bytes = temp_path.stat().st_size if temp_path.exists() else 0
@@ -598,7 +604,7 @@ class HighPerformanceDownloadEngine:
             job["integrity_verified"] = True
 
             # 4. Finalize & Atomic Rename
-            safe_title = re.sub(r'[\\/*?:"<>|]', "", job.get("title") or "video").strip() or "video"
+            safe_title = sanitize_safe_filename(job.get("title") or "video", fallback_ext=ext)
             final_name = f"{safe_title[:60]}_{job_id[-4:]}.{ext}"
             final_path = target_dir / final_name
 

@@ -17,6 +17,7 @@ from app.services.video.ffmpeg_editor import ffmpeg_editor
 from app.services.sources.registry import source_registry
 from app.models.video import VideoSourceType, VideoStatus
 from app.core.database import get_database
+from app.services.downloader.security import validate_download_url, validate_disk_space, sanitize_safe_filename
 
 router = APIRouter()
 
@@ -47,9 +48,10 @@ async def probe_direct_url(payload: ProbeRequest):
     Probes remote media server for HTTP Range request support,
     Content-Length, mime-type, and ETag
     """
-    url = payload.url.strip()
-    if not (url.startswith("http://") or url.startswith("https://")):
-        raise HTTPException(status_code=400, detail="Invalid URL. Please enter a valid HTTP or HTTPS media link.")
+    try:
+        url = validate_download_url(payload.url)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     try:
         data = await download_engine.probe_url(url)
@@ -64,9 +66,10 @@ async def analyze_video_url(payload: AnalyzeRequest):
     Analyzes remote video URL using yt-dlp and returns metadata,
     duration, thumbnail, and selectable quality format options.
     """
-    url = payload.url.strip()
-    if not (url.startswith("http://") or url.startswith("https://")):
-        raise HTTPException(status_code=400, detail="Invalid URL. Please enter a valid HTTP or HTTPS video URL.")
+    try:
+        url = validate_download_url(payload.url)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     try:
         analysis_result = await source_registry.analyze(url)
@@ -89,9 +92,14 @@ async def start_download(payload: StartDownloadRequest):
     and yt-dlp worker for platform streams.
     """
     try:
+        clean_url = validate_download_url(payload.url)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    try:
         is_direct = (
             payload.use_engine is True
-            or direct_media_source_provider.can_handle(payload.url)
+            or direct_media_source_provider.can_handle(clean_url)
             or payload.format_id in ["direct_engine", "best_direct"]
         )
 

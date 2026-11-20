@@ -1,8 +1,8 @@
-import { 
-  SystemHealth, 
-  VideoItem, 
-  ClipItem, 
-  TranscriptionResponse, 
+import {
+  SystemHealth,
+  VideoItem,
+  ClipItem,
+  TranscriptionResponse,
   WhisperModelItem,
   SubtitleStyleConfig,
   SubtitleGenerateRequest,
@@ -468,7 +468,7 @@ class ApiClient {
   }
 
   async updateClip(
-    clipId: string, 
+    clipId: string,
     data: { title?: string; start_time?: number; end_time?: number }
   ): Promise<CandidateClip> {
     const res = await fetch(`${this.baseUrl}/clips/${clipId}`, {

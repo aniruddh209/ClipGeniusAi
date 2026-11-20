@@ -44,6 +44,10 @@ backend/generated-clips/*
 !backend/generated-clips/.gitkeep
 backend/uploads/thumbnails/*
 !backend/uploads/thumbnails/.gitkeep
+backend/downloads/*
+!backend/downloads/.gitkeep
+*.part
+*.ytdl
 
 # Environment & Local Secrets
 .env.local
