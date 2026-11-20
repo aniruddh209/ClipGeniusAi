@@ -276,66 +276,72 @@ class YouTubeSourceProvider(BaseSourceProvider):
 
         # Resolution targets with exact height and width ranges for accurate stream isolation
         res_targets = [
-            {"res_label": "2160p (4K)", "name": "4K Ultra HD", "height": 2160, "min_h": 1800, "max_h": 4320, "min_w": 3200, "max_w": 7680, "typical_kbps": 14000},
-            {"res_label": "1440p (2K)", "name": "2K Quad HD", "height": 1440, "min_h": 1200, "max_h": 1799, "min_w": 2200, "max_w": 3199, "typical_kbps": 7000},
-            {"res_label": "1080p Full HD", "name": "1080p Full HD", "height": 1080, "min_h": 850, "max_h": 1199, "min_w": 1500, "max_w": 2199, "typical_kbps": 2200},
-            {"res_label": "720p HD", "name": "720p HD", "height": 720, "min_h": 600, "max_h": 849, "min_w": 1000, "max_w": 1499, "typical_kbps": 1100},
-            {"res_label": "480p", "name": "480p SD", "height": 480, "min_h": 400, "max_h": 599, "min_w": 650, "max_w": 999, "typical_kbps": 550},
-            {"res_label": "360p", "name": "360p Compact", "height": 360, "min_h": 300, "max_h": 399, "min_w": 450, "max_w": 649, "typical_kbps": 320},
+            {"res_label": "2160p (4K)", "name": "4K Ultra HD", "height": 2160, "min_h": 1800, "min_w": 3200, "typical_kbps": 14000},
+            {"res_label": "1440p (2K)", "name": "2K Quad HD", "height": 1440, "min_h": 1200, "min_w": 2200, "typical_kbps": 7000},
+            {"res_label": "1080p Full HD", "name": "1080p Full HD", "height": 1080, "min_h": 850, "min_w": 1500, "typical_kbps": 2200},
+            {"res_label": "720p HD", "name": "720p HD", "height": 720, "min_h": 600, "min_w": 1000, "typical_kbps": 1100},
+            {"res_label": "480p", "name": "480p SD", "height": 480, "min_h": 400, "min_w": 650, "typical_kbps": 550},
+            {"res_label": "360p", "name": "360p Compact", "height": 360, "min_h": 300, "min_w": 450, "typical_kbps": 320},
         ]
 
         found_heights = set()
+        ydl_selector = yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True, "skip_download": True})
+
         for target in res_targets:
-            matching = [
-                f for f in raw_formats
-                if f.get("vcodec") != "none" and (
-                    f.get("height") == target["height"] or
-                    (f.get("height") and target["min_h"] <= f.get("height") <= target["max_h"]) or
-                    (f.get("width") and target["min_w"] <= f.get("width") <= target["max_w"])
-                )
-            ]
-            if matching:
-                best_match = sorted(
-                    matching,
-                    key=lambda x: (
-                        1 if "avc" in (x.get("vcodec") or "").lower() else 0,
-                        x.get("tbr") or x.get("vbr") or 0,
-                        x.get("filesize") or x.get("filesize_approx") or 0
-                    ),
-                    reverse=True
-                )[0]
+            fmt_id = f"bestvideo[height<={target['height']}]+bestaudio/best[height<={target['height']}]/best"
+            try:
+                selector_fn = ydl_selector.build_format_selector(fmt_id)
+                chosen = list(selector_fn({"formats": raw_formats}))
+                if chosen:
+                    sel = chosen[0]
+                    rf = sel.get("requested_formats")
+                    v = rf[0] if rf else sel
+                    a = rf[1] if (rf and len(rf) > 1) else None
 
-                fps = int(best_match.get("fps") or 30)
-                v_size = best_match.get("filesize") or best_match.get("filesize_approx")
-                if v_size and v_size > 0:
-                    combined_size = int(v_size + audio_bytes)
-                elif duration > 0:
-                    kbps = best_match.get("vbr") or best_match.get("tbr") or target["typical_kbps"]
-                    combined_size = int((kbps * 1000 / 8) * duration) + audio_bytes
-                else:
-                    combined_size = None
+                    v_h = v.get("height") or 0
+                    v_w = v.get("width") or 0
+                    # Strictly check that the stream meets this resolution target
+                    if v_h < target["min_h"] and v_w < target["min_w"]:
+                        continue
 
-                fmt_id = f"bestvideo[height<={target['height']}]+bestaudio/best[height<={target['height']}]/best"
-                is_recommended = target["height"] == 1080 or (target["height"] == 720 and 1080 not in found_heights)
-                found_heights.add(target["height"])
+                    if target["height"] in found_heights:
+                        continue
+                    found_heights.add(target["height"])
 
-                size_str = f"~{format_bytes(combined_size)}" if combined_size else "Adaptive Size"
+                    fps = int(v.get("fps") or 30)
+                    v_sz = v.get("filesize") or v.get("filesize_approx")
+                    a_sz = (a.get("filesize") or a.get("filesize_approx")) if a else audio_bytes
 
-                confirmed_qualities.append(ConfirmedQualityOption(
-                    format_id=fmt_id,
-                    label=target["name"],
-                    resolution=target["res_label"],
-                    height=target["height"],
-                    fps=float(fps),
-                    ext="mp4",
-                    filesize_bytes=combined_size,
-                    filesize_formatted=size_str,
-                    codec=best_match.get("vcodec"),
-                    type="video",
-                    recommended=is_recommended,
-                    badge=f"{fps}fps • MP4",
-                    source_confirmed=True
-                ))
+                    if v_sz and v_sz > 0:
+                        total_size = v_sz + (a_sz or 0)
+                        size_str = format_bytes(total_size)
+                    elif duration > 0:
+                        kbps = v.get("vbr") or v.get("tbr") or target["typical_kbps"]
+                        total_size = int((kbps * 1000 / 8) * duration) + (a_sz or 0)
+                        size_str = f"~{format_bytes(total_size)}"
+                    else:
+                        total_size = None
+                        size_str = "Adaptive Size"
+
+                    is_recommended = target["height"] == 1080 or (target["height"] == 720 and 1080 not in found_heights)
+
+                    confirmed_qualities.append(ConfirmedQualityOption(
+                        format_id=fmt_id,
+                        label=target["name"],
+                        resolution=target["res_label"],
+                        height=target["height"],
+                        fps=float(fps),
+                        ext="mp4",
+                        filesize_bytes=total_size,
+                        filesize_formatted=size_str,
+                        codec=v.get("vcodec"),
+                        type="video",
+                        recommended=is_recommended,
+                        badge=f"{fps}fps • MP4",
+                        source_confirmed=True
+                    ))
+            except Exception as e:
+                logger.warning(f"Error evaluating format for {target['res_label']}: {e}")
 
         # Add "Original quality" / best verified fallback option if needed
         if not confirmed_qualities:
