@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useTransition } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -11,25 +11,29 @@ import {
   Pause, 
   X, 
   Trash2, 
-  RotateCcw, 
   CheckCircle2, 
   AlertCircle, 
-  Film, 
   Scissors, 
   ExternalLink, 
   FolderDown, 
-  HardDrive, 
   Sparkles, 
   Zap, 
   FileVideo, 
   Music, 
   Check, 
   Clock, 
-  ArrowRight,
-  ClipboardPaste,
-  ShieldCheck,
-  RefreshCw,
-  FolderOpen
+  ClipboardPaste, 
+  ShieldCheck, 
+  RefreshCw, 
+  Calendar, 
+  Eye, 
+  Tag, 
+  Info, 
+  UserCheck, 
+  Layers, 
+  ShieldAlert, 
+  CheckCheck,
+  Video
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { VideoAnalysisResult, VideoFormatOption, DownloadTask } from '@/types';
@@ -47,7 +51,11 @@ export default function VideoDownloaderPage() {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<VideoAnalysisResult | null>(null);
 
-  // Form selection
+  // Ownership state (Phase 2)
+  const [isCreatorOwned, setIsCreatorOwned] = useState<boolean>(false);
+  const [showFullDescription, setShowFullDescription] = useState<boolean>(false);
+
+  // Form selection (Phase 3)
   const [selectedFormat, setSelectedFormat] = useState<VideoFormatOption | null>(null);
   const [selectedExt, setSelectedExt] = useState<string>('mp4');
   const [saveDestination, setSaveDestination] = useState<'downloads' | 'projects' | 'custom'>('projects');
@@ -100,7 +108,7 @@ export default function VideoDownloaderPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Handle URL Analysis
+  // Handle URL Analysis (Phase 1)
   const handleAnalyze = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const clean = urlInput.trim();
@@ -113,18 +121,20 @@ export default function VideoDownloaderPage() {
     setAnalysisError(null);
     setAnalysisResult(null);
     setSelectedFormat(null);
+    setIsCreatorOwned(false);
 
     try {
       const result = await api.analyzeDownloaderUrl(clean);
       setAnalysisResult(result);
 
-      // Select default recommended format
-      const recommended = result.formats.find((f) => f.recommended) || result.formats[0];
+      // Select default recommended format from confirmed qualities
+      const qualities = result.confirmed_qualities || result.formats || [];
+      const recommended = qualities.find((f) => f.recommended) || qualities[0];
       if (recommended) {
         setSelectedFormat(recommended);
         setSelectedExt(recommended.ext);
       }
-      showNotification(`Analyzed: "${result.title.slice(0, 45)}..."`, 'success');
+      showNotification(`Analyzed: "${result.title.slice(0, 40)}..."`, 'success');
     } catch (err: any) {
       setAnalysisError(err.message || 'Failed to analyze video URL. Please check the link and try again.');
     } finally {
@@ -151,7 +161,7 @@ export default function VideoDownloaderPage() {
 
     setIsStartingDownload(true);
     try {
-      const created = await api.startDownloaderTask({
+      await api.startDownloaderTask({
         url: analysisResult.url,
         format_id: selectedFormat.format_id,
         ext: selectedExt,
@@ -267,6 +277,9 @@ export default function VideoDownloaderPage() {
     return (t.title || '').toLowerCase().includes(searchFilter.toLowerCase());
   });
 
+  // Confirmed available qualities from source
+  const availableQualities = analysisResult?.confirmed_qualities || analysisResult?.formats || [];
+
   return (
     <div className="flex-1 min-h-screen bg-[#07070a] text-zinc-100 flex flex-col">
       {/* Toast Notification */}
@@ -303,7 +316,7 @@ export default function VideoDownloaderPage() {
                 </Badge>
               </div>
               <p className="text-xs text-zinc-400">
-                Download pristine 4K, 1080p, and high-bitrate audio from YouTube and web URLs.
+                Authorized media ingestion with YouTube Data API analysis and Studio creator workflow.
               </p>
             </div>
           </div>
@@ -359,34 +372,34 @@ export default function VideoDownloaderPage() {
       <div className="flex-1 px-6 py-8 max-w-7xl mx-auto w-full space-y-8">
         {activeTab === 'downloader' ? (
           <>
-            {/* SECTION 1: URL Input & Platform Support */}
+            {/* FIRST PHASE: YOUTUBE VIDEO ANALYSIS INPUT */}
             <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-transparent p-6 shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
 
               <div className="max-w-3xl space-y-4">
                 <div className="flex items-center gap-2 text-xs font-semibold text-purple-400 tracking-wider uppercase">
                   <Zap className="w-3.5 h-3.5" />
-                  <span>Step 1 • Fast Media Ingestion</span>
+                  <span>Phase 1 • YouTube & Media Analysis</span>
                 </div>
 
                 <h2 className="text-xl font-bold text-white tracking-tight">
-                  Paste Video URL to Download or Stream
+                  Paste YouTube or Supported Media URL
                 </h2>
                 <p className="text-xs text-zinc-400">
-                  Enter any public video URL. Supported: YouTube videos & shorts, Twitch VODs, Vimeo, and direct MP4/WebM files.
+                  Analyze public YouTube metadata via the YouTube Data API and verify confirmed source resolutions.
                 </p>
 
                 <form onSubmit={handleAnalyze} className="pt-2">
                   <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                        <DownloadCloud className="w-4 h-4 text-zinc-500" />
+                        <Video className="w-4 h-4 text-zinc-500" />
                       </div>
                       <input
                         type="url"
                         value={urlInput}
                         onChange={(e) => setUrlInput(e.target.value)}
-                        placeholder="https://www.youtube.com/watch?v=... or direct MP4 link"
+                        placeholder="https://www.youtube.com/watch?v=... or youtu.be link"
                         className="w-full h-11 pl-10 pr-24 rounded-xl bg-[#0e0e16] border border-white/[0.1] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/80 focus:ring-2 focus:ring-purple-500/20 transition-all font-mono"
                       />
                       <button
@@ -433,154 +446,394 @@ export default function VideoDownloaderPage() {
 
                 {/* Platform Support Pills */}
                 <div className="pt-2 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
-                  <span className="font-medium text-zinc-400">Supported Platforms:</span>
-                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">YouTube (4K/60)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">YouTube Shorts</span>
-                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">Twitch VODs</span>
-                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">Vimeo</span>
-                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">Direct MP4 / WebM</span>
+                  <span className="font-medium text-zinc-400">Supported Sources:</span>
+                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400 flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                    <span>YouTube (4K / 1080p / Shorts)</span>
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">
+                    YouTube Data API v3 Verified
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">
+                    Direct Cloud MP4 / WebM
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* SECTION 2 & 3: Video Information Preview & Quality Format Selector */}
+            {/* FIRST & SECOND PHASE: YOUTUBE METADATA & AUTHORIZED STUDIO WORKFLOW */}
             {analysisResult && (
-              <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-b from-[#110f1e] to-[#0a0912] p-6 shadow-2xl space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-300">
-                <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-purple-400 tracking-wider uppercase">
-                    <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                    <span>Step 2 • Video Preview & Stream Quality</span>
-                  </div>
-                  <Badge variant="purple" className="text-[10px]">
-                    Validated Stream
-                  </Badge>
-                </div>
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-300">
+                {/* Permitted Public Metadata Card */}
+                <div className="rounded-2xl border border-white/[0.08] bg-[#0c0c14] p-6 shadow-2xl space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="purple" className="text-[10px] uppercase font-semibold">
+                        {analysisResult.provider === 'youtube' ? 'YouTube Stream' : 'Direct Media'}
+                      </Badge>
+                      <span className="text-xs text-zinc-400 flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Source Verified ({analysisResult.api_source || 'YouTube Data API'})</span>
+                      </span>
+                    </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  {/* Left Column: Video Information Card */}
-                  <div className="lg:col-span-5 space-y-4">
-                    <div className="relative aspect-video rounded-xl overflow-hidden border border-white/[0.1] bg-black group shadow-lg">
-                      {analysisResult.thumbnail ? (
-                        <Image
-                          src={analysisResult.thumbnail}
-                          alt={analysisResult.title}
-                          fill
-                          unoptimized
-                          className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-600">
-                          <FileVideo className="w-12 h-12" />
+                    {/* Ownership Toggle - Phase 2 */}
+                    <div className="flex items-center gap-2 bg-white/[0.04] p-1 rounded-xl border border-white/[0.08]">
+                      <button
+                        type="button"
+                        onClick={() => setIsCreatorOwned(false)}
+                        className={cn(
+                          'px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5',
+                          !isCreatorOwned
+                            ? 'bg-purple-600 text-white font-semibold shadow-sm'
+                            : 'text-zinc-400 hover:text-zinc-200'
+                        )}
+                      >
+                        <Video className="w-3.5 h-3.5" />
+                        <span>Public Video</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsCreatorOwned(true)}
+                        className={cn(
+                          'px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5',
+                          isCreatorOwned
+                            ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white font-semibold shadow-md shadow-red-600/30'
+                            : 'text-zinc-400 hover:text-zinc-200'
+                        )}
+                      >
+                        <UserCheck className="w-3.5 h-3.5 text-red-300" />
+                        <span>My Channel Video</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Metadata Presentation Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Left: Thumbnail & Duration */}
+                    <div className="lg:col-span-5 space-y-3">
+                      <div className="relative aspect-video rounded-xl overflow-hidden border border-white/[0.1] bg-black group shadow-lg">
+                        {analysisResult.thumbnail ? (
+                          <Image
+                            src={analysisResult.thumbnail}
+                            alt={analysisResult.title}
+                            fill
+                            unoptimized
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-600">
+                            <FileVideo className="w-12 h-12" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+
+                        {/* Duration Pill */}
+                        <div className="absolute bottom-3 right-3 px-2 py-1 rounded-md bg-black/85 backdrop-blur-md text-white text-[11px] font-mono font-medium border border-white/10 flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-purple-400" />
+                          <span>{analysisResult.duration_formatted}</span>
+                        </div>
+
+                        {/* Views Pill */}
+                        <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/75 backdrop-blur-md text-zinc-300 text-[10px] font-medium border border-white/10 flex items-center gap-1">
+                          <Eye className="w-3 h-3 text-cyan-400" />
+                          <span>{analysisResult.view_count_formatted}</span>
+                        </div>
+                      </div>
+
+                      {/* Video ID & Direct Link */}
+                      <div className="flex items-center justify-between text-[11px] text-zinc-500 px-1">
+                        <span>Video ID: <code className="text-zinc-400 font-mono">{analysisResult.video_id}</code></span>
+                        <a
+                          href={analysisResult.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-purple-400 hover:text-purple-300 flex items-center gap-1 font-medium transition-colors"
+                        >
+                          <span>Open on YouTube</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Right: Title, Channel, Published Date, License */}
+                    <div className="lg:col-span-7 space-y-4">
+                      <div>
+                        <h3 className="font-bold text-base text-white leading-snug">
+                          {analysisResult.title}
+                        </h3>
+
+                        <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-zinc-400 mt-2">
+                          {/* Channel Name */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-zinc-500">Channel:</span>
+                            {analysisResult.channel_url ? (
+                              <a
+                                href={analysisResult.channel_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-semibold text-purple-300 hover:text-purple-200 hover:underline flex items-center gap-1"
+                              >
+                                <span>{analysisResult.channel_name || analysisResult.uploader}</span>
+                                <ExternalLink className="w-3 h-3 text-purple-400/80" />
+                              </a>
+                            ) : (
+                              <span className="font-semibold text-purple-300">
+                                {analysisResult.channel_name || analysisResult.uploader}
+                              </span>
+                            )}
+                          </div>
+
+                          <span>•</span>
+
+                          {/* Published Date */}
+                          <div className="flex items-center gap-1 text-zinc-400">
+                            <Calendar className="w-3.5 h-3.5 text-zinc-500" />
+                            <span>{analysisResult.published_date_formatted || 'Published recently'}</span>
+                          </div>
+
+                          <span>•</span>
+
+                          {/* License Info */}
+                          <div className="flex items-center gap-1">
+                            <Badge
+                              variant={analysisResult.is_creative_commons ? 'success' : 'default'}
+                              className="text-[10px]"
+                            >
+                              {analysisResult.license || 'Standard YouTube License'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Description snippet */}
+                      {analysisResult.description && (
+                        <div className="space-y-1 bg-white/[0.02] p-3 rounded-xl border border-white/[0.04]">
+                          <p className={cn('text-xs text-zinc-400 leading-relaxed', !showFullDescription && 'line-clamp-2')}>
+                            {analysisResult.description}
+                          </p>
+                          {analysisResult.description.length > 140 && (
+                            <button
+                              type="button"
+                              onClick={() => setShowFullDescription(!showFullDescription)}
+                              className="text-[11px] text-purple-400 hover:text-purple-300 font-medium cursor-pointer"
+                            >
+                              {showFullDescription ? 'Show less' : 'Read more description'}
+                            </button>
+                          )}
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 
-                      {/* Duration Badge */}
-                      <div className="absolute bottom-3 right-3 px-2 py-1 rounded-md bg-black/85 backdrop-blur-md text-white text-[11px] font-mono font-medium border border-white/10">
-                        {analysisResult.duration_formatted}
-                      </div>
-
-                      {/* View Count */}
-                      <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/75 backdrop-blur-md text-zinc-300 text-[10px] font-medium border border-white/10 flex items-center gap-1">
-                        <span>{analysisResult.view_count_formatted}</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <h3 className="font-bold text-sm text-white line-clamp-2 leading-snug">
-                        {analysisResult.title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-zinc-400">
-                        <span className="font-medium text-purple-300">{analysisResult.uploader}</span>
-                        <span>•</span>
-                        <span>{analysisResult.duration_formatted} duration</span>
-                      </div>
-                      {analysisResult.description && (
-                        <p className="text-[11px] text-zinc-500 line-clamp-3 pt-1">
-                          {analysisResult.description}
-                        </p>
+                      {/* Public Tags */}
+                      {analysisResult.tags && analysisResult.tags.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                          <Tag className="w-3 h-3 text-zinc-500 shrink-0" />
+                          {analysisResult.tags.slice(0, 6).map((tag, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-[10px] text-zinc-400 font-mono"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
+                </div>
 
-                  {/* Right Column: Available Quality Options & Destination */}
-                  <div className="lg:col-span-7 space-y-5">
-                    {/* Quality Selector */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2.5">
-                        <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-                          <FileVideo className="w-3.5 h-3.5 text-purple-400" />
-                          <span>Select Quality & Format</span>
-                        </label>
-                        <span className="text-[11px] text-zinc-500">
-                          {analysisResult.formats.length} formats available
-                        </span>
+                {/* SECOND PHASE: AUTHORIZED VIDEO DOWNLOAD WORKFLOW (YouTube Studio) */}
+                {isCreatorOwned && analysisResult.workflow && (
+                  <div className="rounded-2xl border border-red-500/30 bg-gradient-to-b from-[#180a0e] to-[#0c0608] p-6 shadow-2xl space-y-5 animate-in fade-in duration-300">
+                    <div className="flex items-center justify-between border-b border-red-500/20 pb-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-red-600/20 border border-red-500/40 flex items-center justify-center text-red-400">
+                          <UserCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-sm text-white">
+                            Creator Authorized Video Download Workflow
+                          </h3>
+                          <p className="text-[11px] text-zinc-400">
+                            Download your original master MP4 file directly via official YouTube Studio.
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
-                        {analysisResult.formats.map((fmt, idx) => {
-                          const isSelected = selectedFormat?.format_id === fmt.format_id && selectedFormat?.type === fmt.type;
-                          return (
+                      {analysisResult.workflow.studio_url && (
+                        <a
+                          href={analysisResult.workflow.studio_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-xs flex items-center gap-2 shadow-lg shadow-red-600/30 transition-all cursor-pointer"
+                        >
+                          <span>Open in YouTube Studio</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Step-by-Step Official Instructions */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-3 bg-black/40 p-4 rounded-xl border border-white/[0.06]">
+                        <h4 className="text-xs font-semibold text-red-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <Layers className="w-3.5 h-3.5" />
+                          <span>Official Download Steps:</span>
+                        </h4>
+
+                        <ol className="space-y-2 text-xs text-zinc-300">
+                          {analysisResult.workflow.official_guide_steps.map((step, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <span className="w-4 h-4 rounded-full bg-red-500/20 text-red-300 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                                {idx + 1}
+                              </span>
+                              <span className="leading-relaxed">{step}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+
+                      {/* Official API Disclaimer & Safety Guidelines */}
+                      <div className="space-y-3 bg-black/40 p-4 rounded-xl border border-white/[0.06] flex flex-col justify-between">
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Official YouTube Data API Policy</span>
+                          </h4>
+                          <p className="text-xs text-zinc-400 leading-relaxed">
+                            {analysisResult.workflow.disclaimer}
+                          </p>
+                        </div>
+
+                        <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2">
+                          <a
+                            href={analysisResult.workflow.learn_more_url || 'https://support.google.com/youtube/answer/56100'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] text-zinc-400 hover:text-white flex items-center gap-1 transition-colors"
+                          >
+                            <span>Google Support Guide</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+
+                          <Link href="/dashboard/create">
                             <button
-                              key={`${fmt.format_id}-${idx}`}
                               type="button"
-                              onClick={() => {
-                                setSelectedFormat(fmt);
-                                setSelectedExt(fmt.ext);
-                              }}
-                              className={cn(
-                                'p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer group',
-                                isSelected
-                                  ? 'bg-purple-600/15 border-purple-500 shadow-md shadow-purple-600/20 ring-1 ring-purple-500/50'
-                                  : 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.15]'
-                              )}
+                              className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-purple-300 hover:text-purple-200 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="space-y-0.5">
-                                  <div className="flex items-center gap-1.5">
-                                    {fmt.type === 'audio' ? (
-                                      <Music className="w-3.5 h-3.5 text-indigo-400" />
-                                    ) : (
-                                      <FileVideo className="w-3.5 h-3.5 text-purple-400" />
-                                    )}
-                                    <span className="font-semibold text-xs text-white">
-                                      {fmt.resolution}
-                                    </span>
-                                    {fmt.recommended && (
-                                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/30 text-purple-300 border border-purple-500/40">
-                                        BEST
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-[11px] text-zinc-400 truncate">
-                                    {fmt.label}
-                                  </p>
-                                </div>
-
-                                <div className={cn(
-                                  'w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors',
-                                  isSelected ? 'border-purple-400 bg-purple-500 text-white' : 'border-zinc-600 bg-black/40'
-                                )}>
-                                  {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                                </div>
-                              </div>
-
-                              <div className="mt-2 pt-2 border-t border-white/[0.06] flex items-center justify-between text-[10px] text-zinc-500">
-                                <span className="font-medium text-zinc-400">{fmt.badge}</span>
-                                <span className="font-mono text-purple-300 font-semibold">{fmt.filesize_formatted}</span>
-                              </div>
+                              <Scissors className="w-3.5 h-3.5" />
+                              <span>Go to AI Clipper</span>
                             </button>
-                          );
-                        })}
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* THIRD PHASE: SOURCE QUALITY INTERFACE */}
+                <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-b from-[#110f1e] to-[#0a0912] p-6 shadow-2xl space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                        <FileVideo className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-white">
+                          Phase 3 • Confirmed Source Qualities
+                        </h3>
+                        <p className="text-[11px] text-zinc-400">
+                          Select from actual verified resolutions provided by the source stream.
+                        </p>
                       </div>
                     </div>
 
-                    {/* Format and Destination Selector */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="purple" className="text-[10px]">
+                        {availableQualities.length} Confirmed Qualities
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Confirmed Quality Selection Grid */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-xs">
+                      <label className="font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Available Source Resolutions (No Invented Qualities)</span>
+                      </label>
+                      <span className="text-[11px] text-zinc-500">
+                        Confirmed via media streams
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {availableQualities.map((fmt, idx) => {
+                        const isSelected = selectedFormat?.format_id === fmt.format_id && selectedFormat?.type === fmt.type;
+                        return (
+                          <button
+                            key={`${fmt.format_id}-${idx}`}
+                            type="button"
+                            onClick={() => {
+                              setSelectedFormat(fmt);
+                              setSelectedExt(fmt.ext);
+                            }}
+                            className={cn(
+                              'p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer group',
+                              isSelected
+                                ? 'bg-purple-600/20 border-purple-500 shadow-lg shadow-purple-600/25 ring-1 ring-purple-500/60'
+                                : 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.15]'
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-1.5">
+                                  {fmt.type === 'audio' ? (
+                                    <Music className="w-3.5 h-3.5 text-indigo-400" />
+                                  ) : (
+                                    <FileVideo className="w-3.5 h-3.5 text-purple-400" />
+                                  )}
+                                  <span className="font-bold text-xs text-white">
+                                    {fmt.resolution}
+                                  </span>
+                                  {fmt.recommended && (
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/30 text-purple-300 border border-purple-500/40">
+                                      RECOMMENDED
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-zinc-400 truncate">
+                                  {fmt.label}
+                                </p>
+                              </div>
+
+                              <div className={cn(
+                                'w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors',
+                                isSelected ? 'border-purple-400 bg-purple-500 text-white' : 'border-zinc-600 bg-black/40'
+                              )}>
+                                {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                              </div>
+                            </div>
+
+                            <div className="mt-3 pt-2 border-t border-white/[0.06] flex items-center justify-between text-[10px]">
+                              <span className="text-zinc-400 font-medium flex items-center gap-1">
+                                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                                <span>{fmt.badge}</span>
+                              </span>
+                              <span className="font-mono text-purple-300 font-semibold">{fmt.filesize_formatted}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Output Container & Save Destination */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                       {/* Format Selector */}
                       <div>
                         <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
-                          Output Container
+                          Output Container Format
                         </label>
                         <div className="flex items-center gap-2">
                           {selectedFormat?.type === 'audio' ? (
@@ -682,7 +935,7 @@ export default function VideoDownloaderPage() {
               </div>
             )}
 
-            {/* SECTION 4: Professional Download Manager */}
+            {/* DOWNLOAD MANAGER (ACTIVE TASKS & REAL-TIME CONTROLS) */}
             <div ref={managerRef} className="space-y-4 pt-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
                 <div className="flex items-center gap-3">
@@ -744,7 +997,7 @@ export default function VideoDownloaderPage() {
                   </div>
                   <h3 className="font-semibold text-sm text-zinc-300">No Active Downloads</h3>
                   <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-                    Paste a YouTube or web link above and click Analyze to begin downloading high-definition videos.
+                    Paste a YouTube link above and click Analyze to begin downloading high-definition videos with verified source qualities.
                   </p>
                 </div>
               ) : (
@@ -925,7 +1178,7 @@ export default function VideoDownloaderPage() {
 
                           <div className="flex items-center justify-between text-[10px] text-zinc-500 font-mono">
                             <span>
-                              {isDownloading ? 'Direct Stream Ingestion' : isCompleted ? 'Completed' : task.status}
+                              {isDownloading ? 'Stream Ingestion' : isCompleted ? 'Completed' : task.status}
                             </span>
                             <span>{task.progress_percentage.toFixed(1)}%</span>
                           </div>
@@ -945,7 +1198,7 @@ export default function VideoDownloaderPage() {
             </div>
           </>
         ) : (
-          /* SECTION 5: Download History Tab */
+          /* DOWNLOAD HISTORY TAB */
           <div className="space-y-6 animate-in fade-in duration-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
               <div>

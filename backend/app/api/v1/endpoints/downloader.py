@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.core.logging import logger
 from app.services.video.downloader_manager import downloader_manager
 from app.services.video.ffmpeg_editor import ffmpeg_editor
+from app.services.sources.registry import source_registry
 from app.models.video import VideoSourceType, VideoStatus
 from app.core.database import get_database
 
@@ -42,7 +43,10 @@ async def analyze_video_url(payload: AnalyzeRequest):
         raise HTTPException(status_code=400, detail="Invalid URL. Please enter a valid HTTP or HTTPS video URL.")
 
     try:
-        data = await asyncio.to_thread(downloader_manager.analyze_url, url)
+        analysis_result = await source_registry.analyze(url)
+        data = analysis_result.model_dump()
+        data["uploader"] = data.get("channel_name")
+        data["formats"] = data.get("confirmed_qualities", [])
         return data
     except Exception as e:
         logger.error(f"Downloader analysis failed for {url}: {e}")

@@ -279,6 +279,18 @@ export interface UserPreferences {
   notificationOnComplete: boolean;
 }
 
+export interface AuthorizedWorkflowInfo {
+  is_owner_download_available: boolean;
+  studio_url?: string | null;
+  studio_name: string;
+  official_guide_steps: string[];
+  disclaimer: string;
+  can_stream_download: boolean;
+  copyright_license: string;
+  requires_creator_auth: boolean;
+  learn_more_url?: string;
+}
+
 export interface VideoFormatOption {
   format_id: string;
   label: string;
@@ -291,20 +303,36 @@ export interface VideoFormatOption {
   type: 'video' | 'audio';
   recommended: boolean;
   badge: string;
+  source_confirmed?: boolean;
 }
 
 export interface VideoAnalysisResult {
+  provider?: string;
   url: string;
   video_id: string;
   title: string;
   uploader: string;
+  channel_name?: string;
+  channel_id?: string | null;
+  channel_url?: string | null;
   duration: number;
   duration_formatted: string;
+  published_date?: string | null;
+  published_date_formatted?: string | null;
   view_count: number;
   view_count_formatted: string;
   thumbnail: string | null;
+  thumbnails_all?: Record<string, string> | null;
   description: string;
+  tags?: string[];
+  category?: string | null;
+  license?: string | null;
+  is_creative_commons?: boolean;
+  is_live?: boolean;
+  workflow?: AuthorizedWorkflowInfo;
+  confirmed_qualities?: VideoFormatOption[];
   formats: VideoFormatOption[];
+  api_source?: string;
 }
 
 export interface DownloadTask {

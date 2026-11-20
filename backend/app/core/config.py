@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 import os
 from pathlib import Path
 
@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     WHISPER_DEVICE: str = "cpu"  # cpu or cuda
     DEFAULT_CLIP_MIN_DURATION: int = 15  # seconds
     DEFAULT_CLIP_MAX_DURATION: int = 60  # seconds
+
+    # Integrations
+    YOUTUBE_API_KEY: Optional[str] = None
 
     class Config:
         env_file = ".env"
