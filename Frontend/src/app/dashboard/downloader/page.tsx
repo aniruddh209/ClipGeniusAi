@@ -1453,10 +1453,10 @@ function VideoDownloaderContent() {
                                   </button>
 
                                   <a
-                                    href={`/api/v1/downloader/file/${task.task_id}`}
+                                    href={api.getDownloadFileUrl(task.task_id)}
                                     download={task.output_filename || 'download'}
                                     className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 flex items-center justify-center transition-colors cursor-pointer"
-                                    title="Download file to browser"
+                                    title="Save to Mac / Downloads"
                                   >
                                     <FolderDown className="w-4 h-4" />
                                   </a>
@@ -1693,7 +1693,7 @@ function VideoDownloaderContent() {
                         </button>
 
                         <a
-                          href={`/api/v1/downloader/file/${item.task_id}`}
+                          href={api.getDownloadFileUrl(item.task_id)}
                           download={item.output_filename || 'download'}
                           className="h-8 px-2.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-zinc-200 text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                           title="Download file via browser"

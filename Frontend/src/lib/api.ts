@@ -668,6 +668,10 @@ class ApiClient {
     return res.json();
   }
 
+  getDownloadFileUrl(taskId: string): string {
+    return `${this.baseUrl}/downloader/file/${taskId}`;
+  }
+
   /* macOS Video Export & Native File Operations */
 
   async getExportFormats(): Promise<ExportFormatOption[]> {

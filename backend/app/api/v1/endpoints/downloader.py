@@ -283,11 +283,13 @@ async def get_history():
 @router.api_route("/file/{task_id}", methods=["GET", "HEAD"])
 async def download_file(task_id: str):
     """
-    Directly streams or downloads the saved file to the user's browser
+    Directly streams or downloads the saved media file to the user's browser
+    with RFC 5987 content-disposition and resilient fallback discovery.
     """
     output_path = None
     filename = None
 
+    # 1. Check in-memory task / job
     if task_id.startswith("job_"):
         j = download_engine.get_job(task_id)
         if j:
@@ -299,13 +301,63 @@ async def download_file(task_id: str):
             output_path = t.get("output_path")
             filename = t.get("output_filename")
 
+    # 2. Fallback to MongoDB if server restarted or task not in memory cache
     if not output_path or not Path(output_path).exists():
-        raise HTTPException(status_code=404, detail="Media file not found on server")
+        db = get_database()
+        if db is not None:
+            doc = await db.download_tasks.find_one({"task_id": task_id})
+            if not doc:
+                doc = await db.download_jobs.find_one({"job_id": task_id})
+            if doc:
+                output_path = doc.get("output_path") or doc.get("final_filepath")
+                filename = doc.get("output_filename") or doc.get("final_filename")
+
+    # 3. Fallback disk search across downloads, uploads, and outputs directories
+    if not output_path or not Path(output_path).exists():
+        for base_dir in [settings.DOWNLOADS_DIR, settings.UPLOAD_DIR, settings.OUTPUT_DIR]:
+            # Direct match by filename
+            direct_cand = base_dir / task_id
+            if direct_cand.is_file() and not direct_cand.name.endswith((".part", ".ytdl")):
+                output_path = str(direct_cand.resolve())
+                filename = direct_cand.name
+                break
+            # Search by task ID suffix (e.g. _3e58) or task ID prefix
+            suffix = task_id[-4:] if len(task_id) >= 4 else task_id
+            for cand in base_dir.glob(f"*{suffix}*"):
+                if cand.is_file() and not cand.name.endswith((".part", ".ytdl")):
+                    output_path = str(cand.resolve())
+                    filename = cand.name
+                    break
+            if output_path and Path(output_path).exists():
+                break
+
+    if not output_path or not Path(output_path).exists():
+        raise HTTPException(status_code=404, detail=f"Media file for task {task_id} not found on server disk")
+
+    resolved = Path(output_path).resolve()
+    final_filename = filename or resolved.name
+
+    # Determine standard media MIME type
+    ext = resolved.suffix.lower()
+    media_type = "video/mp4"
+    if ext == ".webm":
+        media_type = "video/webm"
+    elif ext == ".mov":
+        media_type = "video/quicktime"
+    elif ext == ".mp3":
+        media_type = "audio/mpeg"
+    elif ext == ".m4a":
+        media_type = "audio/mp4"
 
     return FileResponse(
-        path=output_path,
-        filename=filename or Path(output_path).name,
-        media_type="application/octet-stream"
+        path=str(resolved),
+        filename=final_filename,
+        media_type=media_type,
+        headers={
+            "Accept-Ranges": "bytes",
+            "Content-Disposition": f'attachment; filename="{final_filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
     )
 
 @router.post("/tasks/{task_id}/clip")
