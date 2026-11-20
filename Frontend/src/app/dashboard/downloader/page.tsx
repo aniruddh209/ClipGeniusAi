@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -48,7 +48,7 @@ import { Button } from '@/components/ui/Button';
 import { MacOSExportModal } from '@/components/video/MacOSExportModal';
 import { FileDetailsModal } from '@/components/video/FileDetailsModal';
 
-export default function VideoDownloaderPage() {
+function VideoDownloaderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') === 'history' ? 'history' : 'downloader';
@@ -1795,5 +1795,22 @@ export default function VideoDownloaderPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function VideoDownloaderPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 min-h-[60vh] bg-[#07070a] text-zinc-100 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <RefreshCw className="w-7 h-7 text-purple-500 animate-spin" />
+            <p className="text-xs font-medium text-zinc-400">Loading Video Downloader...</p>
+          </div>
+        </div>
+      }
+    >
+      <VideoDownloaderContent />
+    </Suspense>
   );
 }
