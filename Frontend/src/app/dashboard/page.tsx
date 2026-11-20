@@ -48,8 +48,9 @@ export default function DashboardPage() {
         api.getAllClips().catch(() => [])
       ]);
       const validVideos = liveVideos || [];
-      // If no videos exist, strictly force clips to empty list so no ghost clips appear
-      const validClips = validVideos.length === 0 ? [] : (liveClips || []);
+      const validVideoIds = new Set(validVideos.map((v) => v.id));
+      // Strictly filter out any orphan clips whose parent video does not exist
+      const validClips = (liveClips || []).filter((c) => validVideoIds.has(c.video_id));
       setVideos(validVideos);
       setClips(validClips);
     } catch (e) {

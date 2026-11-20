@@ -126,6 +126,9 @@ export default function MyProjectsPage() {
 
   useEffect(() => {
     fetchLiveVideos();
+    const handleUpdate = () => fetchLiveVideos();
+    window.addEventListener('projects-updated', handleUpdate);
+    return () => window.removeEventListener('projects-updated', handleUpdate);
   }, []);
 
   // Fetch candidate clips for selected project

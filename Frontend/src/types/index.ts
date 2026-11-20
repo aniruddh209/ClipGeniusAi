@@ -348,7 +348,12 @@ export interface DownloadTask {
   output_path: string | null;
   output_filename: string | null;
   download_url: string | null;
-  status: 'queued' | 'downloading' | 'paused' | 'processing' | 'completed' | 'cancelled' | 'failed';
+  status: 'queued' | 'connecting' | 'downloading' | 'paused' | 'interrupted' | 'verifying' | 'completed' | 'cancelled' | 'failed' | 'processing';
+  supports_ranges?: boolean;
+  integrity_verified?: boolean;
+  etag?: string | null;
+  checksum_expected?: string | null;
+  checksum_calculated?: string | null;
   downloaded_bytes: number;
   total_bytes: number;
   progress_percentage: number;
@@ -372,4 +377,8 @@ export interface StartDownloadPayload {
   title?: string;
   thumbnail?: string;
   estimated_size?: number;
+  use_engine?: boolean;
+  max_connections?: number;
+  expected_checksum?: string;
+  checksum_type?: string;
 }

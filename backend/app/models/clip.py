@@ -162,7 +162,7 @@ class FullPipelineRequest(BaseModel):
     video_id: str
     target_aspect_ratio: str = "9:16"
     duration_range: str = "30-60"
-    max_clips: int = Field(default=5, ge=1, le=10)
+    max_clips: int = Field(default=5, ge=1, le=20)
     virality_threshold: float = Field(default=50.0, ge=30.0, le=95.0)
     reframing_mode: str = "smart_auto"
     content_type: str = "gaming" # gaming, podcast, education, general

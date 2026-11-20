@@ -569,6 +569,30 @@ class ApiClient {
     return res.json();
   }
 
+  async retryDownloaderTask(taskId: string): Promise<DownloadTask> {
+    const res = await fetch(`${this.baseUrl}/downloader/tasks/${taskId}/retry`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to retry task');
+    }
+    return res.json();
+  }
+
+  async probeDirectMediaUrl(url: string): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/downloader/engine/probe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to probe media server');
+    }
+    return res.json();
+  }
+
   async cancelDownloaderTask(taskId: string): Promise<DownloadTask> {
     const res = await fetch(`${this.baseUrl}/downloader/tasks/${taskId}/cancel`, {
       method: 'POST',

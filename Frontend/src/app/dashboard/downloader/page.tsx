@@ -33,7 +33,8 @@ import {
   Layers, 
   ShieldAlert, 
   CheckCheck,
-  Video
+  Video,
+  RotateCcw
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { VideoAnalysisResult, VideoFormatOption, DownloadTask } from '@/types';
@@ -205,6 +206,16 @@ export default function VideoDownloaderPage() {
       fetchTasks();
     } catch (err: any) {
       showNotification(err.message || 'Could not resume', 'error');
+    }
+  };
+
+  const handleRetry = async (taskId: string) => {
+    try {
+      await api.retryDownloaderTask(taskId);
+      showNotification('Retrying download job...', 'info');
+      fetchTasks();
+    } catch (err: any) {
+      showNotification(err.message || 'Could not retry download', 'error');
     }
   };
 
@@ -938,13 +949,19 @@ export default function VideoDownloaderPage() {
             {/* DOWNLOAD MANAGER (ACTIVE TASKS & REAL-TIME CONTROLS) */}
             <div ref={managerRef} className="space-y-4 pt-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                    <span>Download Manager</span>
-                    <Badge variant="purple" className="text-[11px]">
-                      {activeDownloads.length} Active / {tasks.length} Total
-                    </Badge>
-                  </h2>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                      <span>Download Manager</span>
+                      <Badge variant="purple" className="text-[11px]">
+                        {activeDownloads.length} Active / {tasks.length} Total
+                      </Badge>
+                    </h2>
+                  </div>
+                  <p className="text-[11px] text-zinc-500 flex items-center gap-1.5">
+                    <Info className="w-3 h-3 text-zinc-500 shrink-0" />
+                    <span>Actual transfer speed is determined by your connection bandwidth and source server limits.</span>
+                  </p>
                 </div>
 
                 {/* Batch Actions Toolbar */}
@@ -1003,10 +1020,14 @@ export default function VideoDownloaderPage() {
               ) : (
                 <div className="space-y-3">
                   {filteredTasks.map((task) => {
+                    const isConnecting = task.status === 'connecting';
                     const isDownloading = task.status === 'downloading';
                     const isPaused = task.status === 'paused';
+                    const isInterrupted = task.status === 'interrupted';
+                    const isVerifying = task.status === 'verifying';
                     const isCompleted = task.status === 'completed';
-                    const isFailed = task.status === 'failed';
+                    const isFailed = task.status === 'failed' || task.status === 'cancelled';
+                    const isQueued = task.status === 'queued';
 
                     return (
                       <div
@@ -1014,10 +1035,13 @@ export default function VideoDownloaderPage() {
                         className={cn(
                           'p-4 rounded-xl border transition-all space-y-3',
                           isDownloading && 'bg-purple-950/20 border-purple-500/40 shadow-lg shadow-purple-950/20',
+                          isConnecting && 'bg-blue-950/15 border-blue-500/30',
+                          isVerifying && 'bg-indigo-950/20 border-indigo-500/40',
                           isPaused && 'bg-amber-950/15 border-amber-500/30',
+                          isInterrupted && 'bg-orange-950/15 border-orange-500/30',
                           isCompleted && 'bg-emerald-950/15 border-emerald-500/30',
                           isFailed && 'bg-rose-950/15 border-rose-500/30',
-                          !isDownloading && !isPaused && !isCompleted && !isFailed && 'bg-white/[0.02] border-white/[0.06]'
+                          !isDownloading && !isConnecting && !isVerifying && !isPaused && !isInterrupted && !isCompleted && !isFailed && 'bg-white/[0.02] border-white/[0.06]'
                         )}
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1046,7 +1070,7 @@ export default function VideoDownloaderPage() {
                               <h4 className="text-xs font-semibold text-white truncate leading-tight">
                                 {task.title}
                               </h4>
-                              <div className="flex items-center gap-2 text-[11px] text-zinc-400 mt-0.5">
+                              <div className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-400 mt-0.5">
                                 <span className="uppercase font-mono font-medium text-purple-400">
                                   {task.ext}
                                 </span>
@@ -1058,6 +1082,20 @@ export default function VideoDownloaderPage() {
                                     ? `${(task.downloaded_bytes / (1024 * 1024)).toFixed(1)} / ${(task.total_bytes / (1024 * 1024)).toFixed(1)} MB`
                                     : 'Calculating size...'}
                                 </span>
+                                {task.supports_ranges && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-[10px] text-emerald-400/90 font-mono">Range Resumable</span>
+                                  </>
+                                )}
+                                {task.integrity_verified && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-[10px] text-cyan-400/90 font-mono flex items-center gap-0.5">
+                                      <ShieldCheck className="w-2.5 h-2.5" /> FFprobe Verified
+                                    </span>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1077,9 +1115,27 @@ export default function VideoDownloaderPage() {
                                 </>
                               )}
 
+                              {isConnecting && (
+                                <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-semibold flex items-center gap-1">
+                                  <RefreshCw className="w-3 h-3 animate-spin" /> Connecting
+                                </span>
+                              )}
+
+                              {isVerifying && (
+                                <span className="px-2 py-0.5 rounded bg-purple-500/25 text-purple-200 border border-purple-500/40 text-[10px] font-semibold flex items-center gap-1">
+                                  <ShieldCheck className="w-3 h-3 text-purple-400 animate-pulse" /> Verifying Media
+                                </span>
+                              )}
+
                               {isPaused && (
                                 <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-semibold">
                                   Paused
+                                </span>
+                              )}
+
+                              {isInterrupted && (
+                                <span className="px-2 py-0.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/30 text-[10px] font-semibold flex items-center gap-1">
+                                  <AlertCircle className="w-3 h-3 text-orange-400" /> Interrupted
                                 </span>
                               )}
 
@@ -1092,6 +1148,12 @@ export default function VideoDownloaderPage() {
                               {isFailed && (
                                 <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-semibold">
                                   Failed
+                                </span>
+                              )}
+
+                              {isQueued && (
+                                <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 text-[10px] font-semibold">
+                                  Queued
                                 </span>
                               )}
                             </div>
@@ -1118,7 +1180,17 @@ export default function VideoDownloaderPage() {
                                 </button>
                               )}
 
-                              {(isDownloading || isPaused) && (
+                              {(isInterrupted || isFailed) && (
+                                <button
+                                  onClick={() => handleRetry(task.task_id)}
+                                  className="w-8 h-8 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                                  title="Retry download job"
+                                >
+                                  <RotateCcw className="w-4 h-4" />
+                                </button>
+                              )}
+
+                              {(isDownloading || isPaused || isConnecting) && (
                                 <button
                                   onClick={() => handleCancel(task.task_id)}
                                   className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
@@ -1168,7 +1240,10 @@ export default function VideoDownloaderPage() {
                               className={cn(
                                 'h-full rounded-full transition-all duration-300 ease-out',
                                 isDownloading && 'bg-gradient-to-r from-purple-500 via-indigo-500 to-cyan-400',
+                                isConnecting && 'bg-blue-400 animate-pulse',
+                                isVerifying && 'bg-gradient-to-r from-indigo-500 to-purple-400 animate-pulse',
                                 isPaused && 'bg-amber-400',
+                                isInterrupted && 'bg-orange-500',
                                 isCompleted && 'bg-emerald-500',
                                 isFailed && 'bg-rose-500'
                               )}
@@ -1178,7 +1253,15 @@ export default function VideoDownloaderPage() {
 
                           <div className="flex items-center justify-between text-[10px] text-zinc-500 font-mono">
                             <span>
-                              {isDownloading ? 'Stream Ingestion' : isCompleted ? 'Completed' : task.status}
+                              {isConnecting
+                                ? 'Connecting to remote host...'
+                                : isVerifying
+                                ? 'Verifying stream integrity & decodability...'
+                                : isDownloading
+                                ? 'Stream Ingestion'
+                                : isCompleted
+                                ? 'Completed'
+                                : task.status}
                             </span>
                             <span>{task.progress_percentage.toFixed(1)}%</span>
                           </div>

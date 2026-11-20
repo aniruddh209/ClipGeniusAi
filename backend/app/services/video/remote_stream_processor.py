@@ -259,7 +259,9 @@ class RemoteStreamProcessor:
             logger.info(f"Extracting remote audio stream via FFmpeg: {cmd}")
             res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=180)
             if res.returncode != 0:
-                raise RuntimeError(f"FFmpeg remote audio extraction failed: {res.stderr[:200]}")
+                clean_err = res.stderr.strip()
+                tail_err = clean_err[-350:] if len(clean_err) > 350 else clean_err
+                raise RuntimeError(f"FFmpeg remote audio extraction failed: {tail_err}")
             return output_wav_path
 
         await loop.run_in_executor(None, _exec_extract)
@@ -342,7 +344,9 @@ class RemoteStreamProcessor:
             logger.info(f"Cutting remote segment directly via HTTP range: {cmd}")
             res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120)
             if res.returncode != 0:
-                raise RuntimeError(f"Direct remote video cutting failed: {res.stderr[:200]}")
+                clean_err = res.stderr.strip()
+                tail_err = clean_err[-350:] if len(clean_err) > 350 else clean_err
+                raise RuntimeError(f"Direct remote video cutting failed: {tail_err}")
             return output_video_path
 
         await loop.run_in_executor(None, _exec_cut)

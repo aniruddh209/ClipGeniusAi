@@ -48,7 +48,7 @@ export const DashboardSidebar: React.FC = () => {
     const handleUpdate = () => fetchProjectCount();
     window.addEventListener('projects-updated', handleUpdate);
     return () => window.removeEventListener('projects-updated', handleUpdate);
-  }, []);
+  }, [pathname]);
 
   const navItems = [
     {

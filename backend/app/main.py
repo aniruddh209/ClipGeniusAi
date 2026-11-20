@@ -6,6 +6,7 @@ from app.core.config import settings
 from app.core.logging import logger
 from app.core.database import connect_to_mongo, close_mongo_connection
 from app.services.video.downloader_manager import downloader_manager
+from app.services.downloader.engine import download_engine
 from app.api.v1.router import api_router
 
 @asynccontextmanager
@@ -15,6 +16,7 @@ async def lifespan(app: FastAPI):
     settings.DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
     await connect_to_mongo()
     await downloader_manager.initialize()
+    await download_engine.initialize()
     yield
     # Shutdown
     logger.info(f"Shutting down {settings.PROJECT_NAME}...")

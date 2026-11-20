@@ -718,48 +718,55 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                     </div>
 
                     {/* Secondary Row: Studio Creative Tools */}
-                    <div className="flex items-center gap-1.5">
+                    <div className="grid grid-cols-2 gap-1.5">
                       <Button
                         onClick={() => setSubtitleModalClip(clip)}
                         size="sm"
                         variant="secondary"
-                        className="flex-1 rounded-xl text-[11px] py-1.5 px-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/25"
+                        className="rounded-xl text-[11px] py-1.5 px-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/25 truncate justify-center"
                         title="AI Subtitles & Animated Captions"
                       >
-                        <Sparkles className="w-3 h-3 mr-1 text-purple-400" /> Captions
+                        <Sparkles className="w-3 h-3 mr-1 text-purple-400 shrink-0" /> Captions
                       </Button>
 
                       <Button
                         onClick={() => setReframeModalClip(clip)}
                         size="sm"
                         variant="secondary"
-                        className="flex-1 rounded-xl text-[11px] py-1.5 px-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/25"
+                        className="rounded-xl text-[11px] py-1.5 px-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/25 truncate justify-center"
                         title="Smart Video Reframing (Face Tracking 9:16)"
                       >
-                        <Crop className="w-3 h-3 mr-1 text-blue-400" /> Reframe
+                        <Crop className="w-3 h-3 mr-1 text-blue-400 shrink-0" /> Reframe
                       </Button>
+                    </div>
 
+                    {/* Utility Row: Quick Actions */}
+                    <div className="flex items-center justify-between pt-1">
                       <Button
                         onClick={() => handleOpenEdit(clip)}
                         size="sm"
-                        variant="outline"
-                        className="rounded-xl px-2.5 py-1.5 text-xs border-white/[0.08] hover:bg-white/[0.08] text-zinc-400 hover:text-white"
+                        variant="ghost"
+                        className="rounded-xl px-2 py-1 text-[11px] hover:bg-white/[0.08] text-zinc-400 hover:text-white"
                         title="Edit Clip Timestamps & Title"
                       >
-                        <Edit3 className="w-3.5 h-3.5 text-purple-400" />
+                        <Edit3 className="w-3 h-3 mr-1 text-purple-400" /> Edit Times
                       </Button>
 
                       <Button
                         onClick={() => handleCopyTranscript(clip)}
                         size="sm"
-                        variant="outline"
-                        className="rounded-xl px-2.5 py-1.5 text-xs border-white/[0.08] hover:bg-white/[0.08] text-zinc-400 hover:text-white"
+                        variant="ghost"
+                        className="rounded-xl px-2 py-1 text-[11px] hover:bg-white/[0.08] text-zinc-400 hover:text-white"
                         title="Copy Clip Transcript"
                       >
                         {copiedClipId === clip.id ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <>
+                            <Check className="w-3 h-3 mr-1 text-emerald-400" /> Copied
+                          </>
                         ) : (
-                          <Copy className="w-3.5 h-3.5" />
+                          <>
+                            <Copy className="w-3 h-3 mr-1 text-zinc-400" /> Copy Text
+                          </>
                         )}
                       </Button>
                     </div>

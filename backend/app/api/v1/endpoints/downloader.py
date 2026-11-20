@@ -11,6 +11,8 @@ from pydantic import BaseModel, Field
 from app.core.config import settings
 from app.core.logging import logger
 from app.services.video.downloader_manager import downloader_manager
+from app.services.downloader.engine import download_engine
+from app.services.sources.direct_media import direct_media_source_provider
 from app.services.video.ffmpeg_editor import ffmpeg_editor
 from app.services.sources.registry import source_registry
 from app.models.video import VideoSourceType, VideoStatus
@@ -20,6 +22,9 @@ router = APIRouter()
 
 class AnalyzeRequest(BaseModel):
     url: str = Field(..., description="Web or YouTube URL to analyze")
+
+class ProbeRequest(BaseModel):
+    url: str = Field(..., description="Direct video URL to probe for HTTP Range & media headers")
 
 class StartDownloadRequest(BaseModel):
     url: str
@@ -31,6 +36,27 @@ class StartDownloadRequest(BaseModel):
     title: Optional[str] = None
     thumbnail: Optional[str] = None
     estimated_size: Optional[int] = None
+    use_engine: Optional[bool] = None
+    max_connections: Optional[int] = 2
+    expected_checksum: Optional[str] = None
+    checksum_type: Optional[str] = "md5"
+
+@router.post("/engine/probe")
+async def probe_direct_url(payload: ProbeRequest):
+    """
+    Probes remote media server for HTTP Range request support,
+    Content-Length, mime-type, and ETag
+    """
+    url = payload.url.strip()
+    if not (url.startswith("http://") or url.startswith("https://")):
+        raise HTTPException(status_code=400, detail="Invalid URL. Please enter a valid HTTP or HTTPS media link.")
+
+    try:
+        data = await download_engine.probe_url(url)
+        return data
+    except Exception as e:
+        logger.error(f"Probe failed for {url}: {e}")
+        raise HTTPException(status_code=422, detail=f"Could not probe remote source server: {str(e)}")
 
 @router.post("/analyze")
 async def analyze_video_url(payload: AnalyzeRequest):
@@ -59,8 +85,34 @@ async def analyze_video_url(payload: AnalyzeRequest):
 async def start_download(payload: StartDownloadRequest):
     """
     Creates a new download task and starts background streaming.
+    Uses high-performance HTTPX async streaming engine for direct media URLs
+    and yt-dlp worker for platform streams.
     """
     try:
+        is_direct = (
+            payload.use_engine is True
+            or direct_media_source_provider.can_handle(payload.url)
+            or payload.format_id in ["direct_engine", "best_direct"]
+        )
+
+        if is_direct:
+            job = await download_engine.create_download_job(
+                url=payload.url,
+                title=payload.title,
+                thumbnail=payload.thumbnail,
+                save_destination=payload.save_destination,
+                custom_path=payload.custom_path,
+                max_connections=payload.max_connections or 2,
+                expected_checksum=payload.expected_checksum,
+                checksum_type=payload.checksum_type or "md5"
+            )
+            await download_engine.start_job(job["job_id"])
+            item = job.copy()
+            item["task_id"] = job["job_id"]
+            item["format_id"] = payload.format_id
+            item["resolution"] = payload.resolution
+            return item
+
         task = downloader_manager.create_task(
             url=payload.url,
             format_id=payload.format_id,
@@ -72,7 +124,6 @@ async def start_download(payload: StartDownloadRequest):
             thumbnail=payload.thumbnail,
             estimated_size=payload.estimated_size
         )
-        # Immediately start download
         downloader_manager.start_download(task["task_id"])
         return task
     except Exception as e:
@@ -82,12 +133,31 @@ async def start_download(payload: StartDownloadRequest):
 @router.get("/tasks")
 async def get_all_tasks():
     """
-    Returns real-time status of all download tasks
+    Returns real-time status of all download tasks from both download engines
     """
-    return downloader_manager.get_all_tasks()
+    dm_tasks = downloader_manager.get_all_tasks()
+    engine_jobs = download_engine.get_all_jobs()
+    unified = list(dm_tasks)
+    for j in engine_jobs:
+        item = j.copy()
+        item["task_id"] = j["job_id"]
+        item["output_path"] = j.get("final_filepath")
+        item["output_filename"] = j.get("final_filename")
+        unified.append(item)
+    return sorted(unified, key=lambda x: x.get("created_at", ""), reverse=True)
 
 @router.get("/tasks/{task_id}")
 async def get_task_status(task_id: str):
+    if task_id.startswith("job_"):
+        j = download_engine.get_job(task_id)
+        if not j:
+            raise HTTPException(status_code=404, detail="Download job not found")
+        item = j.copy()
+        item["task_id"] = j["job_id"]
+        item["output_path"] = j.get("final_filepath")
+        item["output_filename"] = j.get("final_filename")
+        return item
+
     task = downloader_manager.get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Download task not found")
@@ -96,6 +166,8 @@ async def get_task_status(task_id: str):
 @router.post("/tasks/{task_id}/pause")
 async def pause_task(task_id: str):
     try:
+        if task_id.startswith("job_"):
+            return await download_engine.pause_job(task_id)
         return downloader_manager.pause_download(task_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -103,6 +175,17 @@ async def pause_task(task_id: str):
 @router.post("/tasks/{task_id}/resume")
 async def resume_task(task_id: str):
     try:
+        if task_id.startswith("job_"):
+            return await download_engine.resume_job(task_id)
+        return downloader_manager.resume_download(task_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.post("/tasks/{task_id}/retry")
+async def retry_task(task_id: str):
+    try:
+        if task_id.startswith("job_"):
+            return await download_engine.retry_job(task_id)
         return downloader_manager.resume_download(task_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -110,13 +193,19 @@ async def resume_task(task_id: str):
 @router.post("/tasks/{task_id}/cancel")
 async def cancel_task(task_id: str):
     try:
+        if task_id.startswith("job_"):
+            return await download_engine.cancel_job(task_id)
         return downloader_manager.cancel_download(task_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 @router.delete("/tasks/{task_id}")
 async def delete_task(task_id: str):
-    success = downloader_manager.delete_task(task_id)
+    if task_id.startswith("job_"):
+        success = await download_engine.delete_job(task_id)
+    else:
+        success = downloader_manager.delete_task(task_id)
+
     if not success:
         raise HTTPException(status_code=404, detail="Task not found")
     return {"success": True, "task_id": task_id}
@@ -128,11 +217,24 @@ async def batch_action(action: str):
     """
     act = action.lower()
     if act == "pause_all":
-        return downloader_manager.pause_all()
+        # Pause both engines
+        for j in download_engine.get_all_jobs():
+            if j.get("status") in ["downloading", "connecting"]:
+                await download_engine.pause_job(j["job_id"])
+        downloader_manager.pause_all()
+        return await get_all_tasks()
     elif act in ["resume_all", "download_all"]:
-        return downloader_manager.resume_all()
+        for j in download_engine.get_all_jobs():
+            if j.get("status") in ["paused", "interrupted", "queued"]:
+                await download_engine.resume_job(j["job_id"])
+        downloader_manager.resume_all()
+        return await get_all_tasks()
     elif act == "clear_completed":
-        return downloader_manager.clear_completed()
+        for j in download_engine.get_all_jobs():
+            if j.get("status") in ["completed", "failed"]:
+                await download_engine.delete_job(j["job_id"])
+        downloader_manager.clear_completed()
+        return await get_all_tasks()
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported batch action '{action}'")
 
@@ -141,25 +243,34 @@ async def get_history():
     """
     Returns completed downloads
     """
-    return downloader_manager.get_history()
+    all_tasks = await get_all_tasks()
+    return [t for t in all_tasks if t.get("status") == "completed"]
 
 @router.api_route("/file/{task_id}", methods=["GET", "HEAD"])
 async def download_file(task_id: str):
     """
     Directly streams or downloads the saved file to the user's browser
     """
-    task = downloader_manager.get_task(task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Download task not found")
+    output_path = None
+    filename = None
 
-    output_path = task.get("output_path")
+    if task_id.startswith("job_"):
+        j = download_engine.get_job(task_id)
+        if j:
+            output_path = j.get("final_filepath")
+            filename = j.get("final_filename")
+    else:
+        t = downloader_manager.get_task(task_id)
+        if t:
+            output_path = t.get("output_path")
+            filename = t.get("output_filename")
+
     if not output_path or not Path(output_path).exists():
         raise HTTPException(status_code=404, detail="Media file not found on server")
 
-    filename = task.get("output_filename") or Path(output_path).name
     return FileResponse(
         path=output_path,
-        filename=filename,
+        filename=filename or Path(output_path).name,
         media_type="application/octet-stream"
     )
 
@@ -169,24 +280,40 @@ async def clip_downloaded_video(task_id: str):
     Imports the downloaded video directly into ClipGenius AI Clipper
     as a ready-to-clip project without re-downloading!
     """
-    task = downloader_manager.get_task(task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Download task not found")
+    output_path = None
+    title = "Downloaded Video"
+    url = None
+    thumbnail_url = None
 
-    if task.get("status") != "completed":
-        raise HTTPException(status_code=400, detail="Video is still downloading. Wait for completion to clip.")
+    if task_id.startswith("job_"):
+        j = download_engine.get_job(task_id)
+        if not j:
+            raise HTTPException(status_code=404, detail="Download job not found")
+        if j.get("status") != "completed":
+            raise HTTPException(status_code=400, detail="Video is still downloading or verifying. Wait for completion to clip.")
+        output_path = j.get("final_filepath")
+        title = j.get("title") or title
+        url = j.get("url")
+        thumbnail_url = j.get("thumbnail")
+    else:
+        t = downloader_manager.get_task(task_id)
+        if not t:
+            raise HTTPException(status_code=404, detail="Download task not found")
+        if t.get("status") != "completed":
+            raise HTTPException(status_code=400, detail="Video is still downloading. Wait for completion to clip.")
+        output_path = t.get("output_path")
+        title = t.get("title") or title
+        url = t.get("url")
+        thumbnail_url = t.get("thumbnail")
 
-    output_path = task.get("output_path")
     if not output_path or not Path(output_path).exists():
         raise HTTPException(status_code=404, detail="Downloaded media file not found on disk")
 
     src_file = Path(output_path)
-    # If not already in UPLOAD_DIR, copy or move into UPLOAD_DIR
     video_id = f"vid_{uuid.uuid4().hex[:12]}"
     dest_path = settings.UPLOAD_DIR / f"{video_id}{src_file.suffix}"
 
     if src_file.parent != settings.UPLOAD_DIR:
-        import shutil
         shutil.copy2(str(src_file), str(dest_path))
     else:
         dest_path = src_file
@@ -207,25 +334,25 @@ async def clip_downloaded_video(task_id: str):
 
     # Generate thumbnail
     thumbnail_filename = f"{video_id}.jpg"
-    thumbnail_path = settings.THUMBNAIL_DIR / thumbnail_filename
+    thumbnail_dest = settings.THUMBNAIL_DIR / thumbnail_filename
     try:
-        await asyncio.to_thread(ffmpeg_editor.extract_thumbnail, str(dest_path), str(thumbnail_path), 2.0)
-        thumbnail_url = f"/uploads/thumbnails/{thumbnail_filename}"
+        await asyncio.to_thread(ffmpeg_editor.extract_thumbnail, str(dest_path), str(thumbnail_dest), 2.0)
+        final_thumb_url = f"/uploads/thumbnails/{thumbnail_filename}"
     except Exception:
-        thumbnail_url = task.get("thumbnail")
+        final_thumb_url = thumbnail_url
 
     video_doc = {
         "id": video_id,
-        "title": task.get("title") or "Downloaded Video",
+        "title": title,
         "original_filename": src_file.name,
         "stored_filename": dest_path.name,
         "source_type": "upload",
-        "source_url": task.get("url"),
+        "source_url": url,
         "file_path": str(dest_path),
         "file_size_mb": round(dest_path.stat().st_size / (1024 * 1024), 2),
         "duration": metadata.get("duration", 60.0),
         "video_url": f"/uploads/{dest_path.name}",
-        "thumbnail_url": thumbnail_url,
+        "thumbnail_url": final_thumb_url,
         "metadata": metadata,
         "status": "ready",
         "progress_percentage": 100,

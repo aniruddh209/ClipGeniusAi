@@ -261,8 +261,16 @@ async def list_videos():
             valid_videos = []
             for d in docs:
                 try:
-                    # Dynamically query real clips count from MongoDB
                     vid = d.get("id")
+                    fpath = d.get("file_path")
+                    is_remote = bool(fpath and (fpath.startswith("http://") or fpath.startswith("https://")))
+                    if not is_remote and fpath and not os.path.exists(fpath):
+                        # File no longer exists on disk -> clean up stale record
+                        await db.videos.delete_one({"id": vid})
+                        await db.clips.delete_many({"video_id": vid})
+                        continue
+
+                    # Dynamically query real clips count from MongoDB
                     if vid:
                         actual_clips = await db.clips.count_documents({"video_id": vid})
                         d["clips_count"] = actual_clips
@@ -345,8 +353,18 @@ async def delete_video(video_id: str):
         except Exception as e:
             logger.warning(f"MongoDB deletion warning: {e}")
 
-    if not video_doc and video_id in _in_memory_videos:
-        video_doc = _in_memory_videos.pop(video_id, None)
+    # Clean in-memory caches
+    _in_memory_videos.pop(video_id, None)
+    try:
+        from app.api.v1.endpoints.clips import _in_memory_clips_by_video
+        _in_memory_clips_by_video.pop(video_id, None)
+    except Exception:
+        pass
+    try:
+        from app.api.v1.endpoints.transcription import _in_memory_transcripts
+        _in_memory_transcripts.pop(video_id, None)
+    except Exception:
+        pass
 
     if not video_doc:
         raise HTTPException(status_code=404, detail="Video not found")
