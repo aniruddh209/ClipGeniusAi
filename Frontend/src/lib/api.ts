@@ -21,7 +21,13 @@ import {
   CandidateClip,
   VideoAnalysisResult,
   DownloadTask,
-  StartDownloadPayload
+  StartDownloadPayload,
+  ExportFormatOption,
+  AvailableQualityOption,
+  MacOSDirectoryOption,
+  ExportVideoPayload,
+  ExportVideoResponse,
+  FileSpecsInfo
 } from '@/types';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1';
@@ -645,6 +651,112 @@ class ApiClient {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
       throw new Error(err.detail || 'Failed to import video into AI Clipper');
+    }
+    return res.json();
+  }
+
+  /* macOS Video Export & Native File Operations */
+
+  async getExportFormats(): Promise<ExportFormatOption[]> {
+    const res = await fetch(`${this.baseUrl}/files/formats`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to fetch export formats');
+    return res.json();
+  }
+
+  async getMacOSDirectories(): Promise<MacOSDirectoryOption[]> {
+    const res = await fetch(`${this.baseUrl}/files/directories`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to fetch macOS directories');
+    return res.json();
+  }
+
+  async getAvailableQualities(params: { source_path?: string; task_id?: string; clip_id?: string; video_id?: string }): Promise<{ source_path: string; filename: string; qualities: AvailableQualityOption[] }> {
+    const res = await fetch(`${this.baseUrl}/files/qualities`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to determine available qualities');
+    }
+    return res.json();
+  }
+
+  async exportVideo(payload: ExportVideoPayload): Promise<ExportVideoResponse> {
+    const res = await fetch(`${this.baseUrl}/files/export`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to export video');
+    }
+    return res.json();
+  }
+
+  async openInMacOSPlayer(params: { file_path?: string; task_id?: string; clip_id?: string; video_id?: string }): Promise<{ success: boolean; message: string; path: string }> {
+    const res = await fetch(`${this.baseUrl}/files/open`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Could not open file in macOS player');
+    }
+    return res.json();
+  }
+
+  async revealInFinder(params: { file_path?: string; task_id?: string; clip_id?: string; video_id?: string }): Promise<{ success: boolean; message: string; path: string }> {
+    const res = await fetch(`${this.baseUrl}/files/reveal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Could not reveal file in macOS Finder');
+    }
+    return res.json();
+  }
+
+  async getFileInfo(params: { path?: string; task_id?: string; clip_id?: string; video_id?: string }): Promise<FileSpecsInfo> {
+    const sp = new URLSearchParams();
+    if (params.path) sp.set('path', params.path);
+    if (params.task_id) sp.set('task_id', params.task_id);
+    if (params.clip_id) sp.set('clip_id', params.clip_id);
+    if (params.video_id) sp.set('video_id', params.video_id);
+    const res = await fetch(`${this.baseUrl}/files/info?${sp.toString()}`, { cache: 'no-store' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to inspect file specifications');
+    }
+    return res.json();
+  }
+
+  async deleteFile(params: { file_path?: string; task_id?: string; clip_id?: string; video_id?: string }): Promise<{ success: boolean; filename: string; path: string; message: string }> {
+    const res = await fetch(`${this.baseUrl}/files/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to delete file');
+    }
+    return res.json();
+  }
+
+  async batchDeleteFiles(params: { file_paths?: string[]; task_ids?: string[]; clip_ids?: string[] }): Promise<{ success: boolean; deleted_count: number; deleted_files: string[]; errors: string[] }> {
+    const res = await fetch(`${this.baseUrl}/files/batch-delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to batch delete files');
     }
     return res.json();
   }

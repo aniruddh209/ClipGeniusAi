@@ -34,12 +34,19 @@ import {
   ShieldAlert, 
   CheckCheck,
   Video,
-  RotateCcw
+  RotateCcw,
+  Apple,
+  Folder,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { VideoAnalysisResult, VideoFormatOption, DownloadTask } from '@/types';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { MacOSExportModal } from '@/components/video/MacOSExportModal';
+import { FileDetailsModal } from '@/components/video/FileDetailsModal';
 
 export default function VideoDownloaderPage() {
   const router = useRouter();
@@ -69,7 +76,99 @@ export default function VideoDownloaderPage() {
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
+  // macOS File Management & Multi-Select State
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [exportModalTask, setExportModalTask] = useState<DownloadTask | null>(null);
+  const [detailsModalTask, setDetailsModalTask] = useState<DownloadTask | null>(null);
+  const [deleteConfirmState, setDeleteConfirmState] = useState<{
+    isOpen: boolean;
+    taskIds: string[];
+    title: string;
+    totalSizeMb: number;
+  } | null>(null);
+
   const managerRef = useRef<HTMLDivElement>(null);
+
+  const handleToggleSelectTask = (taskId: string) => {
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  };
+
+  const handleSelectAllVisible = (taskList: DownloadTask[]) => {
+    if (selectedTaskIds.size === taskList.length && taskList.length > 0) {
+      setSelectedTaskIds(new Set());
+    } else {
+      setSelectedTaskIds(new Set(taskList.map((t) => t.task_id)));
+    }
+  };
+
+  const handleOpenPlayer = async (task: DownloadTask) => {
+    try {
+      const res = await api.openInMacOSPlayer({ task_id: task.task_id });
+      showNotification(res.message, 'success');
+    } catch (e: any) {
+      showNotification(e.message || 'Could not open file in macOS player', 'error');
+    }
+  };
+
+  const handleRevealFinder = async (task: DownloadTask) => {
+    try {
+      const res = await api.revealInFinder({ task_id: task.task_id });
+      showNotification(res.message, 'success');
+    } catch (e: any) {
+      showNotification(e.message || 'Could not reveal file in Finder', 'error');
+    }
+  };
+
+  const promptDeleteSingle = (task: DownloadTask) => {
+    const sizeMb = Number((task.total_bytes / (1024 * 1024)).toFixed(1)) || 0;
+    setDeleteConfirmState({
+      isOpen: true,
+      taskIds: [task.task_id],
+      title: task.title,
+      totalSizeMb: sizeMb,
+    });
+  };
+
+  const promptDeleteBatch = () => {
+    if (selectedTaskIds.size === 0) return;
+    const selectedList = tasks.filter((t) => selectedTaskIds.has(t.task_id));
+    const totalBytes = selectedList.reduce((acc, t) => acc + (t.total_bytes || 0), 0);
+    const totalMb = Number((totalBytes / (1024 * 1024)).toFixed(1));
+    setDeleteConfirmState({
+      isOpen: true,
+      taskIds: Array.from(selectedTaskIds),
+      title: `${selectedTaskIds.size} selected downloads`,
+      totalSizeMb: totalMb,
+    });
+  };
+
+  const executeConfirmedDeletion = async () => {
+    if (!deleteConfirmState) return;
+    const { taskIds } = deleteConfirmState;
+    try {
+      if (taskIds.length === 1) {
+        await api.deleteFile({ task_id: taskIds[0] });
+      } else {
+        await api.batchDeleteFiles({ task_ids: taskIds });
+      }
+      setSelectedTaskIds((prev) => {
+        const next = new Set(prev);
+        taskIds.forEach((id) => next.delete(id));
+        return next;
+      });
+      showNotification(`Successfully deleted ${taskIds.length} file(s) from disk.`, 'success');
+      await fetchTasks();
+    } catch (e: any) {
+      showNotification(`Deletion failed: ${e.message}`, 'error');
+    } finally {
+      setDeleteConfirmState(null);
+    }
+  };
 
   // Sync tab with URL if param changes
   useEffect(() => {
@@ -978,6 +1077,15 @@ export default function VideoDownloaderPage() {
                   </div>
 
                   <button
+                    onClick={() => handleSelectAllVisible(filteredTasks)}
+                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Select or deselect all items"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5 text-purple-400" />
+                    <span>{selectedTaskIds.size === filteredTasks.length && filteredTasks.length > 0 ? 'Deselect' : 'Select All'}</span>
+                  </button>
+
+                  <button
                     onClick={() => handleBatch('resume_all')}
                     className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Resume all paused downloads"
@@ -1005,6 +1113,36 @@ export default function VideoDownloaderPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Multi-Selection Batch Actions Banner */}
+              {selectedTaskIds.size > 0 && (
+                <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/30 flex items-center justify-between text-xs animate-in fade-in">
+                  <div className="flex items-center gap-2">
+                    <CheckSquare className="w-4 h-4 text-purple-400" />
+                    <span className="font-bold text-white">
+                      {selectedTaskIds.size} item(s) selected
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={promptDeleteBatch}
+                      className="rounded-xl text-xs py-1.5 px-3 bg-rose-600 hover:bg-rose-500 text-white"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete Selected ({selectedTaskIds.size})
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelectedTaskIds(new Set())}
+                      className="rounded-xl text-xs py-1.5 text-zinc-400 hover:text-white"
+                    >
+                      Deselect
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Downloads Task List */}
               {filteredTasks.length === 0 ? (
@@ -1045,8 +1183,21 @@ export default function VideoDownloaderPage() {
                         )}
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          {/* Thumbnail & Title */}
-                          <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                          {/* Thumbnail, Checkbox & Title */}
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSelectTask(task.task_id)}
+                              className="shrink-0 p-1 text-zinc-500 hover:text-purple-400 cursor-pointer"
+                              title={selectedTaskIds.has(task.task_id) ? "Deselect" : "Select"}
+                            >
+                              {selectedTaskIds.has(task.task_id) ? (
+                                <CheckSquare className="w-4 h-4 text-purple-400" />
+                              ) : (
+                                <Square className="w-4 h-4 text-zinc-600" />
+                              )}
+                            </button>
+
                             <div className="w-16 h-10 rounded-lg overflow-hidden bg-black shrink-0 relative border border-white/10">
                               {task.thumbnail ? (
                                 <Image
@@ -1203,19 +1354,51 @@ export default function VideoDownloaderPage() {
                               {isCompleted && (
                                 <>
                                   <button
+                                    onClick={() => handleOpenPlayer(task)}
+                                    className="w-8 h-8 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                                    title="Open directly in macOS QuickTime / Media Player"
+                                  >
+                                    <Play className="w-4 h-4 fill-emerald-400/20" />
+                                  </button>
+
+                                  <button
+                                    onClick={() => handleRevealFinder(task)}
+                                    className="w-8 h-8 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                                    title="Reveal file in macOS Finder"
+                                  >
+                                    <Folder className="w-4 h-4" />
+                                  </button>
+
+                                  <button
+                                    onClick={() => setExportModalTask(task)}
+                                    className="w-8 h-8 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                                    title="Export & Convert (Apple ProRes/HEVC/H.264/MOV)"
+                                  >
+                                    <Apple className="w-4 h-4" />
+                                  </button>
+
+                                  <button
+                                    onClick={() => setDetailsModalTask(task)}
+                                    className="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 flex items-center justify-center transition-colors cursor-pointer"
+                                    title="Inspect media specs & exact file path"
+                                  >
+                                    <Info className="w-4 h-4" />
+                                  </button>
+
+                                  <button
                                     onClick={() => handleClipInStudio(task.task_id)}
                                     className="px-2.5 h-8 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-md shadow-purple-600/20 transition-all cursor-pointer"
                                     title="Open directly in AI Clipper to generate viral shorts"
                                   >
                                     <Scissors className="w-3.5 h-3.5" />
-                                    <span>Clip with AI</span>
+                                    <span className="hidden md:inline">Clip AI</span>
                                   </button>
 
                                   <a
                                     href={`/api/v1/downloader/file/${task.task_id}`}
                                     download={task.output_filename || 'download'}
                                     className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 flex items-center justify-center transition-colors cursor-pointer"
-                                    title="Download file to device"
+                                    title="Download file to browser"
                                   >
                                     <FolderDown className="w-4 h-4" />
                                   </a>
@@ -1223,9 +1406,9 @@ export default function VideoDownloaderPage() {
                               )}
 
                               <button
-                                onClick={() => handleDelete(task.task_id)}
+                                onClick={() => promptDeleteSingle(task)}
                                 className="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
-                                title="Delete task record"
+                                title="Delete task and media file"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1343,6 +1526,20 @@ export default function VideoDownloaderPage() {
                   >
                     <div className="space-y-3">
                       <div className="relative aspect-video rounded-lg overflow-hidden bg-black border border-white/10">
+                        {/* Multi-Select Checkbox */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSelectTask(item.task_id)}
+                          className="absolute top-2 left-2 z-20 p-1.5 rounded-md bg-black/75 hover:bg-black/90 backdrop-blur border border-white/20 text-white cursor-pointer"
+                          title={selectedTaskIds.has(item.task_id) ? "Deselect" : "Select"}
+                        >
+                          {selectedTaskIds.has(item.task_id) ? (
+                            <CheckSquare className="w-3.5 h-3.5 text-purple-400" />
+                          ) : (
+                            <Square className="w-3.5 h-3.5 text-zinc-400" />
+                          )}
+                        </button>
+
                         {item.thumbnail ? (
                           <Image
                             src={item.thumbnail}
@@ -1375,31 +1572,70 @@ export default function VideoDownloaderPage() {
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2">
-                      <button
-                        onClick={() => handleClipInStudio(item.task_id)}
-                        className="flex-1 h-8 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        <Scissors className="w-3.5 h-3.5" />
-                        <span>Clip with AI</span>
-                      </button>
+                    <div className="space-y-2 pt-2 border-t border-white/[0.06]">
+                      {/* macOS Native Actions Row */}
+                      <div className="grid grid-cols-4 gap-1.5">
+                        <button
+                          onClick={() => handleOpenPlayer(item as any)}
+                          className="h-7 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                          title="Open in QuickTime / Mac Player"
+                        >
+                          <Play className="w-3.5 h-3.5 fill-emerald-400/20" />
+                        </button>
 
-                      <a
-                        href={`/api/v1/downloader/file/${item.task_id}`}
-                        download={item.output_filename || 'download'}
-                        className="h-8 px-2.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-zinc-200 text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        <FolderDown className="w-3.5 h-3.5" />
-                        <span>Save</span>
-                      </a>
+                        <button
+                          onClick={() => handleRevealFinder(item as any)}
+                          className="h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                          title="Reveal in Finder"
+                        >
+                          <Folder className="w-3.5 h-3.5" />
+                        </button>
 
-                      <button
-                        onClick={() => handleDelete(item.task_id)}
-                        className="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
-                        title="Delete from history"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                        <button
+                          onClick={() => setExportModalTask(item as any)}
+                          className="h-7 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                          title="macOS Export & Convert"
+                        >
+                          <Apple className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                          onClick={() => setDetailsModalTask(item as any)}
+                          className="h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 border border-white/[0.08] flex items-center justify-center transition-colors cursor-pointer"
+                          title="File Specs & Location"
+                        >
+                          <Info className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* AI Clipping & Download & Delete */}
+                      <div className="flex items-center justify-between gap-2">
+                        <button
+                          onClick={() => handleClipInStudio(item.task_id)}
+                          className="flex-1 h-8 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Scissors className="w-3.5 h-3.5" />
+                          <span>Clip with AI</span>
+                        </button>
+
+                        <a
+                          href={`/api/v1/downloader/file/${item.task_id}`}
+                          download={item.output_filename || 'download'}
+                          className="h-8 px-2.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-zinc-200 text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                          title="Download file via browser"
+                        >
+                          <FolderDown className="w-3.5 h-3.5" />
+                          <span>Save</span>
+                        </a>
+
+                        <button
+                          onClick={() => promptDeleteSingle(item as any)}
+                          className="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
+                          title="Delete from history and disk"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1408,6 +1644,82 @@ export default function VideoDownloaderPage() {
           </div>
         )}
       </div>
+
+      {/* macOS Video Export Modal */}
+      {exportModalTask && (
+        <MacOSExportModal
+          isOpen={true}
+          taskId={exportModalTask.task_id}
+          sourcePath={exportModalTask.output_path || undefined}
+          title={exportModalTask.title}
+          defaultFilename={exportModalTask.output_filename || undefined}
+          onClose={() => setExportModalTask(null)}
+          onExportComplete={() => {
+            fetchTasks();
+          }}
+        />
+      )}
+
+      {/* File Details & Specs Modal */}
+      {detailsModalTask && (
+        <FileDetailsModal
+          isOpen={true}
+          taskId={detailsModalTask.task_id}
+          filePath={detailsModalTask.output_path || undefined}
+          onClose={() => setDetailsModalTask(null)}
+          onOpenExport={() => {
+            const t = detailsModalTask;
+            setDetailsModalTask(null);
+            setExportModalTask(t);
+          }}
+          onDeleted={() => {
+            setDetailsModalTask(null);
+            fetchTasks();
+          }}
+        />
+      )}
+
+      {/* Permanent Deletion Confirmation Modal */}
+      {deleteConfirmState && deleteConfirmState.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-2xl bg-[#111116] border border-rose-500/30 p-6 space-y-4 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 shrink-0">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-white">Confirm Permanent Deletion</h3>
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  {deleteConfirmState.taskIds.length === 1
+                    ? `Are you sure you want to permanently delete "${deleteConfirmState.title}" and its media file from your disk?`
+                    : `Are you sure you want to permanently delete ${deleteConfirmState.taskIds.length} selected video files from your disk?`}
+                </p>
+                <p className="text-[11px] text-rose-400/90 font-medium">
+                  This action cannot be undone. Files will be removed from your Mac storage.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDeleteConfirmState(null)}
+                className="text-xs text-zinc-400 hover:text-white"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={executeConfirmedDeletion}
+                className="bg-rose-600 hover:bg-rose-500 text-white text-xs px-4 py-2 rounded-xl"
+              >
+                Yes, Delete Permanently
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

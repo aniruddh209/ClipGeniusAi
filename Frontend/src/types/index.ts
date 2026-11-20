@@ -382,3 +382,82 @@ export interface StartDownloadPayload {
   expected_checksum?: string;
   checksum_type?: string;
 }
+
+export interface ExportFormatOption {
+  id: string;
+  name: string;
+  extension: string;
+  vcodec: string;
+  acodec: string;
+  description: string;
+  apple_compatible: boolean;
+}
+
+export interface AvailableQualityOption {
+  id: string;
+  label: string;
+  available: boolean;
+  resolution: string;
+  reason: string;
+}
+
+export interface MacOSDirectoryOption {
+  id: string;
+  name: string;
+  path: string;
+  icon: string;
+  exists: boolean;
+  writable: boolean;
+  free_space_gb: number;
+}
+
+export interface ExportVideoPayload {
+  source_path?: string;
+  task_id?: string;
+  clip_id?: string;
+  video_id?: string;
+  target_format: string;
+  target_quality: string;
+  destination_dir?: string;
+  custom_filename?: string;
+}
+
+export interface ExportVideoResponse {
+  success: boolean;
+  filename: string;
+  filepath: string;
+  directory: string;
+  size_bytes: number;
+  size_mb: number;
+  format: string;
+  format_name: string;
+  extension: string;
+  apple_compatible: boolean;
+  quality: string;
+  resolution: string;
+  fps: number;
+  video_codec: string;
+  audio_codec: string;
+  duration: number;
+  created_at: string;
+}
+
+export interface FileSpecsInfo {
+  filename: string;
+  filepath: string;
+  directory: string;
+  size_bytes: number;
+  size_mb: number;
+  size_gb: number;
+  extension: string;
+  video_codec?: string;
+  audio_codec?: string;
+  resolution?: string;
+  width?: number;
+  height?: number;
+  duration?: number;
+  fps?: number;
+  bitrate_kbps?: number;
+  last_modified?: number;
+}
+
