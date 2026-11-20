@@ -7,7 +7,32 @@ from app.core.logging import logger
 from app.core.database import connect_to_mongo, close_mongo_connection
 from app.services.video.downloader_manager import downloader_manager
 from app.services.downloader.engine import download_engine
+import subprocess
+from pathlib import Path
 from app.api.v1.router import api_router
+
+async def ensure_bgutil_running():
+    try:
+        import urllib.request
+        with urllib.request.urlopen("http://127.0.0.1:4416/ping", timeout=1.0) as r:
+            if r.status == 200:
+                logger.info("bgutil POT provider is active on port 4416")
+                return
+    except Exception:
+        pass
+
+    bgutil_path = Path.home() / "bgutil-ytdlp-pot-provider" / "server"
+    if bgutil_path.exists() and (bgutil_path / "src" / "main.ts").exists():
+        try:
+            subprocess.Popen(
+                ["deno", "run", "-A", "src/main.ts"],
+                cwd=str(bgutil_path),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            logger.info("Spawned bgutil POT provider daemon on port 4416")
+        except Exception as e:
+            logger.warning(f"Could not spawn bgutil POT provider: {e}")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -15,6 +40,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION}...")
     settings.DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
     await connect_to_mongo()
+    await ensure_bgutil_running()
     await downloader_manager.initialize()
     await download_engine.initialize()
     yield

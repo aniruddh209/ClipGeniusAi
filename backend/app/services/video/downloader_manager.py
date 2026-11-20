@@ -495,7 +495,11 @@ class DownloaderManager:
             "progress_hooks": [progress_hook],
             "prefer_ffmpeg": True,
             "http_chunk_size": 10485760,  # 10MB chunks
-            "socket_timeout": 60,
+            "socket_timeout": 30,
+            "http_headers": {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
         }
 
         # If audio format chosen, configure audio extraction
@@ -606,6 +610,31 @@ class DownloaderManager:
                     return
 
                 err_msg = str(e)
+                err_lower = err_msg.lower()
+                # Detect non-retryable fatal errors immediately without prolonged backoff hang
+                is_fatal = any(f in err_lower for f in [
+                    "unavailable", "private", "removed", "sign in", "copyright", "blocked", "not found"
+                ])
+                if is_fatal:
+                    clean_detail = err_msg
+                    if "unavailable" in err_lower:
+                        clean_detail = "Video is unavailable or removed on YouTube"
+                    elif "private" in err_lower:
+                        clean_detail = "Video is private on YouTube"
+                    elif "sign in" in err_lower:
+                        clean_detail = "YouTube requires sign-in verification for this video"
+                    logger.error(f"Fatal download error for task {task_id}: {clean_detail}")
+                    with self._lock:
+                        if task_id in self._tasks:
+                            t = self._tasks[task_id]
+                            t["status"] = "failed"
+                            t["speed_formatted"] = "Failed"
+                            t["eta_formatted"] = "Failed"
+                            t["error_message"] = clean_detail
+                            t["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    self._sync_save_task(self._tasks[task_id])
+                    return
+
                 # Check if partial file exists on disk
                 saved_bytes = 0
                 for p in target_dir.glob(f"{task_id}.*"):

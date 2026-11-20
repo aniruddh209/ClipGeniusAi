@@ -164,8 +164,14 @@ class YouTubeSourceProvider(BaseSourceProvider):
             "quiet": True,
             "no_warnings": True,
             "skip_download": True,
-            "socket_timeout": 30,
+            "socket_timeout": 20,
+            "http_headers": {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
         }
+
+        probe_error: Optional[Exception] = None
 
         def _sync_probe():
             try:
@@ -178,10 +184,14 @@ class YouTubeSourceProvider(BaseSourceProvider):
                     "quiet": True,
                     "no_warnings": True,
                     "skip_download": True,
-                    "socket_timeout": 30,
+                    "socket_timeout": 20,
+                    "http_headers": {
+                        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                        "Accept-Language": "en-US,en;q=0.9",
+                    },
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["web_embedded", "android"]
+                            "player_client": ["web_embedded", "mweb", "android"]
                         }
                     }
                 }
@@ -192,7 +202,21 @@ class YouTubeSourceProvider(BaseSourceProvider):
         try:
             stream_info = await asyncio.to_thread(_sync_probe)
         except Exception as e:
-            logger.warning(f"yt-dlp stream info probe encountered warning: {e}")
+            probe_error = e
+            logger.warning(f"yt-dlp stream info probe encountered error: {e}")
+
+        # If yt-dlp failed to obtain formats, raise clean descriptive error
+        if not stream_info or not stream_info.get("formats"):
+            err_msg = str(probe_error) if probe_error else "Could not load video streams"
+            err_lower = err_msg.lower()
+            if "unavailable" in err_lower or "not available" in err_lower:
+                raise ValueError("This YouTube video is unavailable or has been removed. Please check the URL.")
+            elif "private" in err_lower:
+                raise ValueError("This YouTube video is private and cannot be downloaded.")
+            elif "sign in" in err_lower:
+                raise ValueError("YouTube requires sign-in verification for this video.")
+            else:
+                raise ValueError(f"Could not load media streams for this video: {err_msg[:120]}")
 
         # Assemble metadata (prioritizing official YouTube Data API v3 where available)
         if api_item:
@@ -300,8 +324,10 @@ class YouTubeSourceProvider(BaseSourceProvider):
 
                     v_h = v.get("height") or 0
                     v_w = v.get("width") or 0
-                    # Strictly check that the stream meets this resolution target
-                    if v_h < target["min_h"] and v_w < target["min_w"]:
+                    max_dim = max(v_h, v_w)
+                    min_dim = min(v_h, v_w)
+                    # Support both standard landscape and vertical/shorts videos
+                    if min_dim < int(target["min_h"] * 0.85) and max_dim < int(target["min_w"] * 0.85):
                         continue
 
                     if target["height"] in found_heights:
@@ -343,22 +369,29 @@ class YouTubeSourceProvider(BaseSourceProvider):
             except Exception as e:
                 logger.warning(f"Error evaluating format for {target['res_label']}: {e}")
 
-        # Add "Original quality" / best verified fallback option if needed
-        if not confirmed_qualities:
-            confirmed_qualities.append(ConfirmedQualityOption(
-                format_id="bestvideo+bestaudio/best",
-                label="Original Quality",
-                resolution="Original quality",
-                height=1080,
-                fps=30.0,
-                ext="mp4",
-                filesize_bytes=None,
-                filesize_formatted="Original Quality",
-                type="video",
-                recommended=True,
-                badge="Best Master",
-                source_confirmed=True
-            ))
+        # Fallback only if no standard resolution bins matched
+        if not confirmed_qualities and raw_formats:
+            best_vid = sorted([f for f in raw_formats if f.get("vcodec") != "none"], key=lambda x: (x.get("height") or 0), reverse=True)
+            if best_vid:
+                bv = best_vid[0]
+                h = bv.get("height") or 720
+                fps = int(bv.get("fps") or 30)
+                sz = bv.get("filesize") or bv.get("filesize_approx")
+                sz_str = format_bytes(sz) if sz else "Adaptive Size"
+                confirmed_qualities.append(ConfirmedQualityOption(
+                    format_id="bestvideo+bestaudio/best",
+                    label=f"{h}p HD" if h >= 720 else f"{h}p",
+                    resolution=f"{h}p",
+                    height=h,
+                    fps=float(fps),
+                    ext="mp4",
+                    filesize_bytes=sz,
+                    filesize_formatted=sz_str,
+                    type="video",
+                    recommended=True,
+                    badge=f"{fps}fps • MP4",
+                    source_confirmed=True
+                ))
 
         # Add pure audio extraction option
         if audio_streams and duration > 0:
