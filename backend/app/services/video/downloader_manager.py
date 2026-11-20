@@ -167,15 +167,26 @@ class DownloaderManager:
             "no_warnings": True,
             "skip_download": True,
             "socket_timeout": 30,
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["ios", "android", "mweb", "web"]
-                }
-            }
         }
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(clean_url, download=False)
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(clean_url, download=False)
+        except Exception:
+            fallback_opts = {
+                "extract_flat": False,
+                "quiet": True,
+                "no_warnings": True,
+                "skip_download": True,
+                "socket_timeout": 30,
+                "extractor_args": {
+                    "youtube": {
+                        "player_client": ["web_embedded", "android"]
+                    }
+                }
+            }
+            with yt_dlp.YoutubeDL(fallback_opts) as ydl:
+                info = ydl.extract_info(clean_url, download=False)
 
         video_id = info.get("id", "")
         title = info.get("title", "Unknown Title")
@@ -198,24 +209,14 @@ class DownloaderManager:
         elif not audio_bytes:
             audio_bytes = 0
 
-        # Realistic streaming bitrates (kbps) for modern codecs (H.264 / VP9 / AV1)
-        typical_bitrates = {
-            2160: 12000,
-            1440: 6000,
-            1080: 2000,
-            720: 1000,
-            480: 500,
-            360: 300
-        }
-
-        # Resolution targets with widescreen / cinema aspect ratio tolerance
+        # Resolution targets with exact height and width ranges for accurate stream isolation
         target_res = [
-            {"name": "4K Ultra HD", "height": 2160, "res_label": "2160p (4K)", "min_height": 1800, "min_width": 3840},
-            {"name": "2K Quad HD", "height": 1440, "res_label": "1440p (2K)", "min_height": 1300, "min_width": 2560},
-            {"name": "Full HD", "height": 1080, "res_label": "1080p FHD", "min_height": 900, "min_width": 1920},
-            {"name": "HD Standard", "height": 720, "res_label": "720p HD", "min_height": 650, "min_width": 1280},
-            {"name": "SD Medium", "height": 480, "res_label": "480p SD", "min_height": 400, "min_width": 720},
-            {"name": "Compact", "height": 360, "res_label": "360p", "min_height": 300, "min_width": 540}
+            {"name": "4K Ultra HD", "height": 2160, "res_label": "2160p (4K)", "min_h": 1800, "max_h": 4320, "min_w": 3200, "max_w": 7680, "typical_kbps": 14000},
+            {"name": "2K Quad HD", "height": 1440, "res_label": "1440p (2K)", "min_h": 1200, "max_h": 1799, "min_w": 2200, "max_w": 3199, "typical_kbps": 7000},
+            {"name": "Full HD", "height": 1080, "res_label": "1080p FHD", "min_h": 850, "max_h": 1199, "min_w": 1500, "max_w": 2199, "typical_kbps": 2200},
+            {"name": "HD Standard", "height": 720, "res_label": "720p HD", "min_h": 600, "max_h": 849, "min_w": 1000, "max_w": 1499, "typical_kbps": 1100},
+            {"name": "SD Medium", "height": 480, "res_label": "480p SD", "min_h": 400, "max_h": 599, "min_w": 650, "max_w": 999, "typical_kbps": 550},
+            {"name": "Compact", "height": 360, "res_label": "360p", "min_h": 300, "max_h": 399, "min_w": 450, "max_w": 649, "typical_kbps": 320}
         ]
 
         found_heights = set()
@@ -224,8 +225,8 @@ class DownloaderManager:
                 f for f in raw_formats
                 if f.get("vcodec") != "none" and (
                     f.get("height") == target["height"] or
-                    (f.get("width") and f.get("width") >= target["min_width"]) or
-                    (f.get("height") and f.get("height") >= target["min_height"] and f.get("height") <= target["height"])
+                    (f.get("height") and target["min_h"] <= f.get("height") <= target["max_h"]) or
+                    (f.get("width") and target["min_w"] <= f.get("width") <= target["max_w"])
                 )
             ]
             if matching:
@@ -245,7 +246,7 @@ class DownloaderManager:
                 if v_size and v_size > 0:
                     combined_size = int(v_size + audio_bytes)
                 elif duration > 0:
-                    kbps = best_match.get("vbr") or typical_bitrates.get(target["height"], 2000)
+                    kbps = best_match.get("vbr") or best_match.get("tbr") or target["typical_kbps"]
                     combined_size = int((kbps * 1000 / 8) * duration) + audio_bytes
                 else:
                     combined_size = 0
@@ -489,11 +490,6 @@ class DownloaderManager:
             "prefer_ffmpeg": True,
             "http_chunk_size": 10485760,  # 10MB chunks
             "socket_timeout": 60,
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["ios", "android", "mweb", "web"]
-                }
-            }
         }
 
         # If audio format chosen, configure audio extraction
