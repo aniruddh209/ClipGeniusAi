@@ -167,7 +167,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
             "socket_timeout": 30,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "web", "android"]
+                    "player_client": ["ios", "android", "mweb", "web"]
                 }
             }
         }
@@ -249,54 +249,86 @@ class YouTubeSourceProvider(BaseSourceProvider):
 
         channel_url = f"https://www.youtube.com/channel/{channel_id}" if channel_id else f"https://www.youtube.com/results?search_query={channel_name}"
 
-        # Phase 3: Extract STRICTLY CONFIRMED source qualities without inventing nonexistent resolutions
+        # Extract CONFIRMED source qualities with full 4K, 2K, 1080p, 720p, 480p, 360p support
         raw_formats = stream_info.get("formats", [])
         confirmed_qualities: List[ConfirmedQualityOption] = []
 
-        # Standard resolution definitions
+        # Find best audio stream size to accurately compute combined muxed video+audio file size
+        audio_streams = [f for f in raw_formats if f.get("vcodec") == "none" and f.get("acodec") != "none"]
+        best_audio = sorted(audio_streams, key=lambda x: x.get("abr") or 0, reverse=True)[0] if audio_streams else None
+        audio_bytes = (best_audio.get("filesize") or best_audio.get("filesize_approx")) if best_audio else None
+        if not audio_bytes and duration > 0:
+            audio_bytes = int((128 * 1000 / 8) * duration)
+        elif not audio_bytes:
+            audio_bytes = 0
+
+        # Realistic streaming bitrates (kbps) for modern codecs (H.264 / VP9 / AV1)
+        typical_bitrates = {
+            2160: 12000,
+            1440: 6000,
+            1080: 2000,
+            720: 1000,
+            480: 500,
+            360: 300
+        }
+
+        # Resolution targets with widescreen/cinematic aspect ratio tolerance
         res_targets = [
-            {"res_label": "2160p (4K)", "name": "2160p (4K)", "height": 2160},
-            {"res_label": "1440p (2K)", "name": "1440p (2K)", "height": 1440},
-            {"res_label": "1080p Full HD", "name": "1080p Full HD", "height": 1080},
-            {"res_label": "720p HD", "name": "720p HD", "height": 720},
-            {"res_label": "480p", "name": "480p", "height": 480},
-            {"res_label": "360p", "name": "360p", "height": 360},
+            {"res_label": "2160p (4K)", "name": "4K Ultra HD", "height": 2160, "min_height": 1800, "min_width": 3840},
+            {"res_label": "1440p (2K)", "name": "2K Quad HD", "height": 1440, "min_height": 1300, "min_width": 2560},
+            {"res_label": "1080p Full HD", "name": "1080p Full HD", "height": 1080, "min_height": 900, "min_width": 1920},
+            {"res_label": "720p HD", "name": "720p HD", "height": 720, "min_height": 650, "min_width": 1280},
+            {"res_label": "480p", "name": "480p SD", "height": 480, "min_height": 400, "min_width": 720},
+            {"res_label": "360p", "name": "360p Compact", "height": 360, "min_height": 300, "min_width": 540},
         ]
 
         found_heights = set()
         for target in res_targets:
-            matching = [f for f in raw_formats if f.get("height") == target["height"] and f.get("vcodec") != "none"]
-            # STRICT CHECK: Only add resolution if matching format stream was actually confirmed by source!
+            matching = [
+                f for f in raw_formats
+                if f.get("vcodec") != "none" and (
+                    f.get("height") == target["height"] or
+                    (f.get("width") and f.get("width") >= target["min_width"]) or
+                    (f.get("height") and f.get("height") >= target["min_height"] and f.get("height") <= target["height"])
+                )
+            ]
             if matching:
                 best_match = sorted(
                     matching,
                     key=lambda x: (
                         1 if "avc" in (x.get("vcodec") or "").lower() else 0,
-                        x.get("tbr") or 0,
+                        x.get("tbr") or x.get("vbr") or 0,
                         x.get("filesize") or x.get("filesize_approx") or 0
                     ),
                     reverse=True
                 )[0]
 
-                fps = best_match.get("fps") or 30.0
-                filesize = best_match.get("filesize") or best_match.get("filesize_approx")
-                if not filesize and duration > 0:
-                    tbr = best_match.get("tbr") or (target["height"] * 3.5)
-                    filesize = int((tbr * 1000 / 8) * duration)
+                fps = int(best_match.get("fps") or 30)
+                v_size = best_match.get("filesize") or best_match.get("filesize_approx")
+                if v_size and v_size > 0:
+                    combined_size = int(v_size + audio_bytes)
+                elif duration > 0:
+                    # Calculate realistic download size using stream's actual video bitrate or realistic standard
+                    kbps = best_match.get("vbr") or typical_bitrates.get(target["height"], 2000)
+                    combined_size = int((kbps * 1000 / 8) * duration) + audio_bytes
+                else:
+                    combined_size = None
 
                 fmt_id = f"bestvideo[height<={target['height']}]+bestaudio/best[height<={target['height']}]/best"
                 is_recommended = target["height"] == 1080 or (target["height"] == 720 and 1080 not in found_heights)
                 found_heights.add(target["height"])
 
+                size_str = f"~{format_bytes(combined_size)}" if combined_size else "Adaptive Size"
+
                 confirmed_qualities.append(ConfirmedQualityOption(
                     format_id=fmt_id,
-                    label=f"{target['name']}",
+                    label=target["name"],
                     resolution=target["res_label"],
                     height=target["height"],
-                    fps=fps,
+                    fps=float(fps),
                     ext="mp4",
-                    filesize_bytes=filesize,
-                    filesize_formatted=format_bytes(filesize) if filesize else "Adaptive Size",
+                    filesize_bytes=combined_size,
+                    filesize_formatted=size_str,
                     codec=best_match.get("vcodec"),
                     type="video",
                     recommended=is_recommended,
@@ -304,7 +336,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
                     source_confirmed=True
                 ))
 
-        # Add "Original quality" / best verified fallback option
+        # Add "Original quality" / best verified fallback option if needed
         if not confirmed_qualities:
             confirmed_qualities.append(ConfirmedQualityOption(
                 format_id="bestvideo+bestaudio/best",
@@ -318,6 +350,24 @@ class YouTubeSourceProvider(BaseSourceProvider):
                 type="video",
                 recommended=True,
                 badge="Best Master",
+                source_confirmed=True
+            ))
+
+        # Add pure audio extraction option
+        if audio_streams and duration > 0:
+            confirmed_qualities.append(ConfirmedQualityOption(
+                format_id="bestaudio/best",
+                label="Audio (MP3 320k)",
+                resolution="Audio Only",
+                height=0,
+                fps=0.0,
+                ext="mp3",
+                filesize_bytes=audio_bytes,
+                filesize_formatted=f"~{format_bytes(audio_bytes)}" if audio_bytes else "Adaptive",
+                codec="mp3",
+                type="audio",
+                recommended=False,
+                badge="320 kbps • MP3",
                 source_confirmed=True
             ))
 

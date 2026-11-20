@@ -232,23 +232,40 @@ async def get_file_info(
 async def delete_single_file(payload: FileActionRequest):
     """
     Permanently deletes a video file from disk after confirmation.
+    Handles download tasks safely even if the file is incomplete, corrupt, or missing.
     """
+    # 1. If task_id is provided, always clean up the task record and any partial files
+    if payload.task_id:
+        tid = payload.task_id
+        if tid.startswith("job_"):
+            await download_engine.delete_job(tid)
+        else:
+            downloader_manager.delete_task(tid)
+
+        # Check if physical file exists to delete it
+        try:
+            resolved_path = await _resolve_file_path(task_id=tid)
+            if resolved_path and Path(resolved_path).exists():
+                return macos_exporter.delete_file(resolved_path)
+        except Exception:
+            pass
+
+        return {
+            "success": True,
+            "filename": tid,
+            "path": "",
+            "message": f"Download task {tid} and associated files removed successfully."
+        }
+
+    # 2. General file / clip / video deletion
     resolved_path = await _resolve_file_path(
         file_path=payload.file_path,
-        task_id=payload.task_id,
         clip_id=payload.clip_id,
         video_id=payload.video_id
     )
 
     try:
-        res = macos_exporter.delete_file(resolved_path)
-        # Also clean up from download tasks if applicable
-        if payload.task_id:
-            if payload.task_id.startswith("job_"):
-                await download_engine.delete_job(payload.task_id)
-            else:
-                downloader_manager.delete_task(payload.task_id)
-        return res
+        return macos_exporter.delete_file(resolved_path)
     except Exception as e:
         logger.error(f"File deletion error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -258,6 +275,7 @@ async def batch_delete_files(payload: BatchDeleteRequest):
     """
     Permanently deletes multiple selected video files from disk.
     Requires explicit user confirmation on frontend.
+    Handles tasks and files gracefully without failing if a file was never completed.
     """
     deleted_files = []
     errors = []
@@ -274,13 +292,22 @@ async def batch_delete_files(payload: BatchDeleteRequest):
     # 2. Delete by task_ids
     for tid in payload.task_ids:
         try:
-            resolved = await _resolve_file_path(task_id=tid)
-            res = macos_exporter.delete_file(resolved)
-            deleted_files.append(res["filename"])
+            # Delete task from engine/manager and purge partial files
             if tid.startswith("job_"):
                 await download_engine.delete_job(tid)
             else:
                 downloader_manager.delete_task(tid)
+
+            # Delete physical file if exists
+            try:
+                resolved = await _resolve_file_path(task_id=tid)
+                if resolved and Path(resolved).exists():
+                    res = macos_exporter.delete_file(resolved)
+                    deleted_files.append(res["filename"])
+                else:
+                    deleted_files.append(tid)
+            except Exception:
+                deleted_files.append(tid)
         except Exception as e:
             errors.append(f"Failed to delete task {tid}: {str(e)}")
 

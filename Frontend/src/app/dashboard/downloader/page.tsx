@@ -152,16 +152,26 @@ export default function VideoDownloaderPage() {
     const { taskIds } = deleteConfirmState;
     try {
       if (taskIds.length === 1) {
-        await api.deleteFile({ task_id: taskIds[0] });
+        try {
+          await api.deleteDownloaderTask(taskIds[0]);
+        } catch {
+          await api.deleteFile({ task_id: taskIds[0] });
+        }
       } else {
-        await api.batchDeleteFiles({ task_ids: taskIds });
+        try {
+          await api.batchDeleteDownloaderTasks(taskIds);
+        } catch {
+          await api.batchDeleteFiles({ task_ids: taskIds });
+        }
       }
       setSelectedTaskIds((prev) => {
         const next = new Set(prev);
         taskIds.forEach((id) => next.delete(id));
         return next;
       });
-      showNotification(`Successfully deleted ${taskIds.length} file(s) from disk.`, 'success');
+      setTasks((prev) => prev.filter((t) => !taskIds.includes(t.task_id)));
+      setHistoryTasks((prev) => prev.filter((t) => !taskIds.includes(t.task_id)));
+      showNotification(`Successfully deleted ${taskIds.length} download(s).`, 'success');
       await fetchTasks();
     } catch (e: any) {
       showNotification(`Deletion failed: ${e.message}`, 'error');
@@ -424,13 +434,13 @@ export default function VideoDownloaderPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold text-white tracking-tight">Video Downloader & Stream Engine</h1>
+                <h1 className="text-lg font-bold text-white tracking-tight">Video Downloader</h1>
                 <Badge variant="purple" className="text-[10px] uppercase font-semibold tracking-wider">
-                  Direct Ingest
+                  4K / HD
                 </Badge>
               </div>
               <p className="text-xs text-zinc-400">
-                Authorized media ingestion with YouTube Data API analysis and Studio creator workflow.
+                Download high-speed video streams directly to your Mac or import to AI Clipper for viral short creation.
               </p>
             </div>
           </div>
@@ -493,14 +503,14 @@ export default function VideoDownloaderPage() {
               <div className="max-w-3xl space-y-4">
                 <div className="flex items-center gap-2 text-xs font-semibold text-purple-400 tracking-wider uppercase">
                   <Zap className="w-3.5 h-3.5" />
-                  <span>Phase 1 • YouTube & Media Analysis</span>
+                  <span>Fast Video Downloader</span>
                 </div>
 
                 <h2 className="text-xl font-bold text-white tracking-tight">
-                  Paste YouTube or Supported Media URL
+                  Enter Video or Media Link
                 </h2>
                 <p className="text-xs text-zinc-400">
-                  Analyze public YouTube metadata via the YouTube Data API and verify confirmed source resolutions.
+                  Paste any YouTube video link, podcast, interview, or direct media URL (MP4, WebM, MOV).
                 </p>
 
                 <form onSubmit={handleAnalyze} className="pt-2">
@@ -513,7 +523,7 @@ export default function VideoDownloaderPage() {
                         type="url"
                         value={urlInput}
                         onChange={(e) => setUrlInput(e.target.value)}
-                        placeholder="https://www.youtube.com/watch?v=... or youtu.be link"
+                        placeholder="https://www.youtube.com/watch?v=... or direct MP4 link"
                         className="w-full h-11 pl-10 pr-24 rounded-xl bg-[#0e0e16] border border-white/[0.1] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/80 focus:ring-2 focus:ring-purple-500/20 transition-all font-mono"
                       />
                       <button
@@ -560,16 +570,13 @@ export default function VideoDownloaderPage() {
 
                 {/* Platform Support Pills */}
                 <div className="pt-2 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
-                  <span className="font-medium text-zinc-400">Supported Sources:</span>
-                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400 flex items-center gap-1">
+                  <span className="font-medium text-zinc-400">Supported:</span>
+                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-300 flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                    <span>YouTube (4K / 1080p / Shorts)</span>
+                    <span>YouTube (4K • 1080p • Shorts)</span>
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">
-                    YouTube Data API v3 Verified
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">
-                    Direct Cloud MP4 / WebM
+                    Direct Cloud MP4 / MOV / WebM
                   </span>
                 </div>
               </div>
@@ -846,7 +853,7 @@ export default function VideoDownloaderPage() {
                   </div>
                 )}
 
-                {/* THIRD PHASE: SOURCE QUALITY INTERFACE */}
+                {/* VIDEO QUALITY & FORMAT SELECTOR */}
                 <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-b from-[#110f1e] to-[#0a0912] p-6 shadow-2xl space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
                     <div className="flex items-center gap-2">
@@ -855,17 +862,17 @@ export default function VideoDownloaderPage() {
                       </div>
                       <div>
                         <h3 className="font-bold text-sm text-white">
-                          Phase 3 • Confirmed Source Qualities
+                          Select Download Quality
                         </h3>
                         <p className="text-[11px] text-zinc-400">
-                          Select from actual verified resolutions provided by the source stream.
+                          Choose your desired resolution and audio profile.
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <Badge variant="purple" className="text-[10px]">
-                        {availableQualities.length} Confirmed Qualities
+                        {availableQualities.length} Streams Available
                       </Badge>
                     </div>
                   </div>
@@ -875,10 +882,10 @@ export default function VideoDownloaderPage() {
                     <div className="flex items-center justify-between text-xs">
                       <label className="font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Available Source Resolutions (No Invented Qualities)</span>
+                        <span>Available Video & Audio Streams</span>
                       </label>
                       <span className="text-[11px] text-zinc-500">
-                        Confirmed via media streams
+                        Direct high-fidelity streams
                       </span>
                     </div>
 
@@ -1000,9 +1007,9 @@ export default function VideoDownloaderPage() {
                           onChange={(e: any) => setSaveDestination(e.target.value)}
                           className="w-full h-9 px-3 rounded-lg bg-[#0e0e16] border border-white/[0.1] text-xs text-zinc-200 focus:outline-none focus:border-purple-500/80 cursor-pointer"
                         >
-                          <option value="projects">ClipGenius Projects (Auto-Clip Ready)</option>
-                          <option value="downloads">Server Downloads Directory</option>
-                          <option value="custom">Custom Folder Path</option>
+                          <option value="downloads">💻 Save to My Mac (Downloads)</option>
+                          <option value="projects">✂️ Save to AI Studio (Auto-Clip Ready)</option>
+                          <option value="custom">📁 Custom Folder Path</option>
                         </select>
                       </div>
                     </div>
@@ -1136,26 +1143,20 @@ export default function VideoDownloaderPage() {
                 </div>
               </div>
 
-              {/* Interruption Recovery & Background Reliability Banner */}
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/30 via-indigo-950/20 to-zinc-900/50 border border-purple-500/25 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-lg shadow-purple-950/10">
-                <div className="flex items-start md:items-center gap-2.5">
-                  <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 shrink-0 mt-0.5 md:mt-0">
-                    <ShieldCheck className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="font-bold text-white flex items-center gap-1.5">
-                      Reliable Interruption Recovery Active
-                      <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono">Range Resumption</span>
-                    </span>
-                    <p className="text-[11px] text-zinc-400 mt-0.5">
-                      If Wi-Fi disconnects, your Mac sleeps, or the backend restarts, downloads automatically resume from the last verified byte without corrupting files.
-                    </p>
-                  </div>
+              {/* Download Engine Status Strip */}
+              <div className="p-3 px-4 rounded-xl bg-purple-950/20 border border-purple-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="font-semibold text-white">Resumable Download Engine</span>
+                  <span className="text-zinc-500 hidden sm:inline">•</span>
+                  <span className="text-zinc-400 text-[11px] hidden sm:inline">Auto-reconnects on network drops without file corruption.</span>
                 </div>
-                <div className="flex items-center gap-2 shrink-0 text-[11px] text-zinc-500 self-end md:self-center">
-                  <span className="hidden lg:inline text-zinc-400">Offline Daemon Mode:</span>
-                  <span className="px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-purple-300 font-mono text-[10px] flex items-center gap-1">
-                    <Apple className="w-3 h-3 text-white" /> Tauri Desktop Companion
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono shrink-0">
+                    Range Resumption
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20 text-[10px] font-mono shrink-0">
+                    macOS Native
                   </span>
                 </div>
               </div>

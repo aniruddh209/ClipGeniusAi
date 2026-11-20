@@ -193,7 +193,7 @@ class VideoDownloader:
             "http_chunk_size": 10485760,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "web", "android"]
+                    "player_client": ["ios", "android", "mweb", "web"]
                 }
             }
         }
@@ -217,7 +217,7 @@ class VideoDownloader:
                     "http_chunk_size": 10485760,
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["tv_samsung", "visionos", "web", "android"]
+                            "player_client": ["ios", "android", "mweb", "web"]
                         }
                     }
                 }

@@ -169,7 +169,7 @@ class DownloaderManager:
             "socket_timeout": 30,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "web", "android"]
+                    "player_client": ["ios", "android", "mweb", "web"]
                 }
             }
         }
@@ -189,37 +189,66 @@ class DownloaderManager:
         raw_formats = info.get("formats", [])
         available_formats: List[Dict[str, Any]] = []
 
-        # Standard resolution targets
+        # Locate audio streams to compute accurate combined file size
+        audio_streams = [f for f in raw_formats if f.get("vcodec") == "none" and f.get("acodec") != "none"]
+        best_audio = sorted(audio_streams, key=lambda x: x.get("abr") or 0, reverse=True)[0] if audio_streams else None
+        audio_bytes = (best_audio.get("filesize") or best_audio.get("filesize_approx")) if best_audio else None
+        if not audio_bytes and duration > 0:
+            audio_bytes = int((128 * 1000 / 8) * duration)
+        elif not audio_bytes:
+            audio_bytes = 0
+
+        # Realistic streaming bitrates (kbps) for modern codecs (H.264 / VP9 / AV1)
+        typical_bitrates = {
+            2160: 12000,
+            1440: 6000,
+            1080: 2000,
+            720: 1000,
+            480: 500,
+            360: 300
+        }
+
+        # Resolution targets with widescreen / cinema aspect ratio tolerance
         target_res = [
-            {"name": "4K Ultra HD", "height": 2160, "res_label": "2160p (4K)"},
-            {"name": "2K Quad HD", "height": 1440, "res_label": "1440p (2K)"},
-            {"name": "Full HD", "height": 1080, "res_label": "1080p FHD"},
-            {"name": "HD Standard", "height": 720, "res_label": "720p HD"},
-            {"name": "SD Medium", "height": 480, "res_label": "480p SD"},
-            {"name": "Compact", "height": 360, "res_label": "360p"}
+            {"name": "4K Ultra HD", "height": 2160, "res_label": "2160p (4K)", "min_height": 1800, "min_width": 3840},
+            {"name": "2K Quad HD", "height": 1440, "res_label": "1440p (2K)", "min_height": 1300, "min_width": 2560},
+            {"name": "Full HD", "height": 1080, "res_label": "1080p FHD", "min_height": 900, "min_width": 1920},
+            {"name": "HD Standard", "height": 720, "res_label": "720p HD", "min_height": 650, "min_width": 1280},
+            {"name": "SD Medium", "height": 480, "res_label": "480p SD", "min_height": 400, "min_width": 720},
+            {"name": "Compact", "height": 360, "res_label": "360p", "min_height": 300, "min_width": 540}
         ]
 
         found_heights = set()
         for target in target_res:
-            matching = [f for f in raw_formats if f.get("height") == target["height"] and f.get("vcodec") != "none"]
+            matching = [
+                f for f in raw_formats
+                if f.get("vcodec") != "none" and (
+                    f.get("height") == target["height"] or
+                    (f.get("width") and f.get("width") >= target["min_width"]) or
+                    (f.get("height") and f.get("height") >= target["min_height"] and f.get("height") <= target["height"])
+                )
+            ]
             if matching:
                 # Select best matching stream with standard codecs or avc1
                 best_match = sorted(
                     matching,
                     key=lambda x: (
                         1 if "avc" in (x.get("vcodec") or "").lower() else 0,
-                        x.get("tbr") or 0,
+                        x.get("tbr") or x.get("vbr") or 0,
                         x.get("filesize") or x.get("filesize_approx") or 0
                     ),
                     reverse=True
                 )[0]
 
-                fps = best_match.get("fps") or 30
-                filesize = best_match.get("filesize") or best_match.get("filesize_approx")
-                if not filesize and duration:
-                    # Estimate based on bitrate
-                    tbr = best_match.get("tbr") or (target["height"] * 3.5)
-                    filesize = int((tbr * 1000 / 8) * duration)
+                fps = int(best_match.get("fps") or 30)
+                v_size = best_match.get("filesize") or best_match.get("filesize_approx")
+                if v_size and v_size > 0:
+                    combined_size = int(v_size + audio_bytes)
+                elif duration > 0:
+                    kbps = best_match.get("vbr") or typical_bitrates.get(target["height"], 2000)
+                    combined_size = int((kbps * 1000 / 8) * duration) + audio_bytes
+                else:
+                    combined_size = 0
 
                 fmt_id = f"bestvideo[height<={target['height']}]+bestaudio/best[height<={target['height']}]/best"
                 is_recommended = target["height"] == 1080 or (target["height"] == 720 and 1080 not in found_heights)
@@ -232,8 +261,8 @@ class DownloaderManager:
                     "height": target["height"],
                     "fps": fps,
                     "ext": "mp4",
-                    "filesize_bytes": filesize or 0,
-                    "filesize_formatted": format_bytes(filesize) if filesize else "Adaptive Size",
+                    "filesize_bytes": combined_size,
+                    "filesize_formatted": f"~{format_bytes(combined_size)}" if combined_size else "Adaptive Size",
                     "type": "video",
                     "recommended": is_recommended,
                     "badge": f"{fps}fps • MP4"
@@ -462,7 +491,7 @@ class DownloaderManager:
             "socket_timeout": 60,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "web", "android"]
+                    "player_client": ["ios", "android", "mweb", "web"]
                 }
             }
         }
