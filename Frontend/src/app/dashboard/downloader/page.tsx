@@ -339,13 +339,17 @@ export default function VideoDownloaderPage() {
   };
 
   // Batch actions
-  const handleBatch = async (action: 'pause_all' | 'resume_all' | 'download_all' | 'clear_completed') => {
+  const handleBatch = async (
+    action: 'pause_all' | 'resume_all' | 'download_all' | 'clear_completed' | 'retry_failed' | 'cancel_all'
+  ) => {
     try {
       await api.batchDownloaderAction(action);
       const actionMap = {
         pause_all: 'All active downloads paused',
         resume_all: 'Resuming all downloads',
         download_all: 'Starting all downloads',
+        retry_failed: 'Retrying all failed & interrupted downloads',
+        cancel_all: 'All active downloads cancelled',
         clear_completed: 'Cleared completed records',
       };
       showNotification(actionMap[action], 'info');
@@ -1088,7 +1092,7 @@ export default function VideoDownloaderPage() {
                   <button
                     onClick={() => handleBatch('resume_all')}
                     className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-                    title="Resume all paused downloads"
+                    title="Resume all paused and interrupted downloads"
                   >
                     <Play className="w-3.5 h-3.5 text-emerald-400" />
                     <span className="hidden sm:inline">Resume All</span>
@@ -1104,6 +1108,24 @@ export default function VideoDownloaderPage() {
                   </button>
 
                   <button
+                    onClick={() => handleBatch('retry_failed')}
+                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-blue-300 hover:text-white border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Retry all failed and interrupted downloads"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-blue-400" />
+                    <span className="hidden sm:inline">Retry Failed</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleBatch('cancel_all')}
+                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Cancel all active downloads"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Cancel All</span>
+                  </button>
+
+                  <button
                     onClick={() => handleBatch('clear_completed')}
                     className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-zinc-200 border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Clear completed tasks from view"
@@ -1111,6 +1133,30 @@ export default function VideoDownloaderPage() {
                     <CheckCircle2 className="w-3.5 h-3.5 text-purple-400" />
                     <span className="hidden sm:inline">Clear Done</span>
                   </button>
+                </div>
+              </div>
+
+              {/* Interruption Recovery & Background Reliability Banner */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/30 via-indigo-950/20 to-zinc-900/50 border border-purple-500/25 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-lg shadow-purple-950/10">
+                <div className="flex items-start md:items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 shrink-0 mt-0.5 md:mt-0">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-white flex items-center gap-1.5">
+                      Reliable Interruption Recovery Active
+                      <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono">Range Resumption</span>
+                    </span>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      If Wi-Fi disconnects, your Mac sleeps, or the backend restarts, downloads automatically resume from the last verified byte without corrupting files.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 text-[11px] text-zinc-500 self-end md:self-center">
+                  <span className="hidden lg:inline text-zinc-400">Offline Daemon Mode:</span>
+                  <span className="px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-purple-300 font-mono text-[10px] flex items-center gap-1">
+                    <Apple className="w-3 h-3 text-white" /> Tauri Desktop Companion
+                  </span>
                 </div>
               </div>
 
@@ -1331,7 +1377,18 @@ export default function VideoDownloaderPage() {
                                 </button>
                               )}
 
-                              {(isInterrupted || isFailed) && (
+                              {isInterrupted && (
+                                <button
+                                  onClick={() => handleResume(task.task_id)}
+                                  className="h-8 px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer"
+                                  title="Resume interrupted download from last verified byte"
+                                >
+                                  <Play className="w-3.5 h-3.5" />
+                                  <span>Resume</span>
+                                </button>
+                              )}
+
+                              {isFailed && (
                                 <button
                                   onClick={() => handleRetry(task.task_id)}
                                   className="w-8 h-8 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 flex items-center justify-center transition-colors cursor-pointer"
@@ -1341,7 +1398,7 @@ export default function VideoDownloaderPage() {
                                 </button>
                               )}
 
-                              {(isDownloading || isPaused || isConnecting) && (
+                              {(isDownloading || isPaused || isConnecting || isInterrupted) && (
                                 <button
                                   onClick={() => handleCancel(task.task_id)}
                                   className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
@@ -1450,10 +1507,26 @@ export default function VideoDownloaderPage() {
                           </div>
                         </div>
 
-                        {/* Error Message if failed */}
+                        {/* Message for Interrupted or Failed tasks */}
+                        {isInterrupted && task.error_message && (
+                          <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                              <span>{task.error_message}</span>
+                            </div>
+                            <button
+                              onClick={() => handleResume(task.task_id)}
+                              className="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-semibold cursor-pointer shrink-0"
+                            >
+                              Resume
+                            </button>
+                          </div>
+                        )}
+
                         {isFailed && task.error_message && (
-                          <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[11px] text-rose-300">
-                            {task.error_message}
+                          <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[11px] text-rose-300 flex items-center gap-2">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+                            <span>{task.error_message}</span>
                           </div>
                         )}
                       </div>

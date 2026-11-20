@@ -210,10 +210,28 @@ async def delete_task(task_id: str):
         raise HTTPException(status_code=404, detail="Task not found")
     return {"success": True, "task_id": task_id}
 
+class BatchDeleteRequest(BaseModel):
+    task_ids: List[str]
+
+@router.post("/batch-delete")
+async def batch_delete_tasks(payload: BatchDeleteRequest):
+    """
+    Batch permanently deletes selected tasks and removes partial/output media files
+    """
+    deleted_ids = []
+    for tid in payload.task_ids:
+        if tid.startswith("job_"):
+            success = await download_engine.delete_job(tid)
+        else:
+            success = downloader_manager.delete_task(tid)
+        if success:
+            deleted_ids.append(tid)
+    return {"success": True, "deleted_count": len(deleted_ids), "deleted_ids": deleted_ids}
+
 @router.post("/batch/{action}")
 async def batch_action(action: str):
     """
-    Batch actions: download_all, pause_all, resume_all, clear_completed
+    Batch actions: download_all, pause_all, resume_all, retry_failed, cancel_all, clear_completed
     """
     act = action.lower()
     if act == "pause_all":
@@ -229,9 +247,17 @@ async def batch_action(action: str):
                 await download_engine.resume_job(j["job_id"])
         downloader_manager.resume_all()
         return await get_all_tasks()
+    elif act == "retry_failed":
+        await download_engine.retry_failed()
+        downloader_manager.retry_failed()
+        return await get_all_tasks()
+    elif act == "cancel_all":
+        await download_engine.cancel_all()
+        downloader_manager.cancel_all()
+        return await get_all_tasks()
     elif act == "clear_completed":
         for j in download_engine.get_all_jobs():
-            if j.get("status") in ["completed", "failed"]:
+            if j.get("status") in ["completed", "failed", "cancelled"]:
                 await download_engine.delete_job(j["job_id"])
         downloader_manager.clear_completed()
         return await get_all_tasks()

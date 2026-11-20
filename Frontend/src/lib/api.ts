@@ -622,7 +622,7 @@ class ApiClient {
   }
 
   async batchDownloaderAction(
-    action: 'pause_all' | 'resume_all' | 'download_all' | 'clear_completed'
+    action: 'pause_all' | 'resume_all' | 'download_all' | 'retry_failed' | 'cancel_all' | 'clear_completed'
   ): Promise<DownloadTask[]> {
     const res = await fetch(`${this.baseUrl}/downloader/batch/${action}`, {
       method: 'POST',
@@ -630,6 +630,19 @@ class ApiClient {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
       throw new Error(err.detail || `Failed to execute batch action '${action}'`);
+    }
+    return res.json();
+  }
+
+  async batchDeleteDownloaderTasks(taskIds: string[]): Promise<{ success: boolean; deleted_count: number; deleted_ids: string[] }> {
+    const res = await fetch(`${this.baseUrl}/downloader/batch-delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task_ids: taskIds }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to delete selected download tasks');
     }
     return res.json();
   }

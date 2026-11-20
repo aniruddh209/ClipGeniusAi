@@ -72,7 +72,7 @@ class DownloaderManager:
         self._main_loop: Optional[asyncio.AbstractEventLoop] = None
 
     async def initialize(self):
-        """Loads existing tasks from database into cache on startup"""
+        """Loads existing tasks from database into cache on startup and restores queues safely"""
         try:
             self._main_loop = asyncio.get_running_loop()
         except Exception:
@@ -86,9 +86,41 @@ class DownloaderManager:
                 cursor = db.download_tasks.find().sort("created_at", -1)
                 async for doc in cursor:
                     doc["_id"] = str(doc.get("_id", ""))
-                    # If server restarted while downloading, set to paused
+                    target_dir = Path(doc.get("destination_dir") or settings.DOWNLOADS_DIR)
+                    task_id = doc.get("task_id")
+
+                    # Scan disk for partial files
+                    found_part_size = 0
+                    if target_dir.exists():
+                        for p in target_dir.glob(f"{task_id}.*"):
+                            if p.name.endswith(".part") or p.name.endswith(".ytdl"):
+                                try:
+                                    found_part_size = max(found_part_size, p.stat().st_size)
+                                except Exception:
+                                    pass
+
+                    if found_part_size > 0:
+                        doc["downloaded_bytes"] = found_part_size
+                        if doc.get("total_bytes") and doc["total_bytes"] > 0:
+                            doc["progress_percentage"] = min(99.0, round((found_part_size / doc["total_bytes"]) * 100.0, 1))
+
+                    # If server restarted while downloading, set to interrupted (safe recovery state)
                     if doc.get("status") in ["downloading", "queued"]:
-                        doc["status"] = "paused"
+                        doc["status"] = "interrupted"
+                        doc["speed_formatted"] = "Interrupted"
+                        doc["eta_formatted"] = "Interrupted"
+                        doc["error_message"] = f"Backend was restarted. Partial media preserved safely ({format_bytes(found_part_size)}). Ready to resume."
+                        await db.download_tasks.update_one(
+                            {"task_id": doc["task_id"]},
+                            {"$set": {
+                                "status": "interrupted",
+                                "speed_formatted": "Interrupted",
+                                "eta_formatted": "Interrupted",
+                                "downloaded_bytes": doc["downloaded_bytes"],
+                                "progress_percentage": doc["progress_percentage"],
+                                "error_message": doc["error_message"]
+                            }}
+                        )
                     self._tasks[doc["task_id"]] = doc
             except Exception as e:
                 logger.warning(f"Could not load download tasks from MongoDB: {e}")
@@ -279,9 +311,24 @@ class DownloaderManager:
         estimated_size: Optional[int] = None
     ) -> Dict[str, Any]:
         """
-        Creates and registers a new download task
+        Creates and registers a new download task with deduplication
         """
         clean_url = sanitize_media_url(url)
+
+        # Deduplication check: avoid duplicate download tasks for the same media
+        with self._lock:
+            for existing in self._tasks.values():
+                if existing.get("url") == clean_url and existing.get("format_id") == format_id:
+                    st = existing.get("status")
+                    if st in ["downloading", "queued", "paused", "interrupted"]:
+                        logger.info(f"Duplicate download task requested for {clean_url}. Returning existing task {existing['task_id']} (status: {st})")
+                        return existing
+                    elif st == "completed":
+                        out_p = existing.get("output_path")
+                        if out_p and Path(out_p).exists():
+                            logger.info(f"Completed task already exists on disk for {clean_url}. Returning existing task {existing['task_id']}")
+                            return existing
+
         task_id = f"dl_{uuid.uuid4().hex[:10]}"
         now = datetime.now(timezone.utc).isoformat()
 
@@ -431,71 +478,9 @@ class DownloaderManager:
         else:
             ydl_opts["merge_output_format"] = ext
 
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(clean_url, download=True)
-                title = info.get("title") or task["title"]
-                thumbnail = info.get("thumbnail") or task["thumbnail"]
+        max_attempts = 4
 
-            # Locate completed file
-            found_file: Optional[Path] = None
-            for p in target_dir.glob(f"{task_id}.*"):
-                if not p.name.endswith(".part") and not p.name.endswith(".ytdl"):
-                    found_file = p
-                    break
-
-            if not found_file or not found_file.exists():
-                raise FileNotFoundError(f"Target download file was not created in {target_dir}")
-
-            file_size = found_file.stat().st_size
-            safe_title = re.sub(r'[\\/*?:"<>|]', "", title).strip() or "video"
-            final_name = f"{safe_title[:60]}_{task_id[-4:]}.{found_file.suffix.lstrip('.')}"
-            final_path = target_dir / final_name
-
-            # Rename to friendly user-facing name
-            if found_file != final_path:
-                shutil.move(str(found_file), str(final_path))
-
-            # Set download URL
-            if task["save_destination"] == "projects":
-                download_url = f"/uploads/{final_path.name}"
-            else:
-                download_url = f"/downloads/{final_path.name}"
-
-            with self._lock:
-                if task_id in self._tasks:
-                    t = self._tasks[task_id]
-                    t["status"] = "completed"
-                    t["title"] = title
-                    t["thumbnail"] = thumbnail
-                    t["output_path"] = str(final_path)
-                    t["output_filename"] = final_path.name
-                    t["download_url"] = download_url
-                    t["downloaded_bytes"] = file_size
-                    t["total_bytes"] = file_size
-                    t["progress_percentage"] = 100.0
-                    t["speed_formatted"] = "0.0 MB/s"
-                    t["eta_formatted"] = "Completed"
-                    now_str = datetime.now(timezone.utc).isoformat()
-                    t["completed_at"] = now_str
-                    t["updated_at"] = now_str
-
-            self._sync_save_task(self._tasks[task_id])
-            logger.info(f"Download task {task_id} completed successfully -> {final_path.name}")
-
-        except KeyboardInterrupt:
-            # User paused the task
-            with self._lock:
-                if task_id in self._tasks:
-                    t = self._tasks[task_id]
-                    t["status"] = "paused"
-                    t["speed_formatted"] = "Paused"
-                    t["eta_formatted"] = "Paused"
-                    t["updated_at"] = datetime.now(timezone.utc).isoformat()
-            self._sync_save_task(self._tasks[task_id])
-            logger.info(f"Download task {task_id} paused by user")
-
-        except Exception as e:
+        for attempt in range(max_attempts):
             if stop_event.is_set():
                 with self._lock:
                     if task_id in self._tasks:
@@ -507,17 +492,129 @@ class DownloaderManager:
                 self._sync_save_task(self._tasks[task_id])
                 return
 
-            err_msg = str(e)
-            logger.error(f"Download task {task_id} failed: {err_msg}")
-            with self._lock:
-                if task_id in self._tasks:
-                    t = self._tasks[task_id]
-                    t["status"] = "failed"
-                    t["error_message"] = err_msg
-                    t["speed_formatted"] = "Failed"
-                    t["eta_formatted"] = "--:--"
-                    t["updated_at"] = datetime.now(timezone.utc).isoformat()
-            self._sync_save_task(self._tasks[task_id])
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(clean_url, download=True)
+                    title = info.get("title") or task["title"]
+                    thumbnail = info.get("thumbnail") or task["thumbnail"]
+
+                # Locate completed file
+                found_file: Optional[Path] = None
+                for p in target_dir.glob(f"{task_id}.*"):
+                    if not p.name.endswith(".part") and not p.name.endswith(".ytdl"):
+                        found_file = p
+                        break
+
+                if not found_file or not found_file.exists():
+                    raise FileNotFoundError(f"Target download file was not created in {target_dir}")
+
+                file_size = found_file.stat().st_size
+                if file_size == 0:
+                    raise ValueError("Downloaded file is 0 bytes.")
+
+                safe_title = re.sub(r'[\\/*?:"<>|]', "", title).strip() or "video"
+                final_name = f"{safe_title[:60]}_{task_id[-4:]}.{found_file.suffix.lstrip('.')}"
+                final_path = target_dir / final_name
+
+                # Rename to friendly user-facing name
+                if found_file != final_path:
+                    shutil.move(str(found_file), str(final_path))
+
+                # Set download URL
+                if task["save_destination"] == "projects":
+                    download_url = f"/uploads/{final_path.name}"
+                else:
+                    download_url = f"/downloads/{final_path.name}"
+
+                with self._lock:
+                    if task_id in self._tasks:
+                        t = self._tasks[task_id]
+                        t["status"] = "completed"
+                        t["title"] = title
+                        t["thumbnail"] = thumbnail
+                        t["output_path"] = str(final_path)
+                        t["output_filename"] = final_path.name
+                        t["download_url"] = download_url
+                        t["downloaded_bytes"] = file_size
+                        t["total_bytes"] = file_size
+                        t["progress_percentage"] = 100.0
+                        t["speed_formatted"] = "0.0 MB/s"
+                        t["eta_formatted"] = "Completed"
+                        t["error_message"] = None
+                        now_str = datetime.now(timezone.utc).isoformat()
+                        t["completed_at"] = now_str
+                        t["updated_at"] = now_str
+
+                self._sync_save_task(self._tasks[task_id])
+                logger.info(f"Download task {task_id} completed successfully -> {final_path.name}")
+                return
+
+            except KeyboardInterrupt:
+                # User paused the task
+                with self._lock:
+                    if task_id in self._tasks:
+                        t = self._tasks[task_id]
+                        t["status"] = "paused"
+                        t["speed_formatted"] = "Paused"
+                        t["eta_formatted"] = "Paused"
+                        t["updated_at"] = datetime.now(timezone.utc).isoformat()
+                self._sync_save_task(self._tasks[task_id])
+                logger.info(f"Download task {task_id} paused by user")
+                return
+
+            except Exception as e:
+                if stop_event.is_set():
+                    with self._lock:
+                        if task_id in self._tasks:
+                            t = self._tasks[task_id]
+                            t["status"] = "paused"
+                            t["speed_formatted"] = "Paused"
+                            t["eta_formatted"] = "Paused"
+                            t["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    self._sync_save_task(self._tasks[task_id])
+                    return
+
+                err_msg = str(e)
+                # Check if partial file exists on disk
+                saved_bytes = 0
+                for p in target_dir.glob(f"{task_id}.*"):
+                    if p.name.endswith(".part") or p.name.endswith(".ytdl"):
+                        try:
+                            saved_bytes = max(saved_bytes, p.stat().st_size)
+                        except Exception:
+                            pass
+
+                if attempt < max_attempts - 1:
+                    backoff = min(20.0, 2.0 * (2 ** attempt))
+                    logger.warning(f"Task {task_id} interrupted (attempt {attempt + 1}/{max_attempts}): {err_msg}. Auto-retrying in {int(backoff)}s...")
+                    with self._lock:
+                        if task_id in self._tasks:
+                            t = self._tasks[task_id]
+                            t["status"] = "connecting"
+                            t["speed_formatted"] = f"Reconnecting in {int(backoff)}s..."
+                            t["error_message"] = f"Network disconnected ({err_msg[:60]}). Auto-retrying with backoff (Attempt {attempt + 2}/{max_attempts}). Partial media preserved ({format_bytes(saved_bytes)})."
+                            t["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    self._sync_save_task(self._tasks[task_id])
+
+                    # Sleep with responsive stop check
+                    for _ in range(int(backoff / 0.2)):
+                        if stop_event.is_set():
+                            return
+                        time.sleep(0.2)
+                else:
+                    # All automatic retries exhausted (Mac asleep or prolonged network loss)
+                    # Safely transition to INTERRUPTED (not failed!), keeping partial files intact on disk
+                    logger.warning(f"Download task {task_id} set to INTERRUPTED state after {max_attempts} attempts. Preserved {saved_bytes} bytes.")
+                    with self._lock:
+                        if task_id in self._tasks:
+                            t = self._tasks[task_id]
+                            t["status"] = "interrupted"
+                            t["speed_formatted"] = "Interrupted"
+                            t["eta_formatted"] = "Interrupted"
+                            t["error_message"] = f"Download interrupted ({err_msg[:80]}). Partial download saved safely ({format_bytes(saved_bytes)}). Ready to resume."
+                            t["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    self._sync_save_task(self._tasks[task_id])
+                    return
 
     def pause_download(self, task_id: str) -> Dict[str, Any]:
         """Pauses an active download, preserving downloaded bytes in .part file"""
@@ -637,9 +734,23 @@ class DownloaderManager:
 
     def resume_all(self) -> List[Dict[str, Any]]:
         with self._lock:
-            paused_ids = [t["task_id"] for t in self._tasks.values() if t["status"] in ["paused", "queued"]]
+            paused_ids = [t["task_id"] for t in self._tasks.values() if t["status"] in ["paused", "queued", "interrupted"]]
         for tid in paused_ids:
             self.resume_download(tid)
+        return self.get_all_tasks()
+
+    def retry_failed(self) -> List[Dict[str, Any]]:
+        with self._lock:
+            failed_ids = [t["task_id"] for t in self._tasks.values() if t["status"] in ["failed", "interrupted"]]
+        for tid in failed_ids:
+            self.resume_download(tid)
+        return self.get_all_tasks()
+
+    def cancel_all(self) -> List[Dict[str, Any]]:
+        with self._lock:
+            active_ids = [t["task_id"] for t in self._tasks.values() if t["status"] in ["downloading", "queued", "connecting", "paused", "interrupted"]]
+        for tid in active_ids:
+            self.cancel_download(tid)
         return self.get_all_tasks()
 
     def download_all(self) -> List[Dict[str, Any]]:

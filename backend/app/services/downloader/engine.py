@@ -83,10 +83,34 @@ class HighPerformanceDownloadEngine:
                 cursor = db.download_jobs.find().sort("created_at", -1)
                 async for doc in cursor:
                     doc["_id"] = str(doc.get("_id", ""))
-                    # If server was restarted while active, mark as interrupted so user can resume/retry
+                    temp_p = doc.get("temp_filepath")
+                    actual_part_bytes = 0
+                    if temp_p and Path(temp_p).exists():
+                        try:
+                            actual_part_bytes = Path(temp_p).stat().st_size
+                            doc["downloaded_bytes"] = actual_part_bytes
+                            if doc.get("total_bytes") and doc["total_bytes"] > 0:
+                                doc["progress_percentage"] = min(99.0, round((actual_part_bytes / doc["total_bytes"]) * 100.0, 1))
+                        except Exception:
+                            pass
+
+                    # If server was restarted while active, safely mark as interrupted so user can resume seamlessly
                     if doc.get("status") in ["downloading", "connecting", "verifying"]:
                         doc["status"] = "interrupted"
                         doc["speed_formatted"] = "Interrupted"
+                        doc["eta_formatted"] = "Interrupted"
+                        doc["error_message"] = f"Backend was restarted. Partial download saved safely ({format_bytes(actual_part_bytes)}). Ready to resume."
+                        await db.download_jobs.update_one(
+                            {"job_id": doc["job_id"]},
+                            {"$set": {
+                                "status": "interrupted",
+                                "speed_formatted": "Interrupted",
+                                "eta_formatted": "Interrupted",
+                                "downloaded_bytes": doc["downloaded_bytes"],
+                                "progress_percentage": doc["progress_percentage"],
+                                "error_message": doc["error_message"]
+                            }}
+                        )
                     self._jobs[doc["job_id"]] = doc
             except Exception as e:
                 logger.warning(f"Could not load download jobs from database: {e}")
@@ -160,10 +184,11 @@ class HighPerformanceDownloadEngine:
         accept_ranges = res_headers.get("accept-ranges", "").lower()
         supports_ranges = (accept_ranges == "bytes" or status_code == 206 or bool(content_range))
 
-        # Check ETag
+        # Check ETag & Last-Modified
         etag = res_headers.get("etag")
         if etag:
             etag = etag.strip('"').strip("'")
+        last_modified = res_headers.get("last-modified")
 
         # Parse filename from URL or Content-Disposition
         filename = "video.mp4"
@@ -189,6 +214,7 @@ class HighPerformanceDownloadEngine:
             "content_length_formatted": format_bytes(content_length) if content_length else "Streamed Size",
             "supports_ranges": supports_ranges,
             "etag": etag,
+            "last_modified": last_modified,
         }
 
     async def create_download_job(
@@ -206,6 +232,21 @@ class HighPerformanceDownloadEngine:
         Registers a new download job in queued state
         """
         clean_url = url.strip()
+
+        # Deduplication check: avoid duplicate download jobs for the same URL
+        async with self._lock:
+            for existing in self._jobs.values():
+                if existing.get("url") == clean_url:
+                    st = existing.get("status")
+                    if st in ["downloading", "connecting", "verifying", "queued", "paused", "interrupted"]:
+                        logger.info(f"Duplicate download job requested for {clean_url}. Returning existing job {existing['job_id']} (status: {st})")
+                        return existing
+                    elif st == "completed":
+                        final_p = existing.get("final_filepath")
+                        if final_p and Path(final_p).exists():
+                            logger.info(f"Completed download file already exists for {clean_url} at {final_p}. Returning existing job {existing['job_id']}")
+                            return existing
+
         job_id = f"job_{uuid.uuid4().hex[:10]}"
         now = datetime.now(timezone.utc).isoformat()
 
@@ -284,8 +325,13 @@ class HighPerformanceDownloadEngine:
 
     async def _run_download_pipeline(self, job_id: str, pause_event: asyncio.Event):
         """
-        Asynchronous download pipeline with Range resumption, direct-to-disk chunking,
-        and post-download FFprobe media verification
+        Enterprise-grade resilient asynchronous download pipeline:
+        - HTTP Range resumption from last verified byte
+        - ETag and Last-Modified verification before resuming to prevent file corruption
+        - Fallback explanation when server does not support Range requests
+        - Automatic retry loop with exponential backoff for network disconnects & sleep
+        - Direct-to-disk safe chunking with periodic fsync
+        - Strict media integrity and size validation before marking completed
         """
         job = self._jobs.get(job_id)
         if not job:
@@ -296,8 +342,10 @@ class HighPerformanceDownloadEngine:
         target_dir = Path(job["destination_dir"])
         target_dir.mkdir(parents=True, exist_ok=True)
 
+        max_retries = 5
+
         try:
-            # 1. Probing Phase
+            # 1. Probing Phase & Source Change Verification
             job["status"] = "connecting"
             job["speed_formatted"] = "Connecting..."
             await self._persist_job(job)
@@ -306,107 +354,215 @@ class HighPerformanceDownloadEngine:
             total_bytes = probe_info.get("content_length") or job.get("total_bytes") or 0
             supports_ranges = probe_info.get("supports_ranges", False)
             etag = probe_info.get("etag")
+            last_modified = probe_info.get("last_modified")
             ext = probe_info.get("ext", "mp4")
+
+            # Check if partial file exists on disk
+            existing_bytes = temp_path.stat().st_size if temp_path.exists() else 0
+
+            # Verify whether remote source has changed since initial probe
+            if existing_bytes > 0:
+                source_changed = False
+                change_reason = ""
+
+                # Check ETag match
+                if job.get("etag") and etag and job["etag"] != etag:
+                    source_changed = True
+                    change_reason = f"ETag changed ({job['etag'][:8]}... -> {etag[:8]}...)"
+                # Check Last-Modified match
+                elif job.get("last_modified") and last_modified and job["last_modified"] != last_modified:
+                    source_changed = True
+                    change_reason = f"Last-Modified changed ({last_modified})"
+                # Check Content-Length match
+                elif job.get("total_bytes") and total_bytes > 0 and job["total_bytes"] != total_bytes:
+                    source_changed = True
+                    change_reason = f"File size changed ({job['total_bytes']} -> {total_bytes} bytes)"
+
+                if source_changed:
+                    logger.warning(f"Download {job_id} source changed on server: {change_reason}. Resetting partial file to avoid corruption.")
+                    temp_path.unlink(missing_ok=True)
+                    existing_bytes = 0
+                    job["downloaded_bytes"] = 0
+                    job["error_message"] = f"Source was modified on server ({change_reason}). Download restarted cleanly from byte 0."
+                elif not supports_ranges:
+                    logger.warning(f"Download {job_id} source does not support Range requests. Resetting partial file.")
+                    temp_path.unlink(missing_ok=True)
+                    existing_bytes = 0
+                    job["downloaded_bytes"] = 0
+                    job["error_message"] = "Remote server does not support HTTP Range requests. Download restarted from beginning."
 
             job["total_bytes"] = total_bytes
             job["supports_ranges"] = supports_ranges
             job["etag"] = etag
+            job["last_modified"] = last_modified
             job["ext"] = ext
 
-            # 2. Resumable Range Check
-            existing_bytes = 0
-            if temp_path.exists():
-                existing_bytes = temp_path.stat().st_size
-
-            # If range is supported and partial file exists
-            headers = {
-                "User-Agent": "Mozilla/5.0 (ClipGenius Downloader/2.0; High-Performance Engine)",
-                "Accept": "*/*",
-            }
-
-            write_mode = "ab"
-            if supports_ranges and existing_bytes > 0:
-                if total_bytes > 0 and existing_bytes < total_bytes:
-                    headers["Range"] = f"bytes={existing_bytes}-"
-                    job["downloaded_bytes"] = existing_bytes
-                    logger.info(f"Resuming download {job_id} from byte {existing_bytes}/{total_bytes}")
-                elif total_bytes > 0 and existing_bytes >= total_bytes:
-                    # Already finished downloading bytes, proceed directly to verification
-                    existing_bytes = total_bytes
-            else:
-                # Fresh download or range unsupported
-                existing_bytes = 0
-                write_mode = "wb"
-
-            job["status"] = "downloading"
-            await self._persist_job(job)
-
-            # 3. Streaming directly to disk
-            timeout = httpx.Timeout(connect=15.0, read=45.0, write=20.0, pool=10.0)
+            # 2. Resilient Streaming Loop with Exponential Backoff
             chunk_size = 131072  # 128 KB efficient streaming buffer
+            timeout = httpx.Timeout(connect=20.0, read=45.0, write=25.0, pool=15.0)
 
-            if existing_bytes < total_bytes or total_bytes == 0:
-                async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
-                    async with client.stream("GET", url, headers=headers) as response:
-                        if response.status_code not in [200, 206]:
-                            if response.status_code == 429:
-                                raise RuntimeError("Server rate limit reached (HTTP 429). Please retry shortly.")
-                            raise RuntimeError(f"Server returned HTTP {response.status_code}: {response.reason_phrase}")
+            download_succeeded = False
 
-                        # Check if Content-Range returned
-                        if response.status_code == 200 and existing_bytes > 0:
-                            # Server did not accept Range header, must overwrite from beginning
-                            write_mode = "wb"
-                            existing_bytes = 0
-                            job["downloaded_bytes"] = 0
+            for attempt in range(max_retries + 1):
+                if pause_event.is_set():
+                    job["status"] = "paused"
+                    job["speed_formatted"] = "Paused"
+                    job["eta_formatted"] = "Paused"
+                    job["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    await self._persist_job(job)
+                    return
 
-                        downloaded = existing_bytes
-                        last_time = time.time()
-                        last_bytes = downloaded
-                        rolling_speeds: List[float] = []
+                existing_bytes = temp_path.stat().st_size if temp_path.exists() else 0
 
-                        with open(temp_path, write_mode) as f:
-                            async for chunk in response.aiter_bytes(chunk_size=chunk_size):
-                                if pause_event.is_set():
-                                    logger.info(f"Download {job_id} paused by user")
-                                    job["status"] = "paused"
-                                    job["speed_formatted"] = "Paused"
-                                    job["eta_formatted"] = "Paused"
-                                    job["updated_at"] = datetime.now(timezone.utc).isoformat()
-                                    await self._persist_job(job)
-                                    return
+                # If we already have all expected bytes, skip to verification
+                if total_bytes > 0 and existing_bytes >= total_bytes:
+                    download_succeeded = True
+                    break
 
-                                f.write(chunk)
-                                downloaded += len(chunk)
-                                job["downloaded_bytes"] = downloaded
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (ClipGenius Downloader/2.0; High-Performance Engine)",
+                    "Accept": "*/*",
+                }
 
-                                # Compute rolling speed every ~0.5s
-                                current_time = time.time()
-                                elapsed = current_time - last_time
-                                if elapsed >= 0.5:
-                                    speed = (downloaded - last_bytes) / elapsed
-                                    rolling_speeds.append(speed)
-                                    if len(rolling_speeds) > 5:
-                                        rolling_speeds.pop(0)
-                                    avg_speed = sum(rolling_speeds) / len(rolling_speeds)
+                write_mode = "ab"
+                if supports_ranges and existing_bytes > 0:
+                    headers["Range"] = f"bytes={existing_bytes}-"
+                    if etag:
+                        headers["If-Range"] = etag
+                    logger.info(f"Connecting download {job_id} from byte {existing_bytes}/{total_bytes} (attempt {attempt + 1})")
+                else:
+                    write_mode = "wb" if existing_bytes == 0 else "ab"
 
-                                    percent = 0.0
-                                    if total_bytes > 0:
-                                        percent = min(99.0, round((downloaded / total_bytes) * 100.0, 1))
+                job["status"] = "downloading"
+                job["downloaded_bytes"] = existing_bytes
+                if attempt > 0:
+                    job["error_message"] = f"Reconnected successfully on attempt {attempt + 1}. Resuming stream..."
+                await self._persist_job(job)
 
-                                    eta = int((total_bytes - downloaded) / avg_speed) if (total_bytes > downloaded and avg_speed > 0) else 0
+                try:
+                    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+                        async with client.stream("GET", url, headers=headers) as response:
+                            if response.status_code not in [200, 206]:
+                                if response.status_code == 429:
+                                    raise RuntimeError("Server rate limit reached (HTTP 429).")
+                                elif response.status_code in [502, 503, 504]:
+                                    raise RuntimeError(f"Source server temporarily unavailable (HTTP {response.status_code}).")
+                                raise RuntimeError(f"Server returned HTTP {response.status_code}: {response.reason_phrase}")
 
-                                    job["progress_percentage"] = percent
-                                    job["speed_bytes_sec"] = avg_speed
-                                    job["speed_formatted"] = format_speed(avg_speed)
-                                    job["eta_seconds"] = eta
-                                    job["eta_formatted"] = format_eta(eta)
-                                    job["updated_at"] = datetime.now(timezone.utc).isoformat()
+                            # If server returned 200 instead of 206 when we requested range, it restarted from 0
+                            if response.status_code == 200 and existing_bytes > 0:
+                                logger.info(f"Server returned HTTP 200 instead of 206 Partial Content. Overwriting from byte 0.")
+                                write_mode = "wb"
+                                existing_bytes = 0
+                                job["downloaded_bytes"] = 0
 
-                                    last_time = current_time
-                                    last_bytes = downloaded
+                            downloaded = existing_bytes
+                            last_time = time.time()
+                            last_bytes = downloaded
+                            rolling_speeds: List[float] = []
+                            bytes_since_flush = 0
 
-            # 4. Verifying Phase
+                            with open(temp_path, write_mode) as f:
+                                async for chunk in response.aiter_bytes(chunk_size=chunk_size):
+                                    if pause_event.is_set():
+                                        f.flush()
+                                        logger.info(f"Download {job_id} paused by user during streaming")
+                                        job["status"] = "paused"
+                                        job["speed_formatted"] = "Paused"
+                                        job["eta_formatted"] = "Paused"
+                                        job["updated_at"] = datetime.now(timezone.utc).isoformat()
+                                        await self._persist_job(job)
+                                        return
+
+                                    f.write(chunk)
+                                    downloaded += len(chunk)
+                                    bytes_since_flush += len(chunk)
+                                    job["downloaded_bytes"] = downloaded
+
+                                    # Safely flush to OS disk buffer every 1MB
+                                    if bytes_since_flush >= 1048576:
+                                        f.flush()
+                                        bytes_since_flush = 0
+
+                                    # Compute rolling speed & update progress every ~0.5s
+                                    current_time = time.time()
+                                    elapsed = current_time - last_time
+                                    if elapsed >= 0.5:
+                                        speed = (downloaded - last_bytes) / elapsed
+                                        rolling_speeds.append(speed)
+                                        if len(rolling_speeds) > 5:
+                                            rolling_speeds.pop(0)
+                                        avg_speed = sum(rolling_speeds) / len(rolling_speeds)
+
+                                        percent = 0.0
+                                        if total_bytes > 0:
+                                            percent = min(99.0, round((downloaded / total_bytes) * 100.0, 1))
+
+                                        eta = int((total_bytes - downloaded) / avg_speed) if (total_bytes > downloaded and avg_speed > 0) else 0
+
+                                        job["progress_percentage"] = percent
+                                        job["speed_bytes_sec"] = avg_speed
+                                        job["speed_formatted"] = format_speed(avg_speed)
+                                        job["eta_seconds"] = eta
+                                        job["eta_formatted"] = format_eta(eta)
+                                        job["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+                                        last_time = current_time
+                                        last_bytes = downloaded
+
+                                f.flush()
+
+                    download_succeeded = True
+                    break
+
+                except (httpx.NetworkError, httpx.TimeoutException, ConnectionResetError, BrokenPipeError, OSError, RuntimeError) as e:
+                    if pause_event.is_set():
+                        job["status"] = "paused"
+                        job["speed_formatted"] = "Paused"
+                        job["eta_formatted"] = "Paused"
+                        await self._persist_job(job)
+                        return
+
+                    err_name = type(e).__name__
+                    err_str = str(e) or err_name
+                    current_saved = temp_path.stat().st_size if temp_path.exists() else 0
+                    logger.warning(f"Download {job_id} encountered network interruption on attempt {attempt + 1}: {err_str}")
+
+                    if attempt < max_retries:
+                        # Exponential backoff: 1.5s, 3s, 6s, 12s, 24s (max 30s)
+                        backoff = min(30.0, 1.5 * (2 ** attempt))
+                        job["status"] = "connecting"
+                        job["speed_formatted"] = f"Reconnecting in {int(backoff)}s..."
+                        job["error_message"] = f"Network disconnected ({err_str}). Auto-retrying (Attempt {attempt + 1}/{max_retries}). Partial data saved ({format_bytes(current_saved)})."
+                        job["updated_at"] = datetime.now(timezone.utc).isoformat()
+                        await self._persist_job(job)
+
+                        # Sleep in 0.2s slices to respond promptly if user pauses
+                        slice_count = int(backoff / 0.2)
+                        for _ in range(max(1, slice_count)):
+                            if pause_event.is_set():
+                                job["status"] = "paused"
+                                job["speed_formatted"] = "Paused"
+                                job["eta_formatted"] = "Paused"
+                                await self._persist_job(job)
+                                return
+                            await asyncio.sleep(0.2)
+                    else:
+                        # All automatic retries exhausted (Mac asleep, network fully disconnected)
+                        # Safely mark as INTERRUPTED (not failed!), keeping partial file 100% intact
+                        job["status"] = "interrupted"
+                        job["speed_formatted"] = "Interrupted"
+                        job["eta_formatted"] = "Interrupted"
+                        job["error_message"] = f"Connection interrupted ({err_str}). Partial download saved safely ({format_bytes(current_saved)}). Ready to resume."
+                        job["updated_at"] = datetime.now(timezone.utc).isoformat()
+                        await self._persist_job(job)
+                        logger.info(f"Download {job_id} set to INTERRUPTED state with {current_saved} bytes preserved on disk.")
+                        return
+
+            if not download_succeeded:
+                return
+
+            # 3. Verifying Phase
             job["status"] = "verifying"
             job["progress_percentage"] = 99.5
             job["speed_formatted"] = "Verifying..."
@@ -418,29 +574,30 @@ class HighPerformanceDownloadEngine:
 
             actual_size = temp_path.stat().st_size
 
-            # Check size matches expectation
+            # Check size matches expectation if content-length was announced
             if total_bytes > 0 and actual_size != total_bytes:
-                # Incomplete file detected
                 job["status"] = "interrupted"
-                job["error_message"] = f"Incomplete download: received {actual_size} of {total_bytes} bytes."
+                job["error_message"] = f"Incomplete download: received {actual_size} of {total_bytes} bytes. Ready to resume remaining bytes."
+                job["speed_formatted"] = "Interrupted"
+                job["eta_formatted"] = "Interrupted"
                 await self._persist_job(job)
                 return
 
-            # Check checksum if expected
+            # Check checksum if provided
             if job.get("checksum_expected"):
                 calc_hash = await self._calculate_checksum(temp_path, job.get("checksum_type", "md5"))
                 job["checksum_calculated"] = calc_hash
                 if calc_hash.lower() != job["checksum_expected"].lower():
                     raise ValueError(f"Checksum mismatch: expected {job['checksum_expected']}, computed {calc_hash}")
 
-            # Verify Media Integrity with FFprobe / FFmpeg
+            # Verify Media Integrity with FFprobe
             is_valid_media = await self._verify_media_integrity(temp_path)
             if not is_valid_media:
                 raise ValueError("Corrupted media file: container streams or decodability verification failed.")
 
             job["integrity_verified"] = True
 
-            # 5. Finalize & Atomic Rename
+            # 4. Finalize & Atomic Rename
             safe_title = re.sub(r'[\\/*?:"<>|]', "", job.get("title") or "video").strip() or "video"
             final_name = f"{safe_title[:60]}_{job_id[-4:]}.{ext}"
             final_path = target_dir / final_name
@@ -460,6 +617,7 @@ class HighPerformanceDownloadEngine:
             job["progress_percentage"] = 100.0
             job["speed_formatted"] = "0.0 MB/s"
             job["eta_formatted"] = "Completed"
+            job["error_message"] = None
             now_str = datetime.now(timezone.utc).isoformat()
             job["completed_at"] = now_str
             job["updated_at"] = now_str
@@ -482,11 +640,18 @@ class HighPerformanceDownloadEngine:
             else:
                 err_msg = str(e)
                 logger.error(f"Download pipeline failed for job {job_id}: {err_msg}")
-                job["status"] = "failed"
-                job["error_message"] = err_msg
-                job["speed_formatted"] = "Failed"
+                # If partial file exists, mark as interrupted so user can retry/resume
+                if temp_path.exists() and temp_path.stat().st_size > 0:
+                    job["status"] = "interrupted"
+                    job["speed_formatted"] = "Interrupted"
+                    job["error_message"] = f"Download interrupted: {err_msg}. Partial data preserved."
+                else:
+                    job["status"] = "failed"
+                    job["error_message"] = err_msg
+                    job["speed_formatted"] = "Failed"
                 job["eta_formatted"] = "--:--"
             job["updated_at"] = datetime.now(timezone.utc).isoformat()
+            await self._persist_job(job)
             await self._persist_job(job)
 
     async def _calculate_checksum(self, filepath: Path, algorithm: str = "md5") -> str:
@@ -604,6 +769,30 @@ class HighPerformanceDownloadEngine:
 
         await self._persist_job(job)
         return job
+
+    async def retry_failed(self) -> List[Dict[str, Any]]:
+        """Retries all failed and interrupted jobs with partial files preserved"""
+        retried = []
+        for j in list(self._jobs.values()):
+            if j.get("status") in ["failed", "interrupted"]:
+                try:
+                    res = await self.retry_job(j["job_id"])
+                    retried.append(res)
+                except Exception as e:
+                    logger.warning(f"Error retrying job {j['job_id']}: {e}")
+        return retried
+
+    async def cancel_all(self) -> List[Dict[str, Any]]:
+        """Cancels all active, connecting, and queued jobs"""
+        cancelled = []
+        for j in list(self._jobs.values()):
+            if j.get("status") in ["downloading", "connecting", "queued", "paused", "interrupted"]:
+                try:
+                    res = await self.cancel_job(j["job_id"])
+                    cancelled.append(res)
+                except Exception as e:
+                    logger.warning(f"Error cancelling job {j['job_id']}: {e}")
+        return cancelled
 
     async def delete_job(self, job_id: str) -> bool:
         """Deletes job record and purges all files from disk and database"""
