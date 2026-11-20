@@ -181,7 +181,7 @@ class VideoDownloader:
         logger.info(f"Initiating yt-dlp download for URL: {clean_url} -> {video_id}")
 
         ydl_opts = {
-            "format": "bestvideo[vcodec^=avc1][height<=720]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best[height<=480]/best",
+            "format": "bestvideo[vcodec^=avc1][height<=1080]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/18/best",
             "outtmpl": output_template,
             "merge_output_format": "mp4",
             "noplaylist": True,
@@ -190,6 +190,12 @@ class VideoDownloader:
             "prefer_ffmpeg": True,
             "remote_components": ["ejs:github"],
             "socket_timeout": 45,
+            "http_chunk_size": 10485760,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["tv_samsung", "visionos", "web", "android"]
+                }
+            }
         }
 
         def _sync_download():
@@ -203,11 +209,17 @@ class VideoDownloader:
             logger.error(f"yt-dlp primary download failed for {clean_url}: {e}")
             try:
                 fallback_opts = {
-                    "format": "best",
+                    "format": "18/bestvideo+bestaudio/best",
                     "outtmpl": output_template,
                     "noplaylist": True,
                     "quiet": True,
                     "prefer_ffmpeg": True,
+                    "http_chunk_size": 10485760,
+                    "extractor_args": {
+                        "youtube": {
+                            "player_client": ["tv_samsung", "visionos", "web", "android"]
+                        }
+                    }
                 }
                 def _fallback_download():
                     with yt_dlp.YoutubeDL(fallback_opts) as ydl:

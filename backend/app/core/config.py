@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: Path = BASE_DIR / "uploads"
     OUTPUT_DIR: Path = BASE_DIR / "outputs"
     GENERATED_CLIPS_DIR: Path = BASE_DIR / "generated-clips"
+    DOWNLOADS_DIR: Path = BASE_DIR / "downloads"
     THUMBNAIL_DIR: Path = UPLOAD_DIR / "thumbnails"
     
     # Video & AI Processing

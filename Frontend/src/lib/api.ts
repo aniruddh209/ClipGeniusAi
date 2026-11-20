@@ -18,7 +18,10 @@ import {
   StorageSummaryResponse,
   StorageCleanupResponse,
   ProbeUrlResponse,
-  CandidateClip
+  CandidateClip,
+  VideoAnalysisResult,
+  DownloadTask,
+  StartDownloadPayload
 } from '@/types';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1';
@@ -493,6 +496,131 @@ class ApiClient {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
       throw new Error(err.detail || 'Failed to clean up storage');
+    }
+    return res.json();
+  }
+
+  // --- Video Downloader Module API ---
+  async analyzeDownloaderUrl(url: string): Promise<VideoAnalysisResult> {
+    const res = await fetch(`${this.baseUrl}/downloader/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to analyze video stream');
+    }
+    return res.json();
+  }
+
+  async startDownloaderTask(payload: StartDownloadPayload): Promise<DownloadTask> {
+    const res = await fetch(`${this.baseUrl}/downloader/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to start download task');
+    }
+    return res.json();
+  }
+
+  async getDownloaderTasks(): Promise<DownloadTask[]> {
+    const res = await fetch(`${this.baseUrl}/downloader/tasks`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch download tasks: ${res.statusText}`);
+    }
+    return res.json();
+  }
+
+  async getDownloaderTask(taskId: string): Promise<DownloadTask> {
+    const res = await fetch(`${this.baseUrl}/downloader/tasks/${taskId}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch task ${taskId}: ${res.statusText}`);
+    }
+    return res.json();
+  }
+
+  async pauseDownloaderTask(taskId: string): Promise<DownloadTask> {
+    const res = await fetch(`${this.baseUrl}/downloader/tasks/${taskId}/pause`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to pause task');
+    }
+    return res.json();
+  }
+
+  async resumeDownloaderTask(taskId: string): Promise<DownloadTask> {
+    const res = await fetch(`${this.baseUrl}/downloader/tasks/${taskId}/resume`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to resume task');
+    }
+    return res.json();
+  }
+
+  async cancelDownloaderTask(taskId: string): Promise<DownloadTask> {
+    const res = await fetch(`${this.baseUrl}/downloader/tasks/${taskId}/cancel`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to cancel task');
+    }
+    return res.json();
+  }
+
+  async deleteDownloaderTask(taskId: string): Promise<{ success: boolean; task_id: string }> {
+    const res = await fetch(`${this.baseUrl}/downloader/tasks/${taskId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to delete task');
+    }
+    return res.json();
+  }
+
+  async batchDownloaderAction(
+    action: 'pause_all' | 'resume_all' | 'download_all' | 'clear_completed'
+  ): Promise<DownloadTask[]> {
+    const res = await fetch(`${this.baseUrl}/downloader/batch/${action}`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || `Failed to execute batch action '${action}'`);
+    }
+    return res.json();
+  }
+
+  async getDownloaderHistory(): Promise<DownloadTask[]> {
+    const res = await fetch(`${this.baseUrl}/downloader/history`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch history: ${res.statusText}`);
+    }
+    return res.json();
+  }
+
+  async clipDownloadedVideo(taskId: string): Promise<{ success: boolean; video_id: string; message: string; video: VideoItem }> {
+    const res = await fetch(`${this.baseUrl}/downloader/tasks/${taskId}/clip`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to import video into AI Clipper');
     }
     return res.json();
   }

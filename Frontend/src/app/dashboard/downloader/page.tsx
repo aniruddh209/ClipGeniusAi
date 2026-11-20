@@ -1,0 +1,1077 @@
+'use client';
+
+import React, { useState, useEffect, useRef, useTransition } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { 
+  DownloadCloud, 
+  Search, 
+  Play, 
+  Pause, 
+  X, 
+  Trash2, 
+  RotateCcw, 
+  CheckCircle2, 
+  AlertCircle, 
+  Film, 
+  Scissors, 
+  ExternalLink, 
+  FolderDown, 
+  HardDrive, 
+  Sparkles, 
+  Zap, 
+  FileVideo, 
+  Music, 
+  Check, 
+  Clock, 
+  ArrowRight,
+  ClipboardPaste,
+  ShieldCheck,
+  RefreshCw,
+  FolderOpen
+} from 'lucide-react';
+import { api } from '@/lib/api';
+import { VideoAnalysisResult, VideoFormatOption, DownloadTask } from '@/types';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/Badge';
+
+export default function VideoDownloaderPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'history' ? 'history' : 'downloader';
+
+  const [activeTab, setActiveTab] = useState<'downloader' | 'history'>(initialTab);
+  const [urlInput, setUrlInput] = useState<string>('');
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<VideoAnalysisResult | null>(null);
+
+  // Form selection
+  const [selectedFormat, setSelectedFormat] = useState<VideoFormatOption | null>(null);
+  const [selectedExt, setSelectedExt] = useState<string>('mp4');
+  const [saveDestination, setSaveDestination] = useState<'downloads' | 'projects' | 'custom'>('projects');
+  const [customPath, setCustomPath] = useState<string>('');
+  const [isStartingDownload, setIsStartingDownload] = useState<boolean>(false);
+
+  // Download tasks & polling
+  const [tasks, setTasks] = useState<DownloadTask[]>([]);
+  const [historyTasks, setHistoryTasks] = useState<DownloadTask[]>([]);
+  const [searchFilter, setSearchFilter] = useState<string>('');
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const managerRef = useRef<HTMLDivElement>(null);
+
+  // Sync tab with URL if param changes
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'history') {
+      setActiveTab('history');
+    } else {
+      setActiveTab('downloader');
+    }
+  }, [searchParams]);
+
+  const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 4500);
+  };
+
+  // Fetch tasks
+  const fetchTasks = async () => {
+    try {
+      const data = await api.getDownloaderTasks();
+      setTasks(data);
+      const hist = data.filter((t) => t.status === 'completed');
+      setHistoryTasks(hist);
+    } catch {
+      // ignore
+    }
+  };
+
+  // Live polling every 1.5 seconds when there are active downloads
+  useEffect(() => {
+    fetchTasks();
+    const interval = setInterval(() => {
+      fetchTasks();
+    }, 1500);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Handle URL Analysis
+  const handleAnalyze = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const clean = urlInput.trim();
+    if (!clean) {
+      setAnalysisError('Please enter a valid video link.');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    setAnalysisResult(null);
+    setSelectedFormat(null);
+
+    try {
+      const result = await api.analyzeDownloaderUrl(clean);
+      setAnalysisResult(result);
+
+      // Select default recommended format
+      const recommended = result.formats.find((f) => f.recommended) || result.formats[0];
+      if (recommended) {
+        setSelectedFormat(recommended);
+        setSelectedExt(recommended.ext);
+      }
+      showNotification(`Analyzed: "${result.title.slice(0, 45)}..."`, 'success');
+    } catch (err: any) {
+      setAnalysisError(err.message || 'Failed to analyze video URL. Please check the link and try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Paste from clipboard helper
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setUrlInput(text);
+        setAnalysisError(null);
+      }
+    } catch {
+      showNotification('Unable to access clipboard. Please paste manually.', 'error');
+    }
+  };
+
+  // Start Download
+  const handleStartDownload = async () => {
+    if (!analysisResult || !selectedFormat) return;
+
+    setIsStartingDownload(true);
+    try {
+      const created = await api.startDownloaderTask({
+        url: analysisResult.url,
+        format_id: selectedFormat.format_id,
+        ext: selectedExt,
+        resolution: selectedFormat.resolution,
+        save_destination: saveDestination,
+        custom_path: saveDestination === 'custom' ? customPath : undefined,
+        title: analysisResult.title,
+        thumbnail: analysisResult.thumbnail || undefined,
+        estimated_size: selectedFormat.filesize_bytes || undefined,
+      });
+
+      showNotification(`Started download: ${analysisResult.title.slice(0, 35)}...`, 'success');
+      fetchTasks();
+
+      // Smooth scroll to Download Manager section
+      if (managerRef.current) {
+        managerRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    } catch (err: any) {
+      showNotification(err.message || 'Failed to start download', 'error');
+    } finally {
+      setIsStartingDownload(false);
+    }
+  };
+
+  // Task Control actions
+  const handlePause = async (taskId: string) => {
+    try {
+      await api.pauseDownloaderTask(taskId);
+      showNotification('Download paused', 'info');
+      fetchTasks();
+    } catch (err: any) {
+      showNotification(err.message || 'Could not pause', 'error');
+    }
+  };
+
+  const handleResume = async (taskId: string) => {
+    try {
+      await api.resumeDownloaderTask(taskId);
+      showNotification('Download resumed', 'success');
+      fetchTasks();
+    } catch (err: any) {
+      showNotification(err.message || 'Could not resume', 'error');
+    }
+  };
+
+  const handleCancel = async (taskId: string) => {
+    try {
+      await api.cancelDownloaderTask(taskId);
+      showNotification('Download cancelled', 'info');
+      fetchTasks();
+    } catch (err: any) {
+      showNotification(err.message || 'Could not cancel', 'error');
+    }
+  };
+
+  const handleDelete = async (taskId: string) => {
+    try {
+      await api.deleteDownloaderTask(taskId);
+      showNotification('Download removed', 'info');
+      fetchTasks();
+    } catch (err: any) {
+      showNotification(err.message || 'Could not delete', 'error');
+    }
+  };
+
+  // Batch actions
+  const handleBatch = async (action: 'pause_all' | 'resume_all' | 'download_all' | 'clear_completed') => {
+    try {
+      await api.batchDownloaderAction(action);
+      const actionMap = {
+        pause_all: 'All active downloads paused',
+        resume_all: 'Resuming all downloads',
+        download_all: 'Starting all downloads',
+        clear_completed: 'Cleared completed records',
+      };
+      showNotification(actionMap[action], 'info');
+      fetchTasks();
+    } catch (err: any) {
+      showNotification(err.message || 'Batch action failed', 'error');
+    }
+  };
+
+  // Clip directly in AI Clipper
+  const handleClipInStudio = async (taskId: string) => {
+    try {
+      showNotification('Importing media into ClipGenius AI Studio...', 'info');
+      const res = await api.clipDownloadedVideo(taskId);
+      showNotification('Ready! Redirecting to AI Clipper...', 'success');
+      window.dispatchEvent(new CustomEvent('projects-updated'));
+      setTimeout(() => {
+        router.push(`/dashboard/create?video_id=${res.video_id}`);
+      }, 700);
+    } catch (err: any) {
+      showNotification(err.message || 'Failed to clip video', 'error');
+    }
+  };
+
+  // Filtered lists
+  const activeDownloads = tasks.filter(
+    (t) => t.status === 'downloading' || t.status === 'queued' || t.status === 'paused' || t.status === 'processing'
+  );
+
+  const completedDownloads = tasks.filter((t) => t.status === 'completed');
+
+  const filteredTasks = tasks.filter((t) => {
+    if (!searchFilter.trim()) return true;
+    return (t.title || '').toLowerCase().includes(searchFilter.toLowerCase());
+  });
+
+  const filteredHistory = historyTasks.filter((t) => {
+    if (!searchFilter.trim()) return true;
+    return (t.title || '').toLowerCase().includes(searchFilter.toLowerCase());
+  });
+
+  return (
+    <div className="flex-1 min-h-screen bg-[#07070a] text-zinc-100 flex flex-col">
+      {/* Toast Notification */}
+      {notification && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div
+            className={cn(
+              'px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md flex items-center gap-3 text-xs font-medium max-w-md',
+              notification.type === 'success' && 'bg-emerald-950/80 border-emerald-500/40 text-emerald-200 shadow-emerald-950/40',
+              notification.type === 'error' && 'bg-rose-950/80 border-rose-500/40 text-rose-200 shadow-rose-950/40',
+              notification.type === 'info' && 'bg-purple-950/80 border-purple-500/40 text-purple-200 shadow-purple-950/40'
+            )}
+          >
+            {notification.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+            {notification.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
+            {notification.type === 'info' && <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />}
+            <span>{notification.message}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Header Banner */}
+      <div className="border-b border-white/[0.08] bg-[#0c0c12]/80 backdrop-blur-md sticky top-0 z-30 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-600/30">
+              <DownloadCloud className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold text-white tracking-tight">Video Downloader & Stream Engine</h1>
+                <Badge variant="purple" className="text-[10px] uppercase font-semibold tracking-wider">
+                  Direct Ingest
+                </Badge>
+              </div>
+              <p className="text-xs text-zinc-400">
+                Download pristine 4K, 1080p, and high-bitrate audio from YouTube and web URLs.
+              </p>
+            </div>
+          </div>
+
+          {/* Navigation Tabs */}
+          <div className="flex items-center gap-2 bg-white/[0.04] p-1 rounded-xl border border-white/[0.06]">
+            <button
+              onClick={() => {
+                setActiveTab('downloader');
+                router.push('/dashboard/downloader');
+              }}
+              className={cn(
+                'px-4 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer',
+                activeTab === 'downloader'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+              )}
+            >
+              <DownloadCloud className="w-3.5 h-3.5" />
+              <span>Downloader</span>
+              {activeDownloads.length > 0 && (
+                <span className="w-5 h-5 rounded-full bg-cyan-400 text-black text-[10px] font-bold flex items-center justify-center animate-pulse">
+                  {activeDownloads.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('history');
+                router.push('/dashboard/downloader?tab=history');
+              }}
+              className={cn(
+                'px-4 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer',
+                activeTab === 'history'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+              )}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Download History</span>
+              {completedDownloads.length > 0 && (
+                <span className="px-1.5 py-0.5 rounded-md bg-white/10 text-zinc-300 text-[10px] font-semibold">
+                  {completedDownloads.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 px-6 py-8 max-w-7xl mx-auto w-full space-y-8">
+        {activeTab === 'downloader' ? (
+          <>
+            {/* SECTION 1: URL Input & Platform Support */}
+            <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-transparent p-6 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="max-w-3xl space-y-4">
+                <div className="flex items-center gap-2 text-xs font-semibold text-purple-400 tracking-wider uppercase">
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>Step 1 • Fast Media Ingestion</span>
+                </div>
+
+                <h2 className="text-xl font-bold text-white tracking-tight">
+                  Paste Video URL to Download or Stream
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  Enter any public video URL. Supported: YouTube videos & shorts, Twitch VODs, Vimeo, and direct MP4/WebM files.
+                </p>
+
+                <form onSubmit={handleAnalyze} className="pt-2">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <DownloadCloud className="w-4 h-4 text-zinc-500" />
+                      </div>
+                      <input
+                        type="url"
+                        value={urlInput}
+                        onChange={(e) => setUrlInput(e.target.value)}
+                        placeholder="https://www.youtube.com/watch?v=... or direct MP4 link"
+                        className="w-full h-11 pl-10 pr-24 rounded-xl bg-[#0e0e16] border border-white/[0.1] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/80 focus:ring-2 focus:ring-purple-500/20 transition-all font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={handlePaste}
+                        className="absolute inset-y-1.5 right-1.5 px-3 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-zinc-300 hover:text-white text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                        title="Paste from clipboard"
+                      >
+                        <ClipboardPaste className="w-3.5 h-3.5" />
+                        <span>Paste</span>
+                      </button>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isAnalyzing || !urlInput.trim()}
+                      className="h-11 px-6 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-medium text-xs tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-purple-600/25 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Analyzing Video...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Search className="w-4 h-4" />
+                          <span>Analyze Video</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+
+                {/* Error Banner */}
+                {analysisError && (
+                  <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-rose-200">Analysis Error</p>
+                      <p className="mt-0.5 text-rose-300/90 text-[11px]">{analysisError}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Platform Support Pills */}
+                <div className="pt-2 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
+                  <span className="font-medium text-zinc-400">Supported Platforms:</span>
+                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">YouTube (4K/60)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">YouTube Shorts</span>
+                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">Twitch VODs</span>
+                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">Vimeo</span>
+                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">Direct MP4 / WebM</span>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 2 & 3: Video Information Preview & Quality Format Selector */}
+            {analysisResult && (
+              <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-b from-[#110f1e] to-[#0a0912] p-6 shadow-2xl space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-300">
+                <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-purple-400 tracking-wider uppercase">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Step 2 • Video Preview & Stream Quality</span>
+                  </div>
+                  <Badge variant="purple" className="text-[10px]">
+                    Validated Stream
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Left Column: Video Information Card */}
+                  <div className="lg:col-span-5 space-y-4">
+                    <div className="relative aspect-video rounded-xl overflow-hidden border border-white/[0.1] bg-black group shadow-lg">
+                      {analysisResult.thumbnail ? (
+                        <Image
+                          src={analysisResult.thumbnail}
+                          alt={analysisResult.title}
+                          fill
+                          unoptimized
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-600">
+                          <FileVideo className="w-12 h-12" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+
+                      {/* Duration Badge */}
+                      <div className="absolute bottom-3 right-3 px-2 py-1 rounded-md bg-black/85 backdrop-blur-md text-white text-[11px] font-mono font-medium border border-white/10">
+                        {analysisResult.duration_formatted}
+                      </div>
+
+                      {/* View Count */}
+                      <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/75 backdrop-blur-md text-zinc-300 text-[10px] font-medium border border-white/10 flex items-center gap-1">
+                        <span>{analysisResult.view_count_formatted}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <h3 className="font-bold text-sm text-white line-clamp-2 leading-snug">
+                        {analysisResult.title}
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-zinc-400">
+                        <span className="font-medium text-purple-300">{analysisResult.uploader}</span>
+                        <span>•</span>
+                        <span>{analysisResult.duration_formatted} duration</span>
+                      </div>
+                      {analysisResult.description && (
+                        <p className="text-[11px] text-zinc-500 line-clamp-3 pt-1">
+                          {analysisResult.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column: Available Quality Options & Destination */}
+                  <div className="lg:col-span-7 space-y-5">
+                    {/* Quality Selector */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <FileVideo className="w-3.5 h-3.5 text-purple-400" />
+                          <span>Select Quality & Format</span>
+                        </label>
+                        <span className="text-[11px] text-zinc-500">
+                          {analysisResult.formats.length} formats available
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+                        {analysisResult.formats.map((fmt, idx) => {
+                          const isSelected = selectedFormat?.format_id === fmt.format_id && selectedFormat?.type === fmt.type;
+                          return (
+                            <button
+                              key={`${fmt.format_id}-${idx}`}
+                              type="button"
+                              onClick={() => {
+                                setSelectedFormat(fmt);
+                                setSelectedExt(fmt.ext);
+                              }}
+                              className={cn(
+                                'p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer group',
+                                isSelected
+                                  ? 'bg-purple-600/15 border-purple-500 shadow-md shadow-purple-600/20 ring-1 ring-purple-500/50'
+                                  : 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.15]'
+                              )}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="space-y-0.5">
+                                  <div className="flex items-center gap-1.5">
+                                    {fmt.type === 'audio' ? (
+                                      <Music className="w-3.5 h-3.5 text-indigo-400" />
+                                    ) : (
+                                      <FileVideo className="w-3.5 h-3.5 text-purple-400" />
+                                    )}
+                                    <span className="font-semibold text-xs text-white">
+                                      {fmt.resolution}
+                                    </span>
+                                    {fmt.recommended && (
+                                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/30 text-purple-300 border border-purple-500/40">
+                                        BEST
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-zinc-400 truncate">
+                                    {fmt.label}
+                                  </p>
+                                </div>
+
+                                <div className={cn(
+                                  'w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors',
+                                  isSelected ? 'border-purple-400 bg-purple-500 text-white' : 'border-zinc-600 bg-black/40'
+                                )}>
+                                  {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                                </div>
+                              </div>
+
+                              <div className="mt-2 pt-2 border-t border-white/[0.06] flex items-center justify-between text-[10px] text-zinc-500">
+                                <span className="font-medium text-zinc-400">{fmt.badge}</span>
+                                <span className="font-mono text-purple-300 font-semibold">{fmt.filesize_formatted}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Format and Destination Selector */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                      {/* Format Selector */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
+                          Output Container
+                        </label>
+                        <div className="flex items-center gap-2">
+                          {selectedFormat?.type === 'audio' ? (
+                            <>
+                              {['mp3', 'm4a'].map((ext) => (
+                                <button
+                                  key={ext}
+                                  type="button"
+                                  onClick={() => setSelectedExt(ext)}
+                                  className={cn(
+                                    'flex-1 py-2 rounded-lg border text-xs font-semibold uppercase transition-all cursor-pointer',
+                                    selectedExt === ext
+                                      ? 'bg-purple-600/20 border-purple-500 text-purple-300'
+                                      : 'bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-zinc-200'
+                                  )}
+                                >
+                                  {ext}
+                                </button>
+                              ))}
+                            </>
+                          ) : (
+                            <>
+                              {['mp4', 'webm'].map((ext) => (
+                                <button
+                                  key={ext}
+                                  type="button"
+                                  onClick={() => setSelectedExt(ext)}
+                                  className={cn(
+                                    'flex-1 py-2 rounded-lg border text-xs font-semibold uppercase transition-all cursor-pointer',
+                                    selectedExt === ext
+                                      ? 'bg-purple-600/20 border-purple-500 text-purple-300'
+                                      : 'bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-zinc-200'
+                                  )}
+                                >
+                                  {ext}
+                                </button>
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Destination Selector */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
+                          Save Destination
+                        </label>
+                        <select
+                          value={saveDestination}
+                          onChange={(e: any) => setSaveDestination(e.target.value)}
+                          className="w-full h-9 px-3 rounded-lg bg-[#0e0e16] border border-white/[0.1] text-xs text-zinc-200 focus:outline-none focus:border-purple-500/80 cursor-pointer"
+                        >
+                          <option value="projects">ClipGenius Projects (Auto-Clip Ready)</option>
+                          <option value="downloads">Server Downloads Directory</option>
+                          <option value="custom">Custom Folder Path</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Custom Folder Input if selected */}
+                    {saveDestination === 'custom' && (
+                      <div className="space-y-1 animate-in fade-in duration-200">
+                        <label className="text-[11px] text-zinc-400">Custom Destination Folder Path</label>
+                        <input
+                          type="text"
+                          value={customPath}
+                          onChange={(e) => setCustomPath(e.target.value)}
+                          placeholder="/Users/username/Downloads/MyVideos"
+                          className="w-full h-9 px-3 rounded-lg bg-[#0e0e16] border border-white/[0.1] text-xs text-white font-mono placeholder-zinc-600 focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                    )}
+
+                    {/* Start Download Button */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={handleStartDownload}
+                        disabled={isStartingDownload || !selectedFormat}
+                        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-semibold text-xs tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {isStartingDownload ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>Registering Download Task...</span>
+                          </>
+                        ) : (
+                          <>
+                            <DownloadCloud className="w-4 h-4" />
+                            <span>
+                              Start Download ({selectedFormat?.resolution} • {selectedExt.toUpperCase()})
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 4: Professional Download Manager */}
+            <div ref={managerRef} className="space-y-4 pt-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                    <span>Download Manager</span>
+                    <Badge variant="purple" className="text-[11px]">
+                      {activeDownloads.length} Active / {tasks.length} Total
+                    </Badge>
+                  </h2>
+                </div>
+
+                {/* Batch Actions Toolbar */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-zinc-500 absolute inset-y-0 left-2.5 my-auto" />
+                    <input
+                      type="text"
+                      placeholder="Filter downloads..."
+                      value={searchFilter}
+                      onChange={(e) => setSearchFilter(e.target.value)}
+                      className="w-40 sm:w-48 h-8 pl-8 pr-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/50"
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => handleBatch('resume_all')}
+                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Resume all paused downloads"
+                  >
+                    <Play className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="hidden sm:inline">Resume All</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleBatch('pause_all')}
+                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Pause all active downloads"
+                  >
+                    <Pause className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="hidden sm:inline">Pause All</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleBatch('clear_completed')}
+                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-zinc-200 border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Clear completed tasks from view"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-purple-400" />
+                    <span className="hidden sm:inline">Clear Done</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Downloads Task List */}
+              {filteredTasks.length === 0 ? (
+                <div className="rounded-2xl border border-white/[0.06] bg-[#0c0c12]/50 p-12 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto text-zinc-500">
+                    <DownloadCloud className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-semibold text-sm text-zinc-300">No Active Downloads</h3>
+                  <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                    Paste a YouTube or web link above and click Analyze to begin downloading high-definition videos.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredTasks.map((task) => {
+                    const isDownloading = task.status === 'downloading';
+                    const isPaused = task.status === 'paused';
+                    const isCompleted = task.status === 'completed';
+                    const isFailed = task.status === 'failed';
+
+                    return (
+                      <div
+                        key={task.task_id}
+                        className={cn(
+                          'p-4 rounded-xl border transition-all space-y-3',
+                          isDownloading && 'bg-purple-950/20 border-purple-500/40 shadow-lg shadow-purple-950/20',
+                          isPaused && 'bg-amber-950/15 border-amber-500/30',
+                          isCompleted && 'bg-emerald-950/15 border-emerald-500/30',
+                          isFailed && 'bg-rose-950/15 border-rose-500/30',
+                          !isDownloading && !isPaused && !isCompleted && !isFailed && 'bg-white/[0.02] border-white/[0.06]'
+                        )}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          {/* Thumbnail & Title */}
+                          <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                            <div className="w-16 h-10 rounded-lg overflow-hidden bg-black shrink-0 relative border border-white/10">
+                              {task.thumbnail ? (
+                                <Image
+                                  src={task.thumbnail}
+                                  alt={task.title}
+                                  fill
+                                  unoptimized
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                                  <FileVideo className="w-4 h-4" />
+                                </div>
+                              )}
+                              <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded bg-black/90 text-[8px] font-mono text-zinc-300">
+                                {task.resolution}
+                              </span>
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <h4 className="text-xs font-semibold text-white truncate leading-tight">
+                                {task.title}
+                              </h4>
+                              <div className="flex items-center gap-2 text-[11px] text-zinc-400 mt-0.5">
+                                <span className="uppercase font-mono font-medium text-purple-400">
+                                  {task.ext}
+                                </span>
+                                <span>•</span>
+                                <span>{task.resolution}</span>
+                                <span>•</span>
+                                <span className="font-mono text-zinc-400">
+                                  {task.total_bytes > 0
+                                    ? `${(task.downloaded_bytes / (1024 * 1024)).toFixed(1)} / ${(task.total_bytes / (1024 * 1024)).toFixed(1)} MB`
+                                    : 'Calculating size...'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Status Badge & Speed Indicators */}
+                          <div className="flex items-center gap-3 self-end sm:self-center">
+                            <div className="text-right text-[11px] space-y-0.5">
+                              {isDownloading && (
+                                <>
+                                  <div className="font-mono font-semibold text-cyan-400 flex items-center gap-1 justify-end">
+                                    <Zap className="w-3 h-3 text-cyan-400 animate-pulse" />
+                                    <span>{task.speed_formatted}</span>
+                                  </div>
+                                  <div className="text-zinc-500 font-mono text-[10px]">
+                                    ETA: {task.eta_formatted}
+                                  </div>
+                                </>
+                              )}
+
+                              {isPaused && (
+                                <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-semibold">
+                                  Paused
+                                </span>
+                              )}
+
+                              {isCompleted && (
+                                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-semibold flex items-center gap-1">
+                                  <Check className="w-3 h-3" /> Done
+                                </span>
+                              )}
+
+                              {isFailed && (
+                                <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-semibold">
+                                  Failed
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-1.5">
+                              {isDownloading && (
+                                <button
+                                  onClick={() => handlePause(task.task_id)}
+                                  className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-amber-400 flex items-center justify-center transition-colors cursor-pointer"
+                                  title="Pause download"
+                                >
+                                  <Pause className="w-4 h-4" />
+                                </button>
+                              )}
+
+                              {isPaused && (
+                                <button
+                                  onClick={() => handleResume(task.task_id)}
+                                  className="w-8 h-8 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                                  title="Resume download"
+                                >
+                                  <Play className="w-4 h-4" />
+                                </button>
+                              )}
+
+                              {(isDownloading || isPaused) && (
+                                <button
+                                  onClick={() => handleCancel(task.task_id)}
+                                  className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
+                                  title="Cancel download"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              )}
+
+                              {isCompleted && (
+                                <>
+                                  <button
+                                    onClick={() => handleClipInStudio(task.task_id)}
+                                    className="px-2.5 h-8 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-md shadow-purple-600/20 transition-all cursor-pointer"
+                                    title="Open directly in AI Clipper to generate viral shorts"
+                                  >
+                                    <Scissors className="w-3.5 h-3.5" />
+                                    <span>Clip with AI</span>
+                                  </button>
+
+                                  <a
+                                    href={`/api/v1/downloader/file/${task.task_id}`}
+                                    download={task.output_filename || 'download'}
+                                    className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 flex items-center justify-center transition-colors cursor-pointer"
+                                    title="Download file to device"
+                                  >
+                                    <FolderDown className="w-4 h-4" />
+                                  </a>
+                                </>
+                              )}
+
+                              <button
+                                onClick={() => handleDelete(task.task_id)}
+                                className="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
+                                title="Delete task record"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Animated Progress Bar */}
+                        <div className="space-y-1">
+                          <div className="w-full h-2 rounded-full bg-white/[0.08] overflow-hidden relative">
+                            <div
+                              className={cn(
+                                'h-full rounded-full transition-all duration-300 ease-out',
+                                isDownloading && 'bg-gradient-to-r from-purple-500 via-indigo-500 to-cyan-400',
+                                isPaused && 'bg-amber-400',
+                                isCompleted && 'bg-emerald-500',
+                                isFailed && 'bg-rose-500'
+                              )}
+                              style={{ width: `${Math.max(1, Math.min(100, task.progress_percentage))}%` }}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between text-[10px] text-zinc-500 font-mono">
+                            <span>
+                              {isDownloading ? 'Direct Stream Ingestion' : isCompleted ? 'Completed' : task.status}
+                            </span>
+                            <span>{task.progress_percentage.toFixed(1)}%</span>
+                          </div>
+                        </div>
+
+                        {/* Error Message if failed */}
+                        {isFailed && task.error_message && (
+                          <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[11px] text-rose-300">
+                            {task.error_message}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          /* SECTION 5: Download History Tab */
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+              <div>
+                <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-purple-400" />
+                  <span>Download History</span>
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  Archived library of media downloaded via ClipGenius Downloader.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-zinc-500 absolute inset-y-0 left-2.5 my-auto" />
+                  <input
+                    type="text"
+                    placeholder="Search history..."
+                    value={searchFilter}
+                    onChange={(e) => setSearchFilter(e.target.value)}
+                    className="w-48 h-8 pl-8 pr-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/50"
+                  />
+                </div>
+
+                <button
+                  onClick={() => handleBatch('clear_completed')}
+                  className="h-8 px-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-zinc-200 border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Clear History</span>
+                </button>
+              </div>
+            </div>
+
+            {filteredHistory.length === 0 ? (
+              <div className="rounded-2xl border border-white/[0.06] bg-[#0c0c12]/50 p-16 text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto text-zinc-500">
+                  <Clock className="w-6 h-6" />
+                </div>
+                <h3 className="font-semibold text-sm text-zinc-300">No Download History Yet</h3>
+                <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                  Completed downloads will appear here with instant offline access and one-click AI clipping.
+                </p>
+                <div className="pt-2">
+                  <button
+                    onClick={() => setActiveTab('downloader')}
+                    className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold cursor-pointer shadow-lg shadow-purple-600/30"
+                  >
+                    Go to Video Downloader
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredHistory.map((item) => (
+                  <div
+                    key={item.task_id}
+                    className="rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04] transition-all p-4 space-y-3 flex flex-col justify-between group"
+                  >
+                    <div className="space-y-3">
+                      <div className="relative aspect-video rounded-lg overflow-hidden bg-black border border-white/10">
+                        {item.thumbnail ? (
+                          <Image
+                            src={item.thumbnail}
+                            alt={item.title}
+                            fill
+                            unoptimized
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                            <FileVideo className="w-8 h-8" />
+                          </div>
+                        )}
+                        <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/80 text-[9px] font-mono text-zinc-300">
+                          {item.resolution}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold text-xs text-white line-clamp-2 leading-snug">
+                          {item.title}
+                        </h4>
+                        <div className="flex items-center gap-2 text-[11px] text-zinc-400 mt-1">
+                          <span className="uppercase font-mono text-purple-400">{item.ext}</span>
+                          <span>•</span>
+                          <span>{(item.total_bytes / (1024 * 1024)).toFixed(1)} MB</span>
+                          <span>•</span>
+                          <span>{item.completed_at ? new Date(item.completed_at).toLocaleDateString() : 'Recent'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2">
+                      <button
+                        onClick={() => handleClipInStudio(item.task_id)}
+                        className="flex-1 h-8 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Scissors className="w-3.5 h-3.5" />
+                        <span>Clip with AI</span>
+                      </button>
+
+                      <a
+                        href={`/api/v1/downloader/file/${item.task_id}`}
+                        download={item.output_filename || 'download'}
+                        className="h-8 px-2.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-zinc-200 text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <FolderDown className="w-3.5 h-3.5" />
+                        <span>Save</span>
+                      </a>
+
+                      <button
+                        onClick={() => handleDelete(item.task_id)}
+                        className="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
+                        title="Delete from history"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

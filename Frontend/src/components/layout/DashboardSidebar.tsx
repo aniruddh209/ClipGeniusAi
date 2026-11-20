@@ -14,7 +14,9 @@ import {
   Plus, 
   ExternalLink,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  DownloadCloud,
+  Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
@@ -23,6 +25,14 @@ import { api } from '@/lib/api';
 export const DashboardSidebar: React.FC = () => {
   const pathname = usePathname();
   const [projectCount, setProjectCount] = useState<number | null>(null);
+  const [currentTab, setCurrentTab] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      setCurrentTab(sp.get('tab'));
+    }
+  }, [pathname]);
 
   const fetchProjectCount = async () => {
     try {
@@ -42,22 +52,34 @@ export const DashboardSidebar: React.FC = () => {
 
   const navItems = [
     {
-      label: 'Overview',
+      label: 'Dashboard',
       href: '/dashboard',
       icon: LayoutDashboard,
       badge: undefined,
     },
     {
-      label: 'Create Clips',
+      label: 'AI Clipper',
       href: '/dashboard/create',
       icon: Scissors,
       badge: 'AI',
+    },
+    {
+      label: 'Video Downloader',
+      href: '/dashboard/downloader',
+      icon: DownloadCloud,
+      badge: 'PRO',
     },
     {
       label: 'My Projects',
       href: '/dashboard/projects',
       icon: Film,
       badge: projectCount !== null ? projectCount.toString() : undefined,
+    },
+    {
+      label: 'Download History',
+      href: '/dashboard/downloader?tab=history',
+      icon: Clock,
+      badge: undefined,
     },
     {
       label: 'Settings',
@@ -103,7 +125,16 @@ export const DashboardSidebar: React.FC = () => {
         </div>
 
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isHistoryItem = item.href.includes('tab=history');
+          const isDownloaderItem = item.href === '/dashboard/downloader';
+          
+          let isActive = pathname === item.href;
+          if (isHistoryItem) {
+            isActive = pathname === '/dashboard/downloader' && currentTab === 'history';
+          } else if (isDownloaderItem) {
+            isActive = pathname === '/dashboard/downloader' && currentTab !== 'history';
+          }
+
           const Icon = item.icon;
           return (
             <Link

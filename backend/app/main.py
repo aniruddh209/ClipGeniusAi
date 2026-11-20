@@ -5,13 +5,16 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.logging import logger
 from app.core.database import connect_to_mongo, close_mongo_connection
+from app.services.video.downloader_manager import downloader_manager
 from app.api.v1.router import api_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION}...")
+    settings.DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
     await connect_to_mongo()
+    await downloader_manager.initialize()
     yield
     # Shutdown
     logger.info(f"Shutting down {settings.PROJECT_NAME}...")
@@ -35,10 +38,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Ensure directories exist before mounting static files
+settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+settings.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+settings.GENERATED_CLIPS_DIR.mkdir(parents=True, exist_ok=True)
+settings.DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
+settings.THUMBNAIL_DIR.mkdir(parents=True, exist_ok=True)
+
 # Mount uploads and outputs for streaming uploaded videos, thumbnails & generated clips
 app.mount("/uploads", StaticFiles(directory=str(settings.UPLOAD_DIR)), name="uploads")
 app.mount("/outputs", StaticFiles(directory=str(settings.OUTPUT_DIR)), name="outputs")
 app.mount("/generated-clips", StaticFiles(directory=str(settings.GENERATED_CLIPS_DIR)), name="generated-clips")
+app.mount("/downloads", StaticFiles(directory=str(settings.DOWNLOADS_DIR)), name="downloads")
 
 # Include API v1 Router
 app.include_router(api_router, prefix=settings.API_V1_STR)

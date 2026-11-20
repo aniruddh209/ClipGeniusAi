@@ -278,3 +278,70 @@ export interface UserPreferences {
   autoFaceTracking: boolean;
   notificationOnComplete: boolean;
 }
+
+export interface VideoFormatOption {
+  format_id: string;
+  label: string;
+  resolution: string;
+  height: number;
+  fps: number;
+  ext: string;
+  filesize_bytes: number;
+  filesize_formatted: string;
+  type: 'video' | 'audio';
+  recommended: boolean;
+  badge: string;
+}
+
+export interface VideoAnalysisResult {
+  url: string;
+  video_id: string;
+  title: string;
+  uploader: string;
+  duration: number;
+  duration_formatted: string;
+  view_count: number;
+  view_count_formatted: string;
+  thumbnail: string | null;
+  description: string;
+  formats: VideoFormatOption[];
+}
+
+export interface DownloadTask {
+  task_id: string;
+  url: string;
+  title: string;
+  thumbnail: string | null;
+  format_id: string;
+  ext: string;
+  resolution: string;
+  save_destination: string;
+  destination_dir: string;
+  output_path: string | null;
+  output_filename: string | null;
+  download_url: string | null;
+  status: 'queued' | 'downloading' | 'paused' | 'processing' | 'completed' | 'cancelled' | 'failed';
+  downloaded_bytes: number;
+  total_bytes: number;
+  progress_percentage: number;
+  speed_bytes_sec: number;
+  speed_formatted: string;
+  eta_seconds: number;
+  eta_formatted: string;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+}
+
+export interface StartDownloadPayload {
+  url: string;
+  format_id: string;
+  ext: string;
+  resolution: string;
+  save_destination: string;
+  custom_path?: string;
+  title?: string;
+  thumbnail?: string;
+  estimated_size?: number;
+}
