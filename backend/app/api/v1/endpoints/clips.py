@@ -1304,8 +1304,15 @@ async def _run_full_end_to_end_pipeline(
 
         # STEP 7: Finalization & Project History Update
         job["progress"] = 100
-        job["current_step"] = "6. AI Processing Pipeline Complete! All clips ready for download."
-        job["status"] = "completed" if completed_list else "failed"
+        if completed_list:
+            job["status"] = "completed"
+            job["current_step"] = "6. AI Processing Pipeline Complete! All clips ready for download."
+            job["error_message"] = None
+        else:
+            job["status"] = "failed"
+            first_err = failed_list[0].error if failed_list else "No viral clips could be rendered."
+            job["error_message"] = f"An error occurred during clipping: {first_err}"
+            job["current_step"] = f"Pipeline failed: {first_err}"
         job["completed_clips"] = completed_list
         job["failed_clips"] = failed_list
         job["updated_at"] = datetime.utcnow()

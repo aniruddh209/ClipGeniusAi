@@ -517,7 +517,7 @@ class VideoDownloader:
             f"bestvideo+bestaudio/"
             f"best[height<={max_height}][height>=1080]/"
             f"best[height>=720]/"
-            f"bestvideo/best"
+            f"18/best"
         )
 
         slice_opts = {
@@ -530,10 +530,10 @@ class VideoDownloader:
             "quiet": True,
             "no_warnings": True,
             "prefer_ffmpeg": True,
-            "socket_timeout": 30,
+            "socket_timeout": 35,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["web", "mweb", "tv"]
+                    "player_client": ["android", "ios", "mweb", "web"]
                 }
             }
         }
@@ -548,11 +548,25 @@ class VideoDownloader:
                 slice_opts["cookiefile"] = str(cpath)
                 break
 
-        def _download_slice():
-            with yt_dlp.YoutubeDL(slice_opts) as ydl:
+        def _download_slice(opts):
+            with yt_dlp.YoutubeDL(opts) as ydl:
                 ydl.download([clean_url])
 
-        await asyncio.to_thread(_download_slice)
+        try:
+            await asyncio.to_thread(_download_slice, slice_opts)
+        except Exception as e:
+            logger.warning(f"cut_direct_youtube_slice initial download failed ({e}); retrying with resilient fallback...")
+            fallback_opts = dict(slice_opts)
+            fallback_opts["format"] = "18/bestvideo+bestaudio/best"
+            fallback_opts["extractor_args"] = {
+                "youtube": {
+                    "player_client": ["android", "ios", "mweb", "web"]
+                }
+            }
+            try:
+                await asyncio.to_thread(_download_slice, fallback_opts)
+            except Exception as e2:
+                logger.error(f"Fallback slice download also failed: {e2}")
 
         found_slice = None
         for f in temp_dir.glob(f"{chunk_id}.*"):
