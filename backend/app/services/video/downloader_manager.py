@@ -173,6 +173,11 @@ class DownloaderManager:
             "no_warnings": True,
             "skip_download": True,
             "socket_timeout": 30,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "ios", "mweb", "web"]
+                }
+            }
         }
         if cookie_path:
             ydl_opts["cookiefile"] = cookie_path
@@ -193,7 +198,7 @@ class DownloaderManager:
                 "socket_timeout": 30,
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["web_embedded", "android"]
+                        "player_client": ["android", "ios", "mweb", "web"]
                     }
                 }
             }
@@ -464,25 +469,60 @@ class DownloaderManager:
         ext = task["ext"]
         outtmpl = str(target_dir / f"{task_id}.%(ext)s")
 
+        # Proactive disk space check
+        try:
+            free_bytes = shutil.disk_usage(target_dir).free
+            needed_bytes = int(task.get("total_bytes", 0) * 1.3) if task.get("total_bytes") else 300 * 1024 * 1024
+            if needed_bytes > 0 and free_bytes < needed_bytes:
+                err_text = f"Insufficient disk space. Requires ~{format_bytes(needed_bytes)}, but only {format_bytes(free_bytes)} free on disk. Please free up space and resume."
+                logger.warning(f"Task {task_id} halted: {err_text}")
+                with self._lock:
+                    if task_id in self._tasks:
+                        t = self._tasks[task_id]
+                        t["status"] = "interrupted"
+                        t["speed_formatted"] = "Disk Full"
+                        t["eta_formatted"] = "Disk Full"
+                        t["error_message"] = err_text
+                        t["updated_at"] = datetime.now(timezone.utc).isoformat()
+                self._sync_save_task(self._tasks[task_id])
+                return
+        except Exception:
+            pass
+
+        # Multi-stream progress tracker
+        completed_streams: Dict[str, int] = {}
+
         def progress_hook(d: Dict[str, Any]):
             if stop_event.is_set():
                 raise KeyboardInterrupt("Download paused by user")
 
             status = d.get("status")
             if status == "downloading":
+                stream_filename = d.get("filename") or ""
                 downloaded = d.get("downloaded_bytes") or 0
-                total = d.get("total_bytes") or d.get("total_bytes_estimate") or task.get("total_bytes") or 0
+                stream_total = d.get("total_bytes") or d.get("total_bytes_estimate") or 0
                 speed = d.get("speed") or 0.0
                 eta = d.get("eta") or 0
 
+                # Determine accurate combined total across all streams (video + audio)
+                info_dict = d.get("info_dict") or {}
+                req_fmts = info_dict.get("requested_formats") or []
+                if req_fmts:
+                    total_combined = sum(f.get("filesize") or f.get("filesize_approx") or 0 for f in req_fmts)
+                else:
+                    total_combined = info_dict.get("filesize") or info_dict.get("filesize_approx") or task.get("total_bytes") or 0
+
+                total = max(total_combined, stream_total)
+                cumulative_downloaded = sum(completed_streams.values()) + downloaded
+
                 percent = 0.0
                 if total > 0:
-                    percent = min(100.0, round((downloaded / total) * 100.0, 1))
+                    percent = min(99.0, round((cumulative_downloaded / total) * 100.0, 1))
 
                 with self._lock:
                     if task_id in self._tasks:
                         t = self._tasks[task_id]
-                        t["downloaded_bytes"] = downloaded
+                        t["downloaded_bytes"] = cumulative_downloaded
                         if total > 0:
                             t["total_bytes"] = total
                         t["progress_percentage"] = percent
@@ -494,12 +534,17 @@ class DownloaderManager:
                         t["updated_at"] = datetime.now(timezone.utc).isoformat()
 
             elif status == "finished":
+                stream_fn = d.get("filename") or ""
+                stream_sz = d.get("total_bytes") or d.get("downloaded_bytes") or 0
+                if stream_fn and stream_sz > 0:
+                    completed_streams[stream_fn] = stream_sz
+
                 with self._lock:
                     if task_id in self._tasks:
                         t = self._tasks[task_id]
                         t["progress_percentage"] = 99.0
                         t["status"] = "processing"
-                        t["speed_formatted"] = "Finishing..."
+                        t["speed_formatted"] = "Finishing & Muxing..."
 
         ydl_opts: Dict[str, Any] = {
             "format": task["format_id"],
@@ -509,21 +554,30 @@ class DownloaderManager:
             "no_warnings": True,
             "progress_hooks": [progress_hook],
             "prefer_ffmpeg": True,
+            "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
             "http_chunk_size": 10485760,  # 10MB chunks
-            "socket_timeout": 30,
+            "socket_timeout": 35,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "ios", "mweb", "web"]
+                }
+            },
             "http_headers": {
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
                 "Accept-Language": "en-US,en;q=0.9",
             },
         }
 
-        cookie_path = None
-        for cand in [settings.BASE_DIR / "cookies.txt", Path.cwd() / "cookies.txt", Path.home() / ".config" / "yt-dlp" / "cookies.txt"]:
+        cookie_candidates = [
+            settings.BASE_DIR / "cookies.txt",
+            settings.BASE_DIR.parent / "cookies.txt",
+            Path.cwd() / "cookies.txt",
+            Path.home() / ".config" / "yt-dlp" / "cookies.txt"
+        ]
+        for cand in cookie_candidates:
             if cand.exists() and cand.is_file() and cand.stat().st_size > 0:
-                cookie_path = str(cand)
+                ydl_opts["cookiefile"] = str(cand)
                 break
-        if cookie_path:
-            ydl_opts["cookiefile"] = cookie_path
 
         # If audio format chosen, configure audio extraction
         if ext in ["mp3", "m4a"]:
@@ -556,10 +610,16 @@ class DownloaderManager:
                     title = info.get("title") or task["title"]
                     thumbnail = info.get("thumbnail") or task["thumbnail"]
 
-                # Locate completed file
+                # Locate completed file (strictly exclude incomplete temp/part/stream files)
                 found_file: Optional[Path] = None
                 for p in target_dir.glob(f"{task_id}.*"):
-                    if not p.name.endswith(".part") and not p.name.endswith(".ytdl"):
+                    name_l = p.name.lower()
+                    if (
+                        not name_l.endswith(".part")
+                        and not name_l.endswith(".ytdl")
+                        and ".temp." not in name_l
+                        and not re.search(r'\.f\d+\.', name_l)
+                    ):
                         found_file = p
                         break
 
@@ -634,7 +694,8 @@ class DownloaderManager:
 
                 err_msg = str(e)
                 err_lower = err_msg.lower()
-                # Detect non-retryable fatal errors immediately without prolonged backoff hang
+
+                # Detect non-retryable fatal errors immediately
                 is_fatal = any(f in err_lower for f in [
                     "unavailable", "private", "removed", "sign in", "copyright", "blocked", "not found"
                 ])
@@ -658,6 +719,31 @@ class DownloaderManager:
                     self._sync_save_task(self._tasks[task_id])
                     return
 
+                # Check if this is a disk full or I/O error
+                is_disk_full = any(x in err_lower for x in ["errno 5", "errno 28", "no space left", "disk full", "input/output error"])
+                if is_disk_full:
+                    # Clean up aborted .temp.* muxing files so they don't consume gigabytes of disk
+                    for p in target_dir.glob(f"{task_id}*"):
+                        if ".temp." in p.name:
+                            try:
+                                p.unlink(missing_ok=True)
+                            except Exception:
+                                pass
+
+                    free_space = shutil.disk_usage(target_dir).free
+                    clean_detail = f"Download halted: Insufficient disk space ({format_bytes(free_space)} available). Partial media saved safely. Free up disk space and click Resume."
+                    logger.warning(f"Task {task_id} disk full error: {clean_detail}")
+                    with self._lock:
+                        if task_id in self._tasks:
+                            t = self._tasks[task_id]
+                            t["status"] = "interrupted"
+                            t["speed_formatted"] = "Disk Full"
+                            t["eta_formatted"] = "Disk Full"
+                            t["error_message"] = clean_detail
+                            t["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    self._sync_save_task(self._tasks[task_id])
+                    return
+
                 # Check if partial file exists on disk
                 saved_bytes = 0
                 for p in target_dir.glob(f"{task_id}.*"):
@@ -668,14 +754,14 @@ class DownloaderManager:
                             pass
 
                 if attempt < max_attempts - 1:
-                    backoff = min(20.0, 2.0 * (2 ** attempt))
+                    backoff = min(15.0, 2.0 * (2 ** attempt))
                     logger.warning(f"Task {task_id} interrupted (attempt {attempt + 1}/{max_attempts}): {err_msg}. Auto-retrying in {int(backoff)}s...")
                     with self._lock:
                         if task_id in self._tasks:
                             t = self._tasks[task_id]
                             t["status"] = "connecting"
-                            t["speed_formatted"] = f"Reconnecting in {int(backoff)}s..."
-                            t["error_message"] = f"Network disconnected ({err_msg[:60]}). Auto-retrying with backoff (Attempt {attempt + 2}/{max_attempts}). Partial media preserved ({format_bytes(saved_bytes)})."
+                            t["speed_formatted"] = f"Reconnecting ({int(backoff)}s)..."
+                            t["error_message"] = f"Network reconnecting... Attempt {attempt + 2}/{max_attempts}. Partial media preserved ({format_bytes(saved_bytes)})."
                             t["updated_at"] = datetime.now(timezone.utc).isoformat()
                     self._sync_save_task(self._tasks[task_id])
 
@@ -685,8 +771,6 @@ class DownloaderManager:
                             return
                         time.sleep(0.2)
                 else:
-                    # All automatic retries exhausted (Mac asleep or prolonged network loss)
-                    # Safely transition to INTERRUPTED (not failed!), keeping partial files intact on disk
                     logger.warning(f"Download task {task_id} set to INTERRUPTED state after {max_attempts} attempts. Preserved {saved_bytes} bytes.")
                     with self._lock:
                         if task_id in self._tasks:
@@ -720,7 +804,7 @@ class DownloaderManager:
         return task
 
     def resume_download(self, task_id: str) -> Dict[str, Any]:
-        """Resumes a paused download using HTTP Range continuation"""
+        """Resumes a paused or interrupted download using HTTP Range continuation"""
         with self._lock:
             if task_id not in self._tasks:
                 raise ValueError(f"Task {task_id} not found")
@@ -728,6 +812,13 @@ class DownloaderManager:
             if task["status"] in ["completed", "downloading"]:
                 return task
 
+            task["error_message"] = None
+            task["speed_formatted"] = "Resuming..."
+            task["eta_formatted"] = "Connecting..."
+            task["status"] = "queued"
+            task["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+        self._sync_save_task(task)
         return self.start_download(task_id)
 
     def cancel_download(self, task_id: str) -> Dict[str, Any]:
