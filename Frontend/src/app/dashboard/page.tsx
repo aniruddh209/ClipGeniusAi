@@ -12,16 +12,9 @@ import {
   ArrowUpRight, 
   Play, 
   Download, 
-  CheckCircle2, 
   Loader2, 
   TrendingUp, 
-  Layers, 
-  HardDrive,
-  Eye,
-  Filter,
-  Share2,
-  Trash2,
-  AlertCircle,
+  Trash2, 
   Film
 } from 'lucide-react';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
@@ -47,12 +40,9 @@ export default function DashboardPage() {
         api.getVideos().catch(() => []),
         api.getAllClips().catch(() => [])
       ]);
-      const validVideos = liveVideos || [];
-      const validVideoIds = new Set(validVideos.map((v) => v.id));
-      // Strictly filter out any orphan clips whose parent video does not exist
-      const validClips = (liveClips || []).filter((c) => validVideoIds.has(c.video_id));
-      setVideos(validVideos);
-      setClips(validClips);
+      setVideos(liveVideos || []);
+      // Keep all generated clips visible (even if the original source video was deleted)
+      setClips(liveClips || []);
     } catch (e) {
       console.error('Error loading dashboard data:', e);
     } finally {
@@ -69,14 +59,11 @@ export default function DashboardPage() {
 
   const handleDeleteVideo = async (videoId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to permanently delete this project and all its clips?')) return;
+    if (!confirm('Are you sure you want to remove this source video? Generated clips will be safely preserved.')) return;
     setDeletingVideoId(videoId);
     try {
       await api.deleteVideo(videoId);
-      const updatedVideos = videos.filter(v => v.id !== videoId);
-      setVideos(updatedVideos);
-      const updatedClips = updatedVideos.length === 0 ? [] : clips.filter(c => c.video_id !== videoId);
-      setClips(updatedClips);
+      setVideos(prev => prev.filter(v => v.id !== videoId));
       window.dispatchEvent(new Event('projects-updated'));
     } catch (err: any) {
       alert(`Deletion error: ${err.message}`);
@@ -103,19 +90,18 @@ export default function DashboardPage() {
     }
   };
 
-  // Compute live statistics from real database records (0 if no videos)
+  // Compute live statistics from real database records
   const totalVideos = videos.length;
-  const displayedClips = totalVideos === 0 ? [] : clips;
-  const totalClips = displayedClips.length;
-  const avgVirality = displayedClips.length > 0
-    ? (displayedClips.reduce((acc, c) => acc + (c.virality_score || c.overall_score || 0), 0) / displayedClips.length).toFixed(1)
+  const totalClips = clips.length;
+  const avgVirality = clips.length > 0
+    ? (clips.reduce((acc, c) => acc + (c.virality_score || c.overall_score || 0), 0) / clips.length).toFixed(1)
     : '0.0';
   const totalSeconds = videos.reduce((acc, v) => acc + (v.duration || 0), 0);
   const hoursFootage = (totalSeconds / 3600).toFixed(1);
   const hoursSaved = (totalSeconds / 1800).toFixed(1);
 
   return (
-    <div className="flex-1 pb-16">
+    <div className="flex-1 pb-16 bg-[var(--background)] text-[var(--foreground)]">
       {/* Top Header */}
       <DashboardHeader
         title="Studio Overview"
@@ -132,64 +118,64 @@ export default function DashboardPage() {
       <div className="px-6 sm:px-8 pt-8 space-y-8 max-w-7xl mx-auto">
         {/* 1. OVERVIEW STATISTICS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-5 border-white/[0.06] bg-[#0a0a0a] hover:border-blue-500/30 transition-all">
+          <Card className="p-5 border border-[var(--card-border)] bg-[var(--card)] hover:border-blue-500/40 transition-all">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-zinc-400">Total Videos Processed</span>
-              <div className="w-8 h-8 rounded-lg bg-blue-950/50 border border-blue-800/40 text-blue-400 flex items-center justify-center">
+              <span className="text-xs font-medium text-[var(--text-muted)]">Total Videos Processed</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500 flex items-center justify-center">
                 <Video className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-white">{totalVideos}</span>
-              <span className="text-xs text-emerald-400 font-medium flex items-center gap-0.5">
+              <span className="text-2xl font-extrabold text-[var(--foreground)]">{totalVideos}</span>
+              <span className="text-xs text-emerald-500 font-medium flex items-center gap-0.5">
                 <TrendingUp className="w-3 h-3" /> Live
               </span>
             </div>
-            <p className="text-[11px] text-zinc-500 mt-1">{hoursFootage} hrs total source footage</p>
+            <p className="text-[11px] text-[var(--text-muted)] mt-1">{hoursFootage} hrs total source footage</p>
           </Card>
 
-          <Card className="p-5 border-white/[0.06] bg-[#0a0a0a] hover:border-pink-500/30 transition-all">
+          <Card className="p-5 border border-[var(--card-border)] bg-[var(--card)] hover:border-pink-500/40 transition-all">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-zinc-400">Viral Shorts Generated</span>
-              <div className="w-8 h-8 rounded-lg bg-pink-950/50 border border-pink-800/40 text-pink-400 flex items-center justify-center">
+              <span className="text-xs font-medium text-[var(--text-muted)]">Viral Shorts Generated</span>
+              <div className="w-8 h-8 rounded-lg bg-pink-500/10 border border-pink-500/20 text-pink-500 flex items-center justify-center">
                 <Scissors className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-white">{totalClips}</span>
-              <span className="text-xs text-blue-400 font-medium">9:16 Vertical</span>
+              <span className="text-2xl font-extrabold text-[var(--foreground)]">{totalClips}</span>
+              <span className="text-xs text-blue-500 font-medium">9:16 Vertical</span>
             </div>
-            <p className="text-[11px] text-zinc-500 mt-1">Ready for Reels, Shorts, TikTok</p>
+            <p className="text-[11px] text-[var(--text-muted)] mt-1">Ready for Reels, Shorts, TikTok</p>
           </Card>
 
-          <Card className="p-5 border-white/[0.06] bg-[#0a0a0a] hover:border-amber-500/30 transition-all">
+          <Card className="p-5 border border-[var(--card-border)] bg-[var(--card)] hover:border-amber-500/40 transition-all">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-zinc-400">Avg. Virality Score</span>
-              <div className="w-8 h-8 rounded-lg bg-amber-950/50 border border-amber-800/40 text-amber-400 flex items-center justify-center">
+              <span className="text-xs font-medium text-[var(--text-muted)]">Avg. Virality Score</span>
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center">
                 <Flame className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-white">{avgVirality}%</span>
-              <span className="text-xs text-emerald-400 font-medium font-mono">
+              <span className="text-2xl font-extrabold text-[var(--foreground)]">{avgVirality}%</span>
+              <span className="text-xs text-emerald-500 font-medium font-mono">
                 {parseFloat(avgVirality) > 70 ? 'High Impact' : 'Optimal'}
               </span>
             </div>
-            <p className="text-[11px] text-zinc-500 mt-1">Faster-Whisper & PySceneDetect scored</p>
+            <p className="text-[11px] text-[var(--text-muted)] mt-1">Whisper & PySceneDetect scored</p>
           </Card>
 
-          <Card className="p-5 border-white/[0.06] bg-[#0a0a0a] hover:border-blue-500/30 transition-all">
+          <Card className="p-5 border border-[var(--card-border)] bg-[var(--card)] hover:border-blue-500/40 transition-all">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-zinc-400">Editing Hours Saved</span>
-              <div className="w-8 h-8 rounded-lg bg-blue-950/50 border border-blue-800/40 text-blue-400 flex items-center justify-center">
+              <span className="text-xs font-medium text-[var(--text-muted)]">Editing Hours Saved</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500 flex items-center justify-center">
                 <Clock className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-white">{hoursSaved} hrs</span>
-              <span className="text-xs text-blue-400 font-medium">Auto-Cut</span>
+              <span className="text-2xl font-extrabold text-[var(--foreground)]">{hoursSaved} hrs</span>
+              <span className="text-xs text-blue-500 font-medium">Auto-Cut</span>
             </div>
-            <p className="text-[11px] text-zinc-500 mt-1">Saved vs. manual video editing</p>
+            <p className="text-[11px] text-[var(--text-muted)] mt-1">Saved vs. manual video editing</p>
           </Card>
         </div>
 
@@ -197,30 +183,30 @@ export default function DashboardPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Flame className="w-4 h-4 text-amber-400" />
-                AI-Selected Viral Shorts ({displayedClips.length})
+              <h2 className="text-base font-bold text-[var(--foreground)] flex items-center gap-2">
+                <Flame className="w-4 h-4 text-amber-500" />
+                AI-Selected Viral Shorts ({clips.length})
               </h2>
-              <p className="text-xs text-zinc-400 mt-0.5">
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
                 Real clips scored for retention, reframed with OpenCV face-tracking, and captioned.
               </p>
             </div>
 
-            <Link href="/dashboard/projects" className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
+            <Link href="/dashboard/projects" className="text-xs font-semibold text-blue-500 hover:text-blue-400 flex items-center gap-1">
               View All Projects <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           {isLoading ? (
-            <div className="p-12 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] text-center text-xs text-zinc-400">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-400 mb-2" />
+            <div className="p-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-center text-xs text-[var(--text-muted)]">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500 mb-2" />
               Loading real clips from database...
             </div>
-          ) : displayedClips.length === 0 ? (
-            <div className="p-10 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] text-center space-y-3">
-              <Scissors className="w-8 h-8 text-zinc-600 mx-auto" />
-              <p className="text-sm font-semibold text-white">No generated clips yet</p>
-              <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+          ) : clips.length === 0 ? (
+            <div className="p-10 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-center space-y-3">
+              <Scissors className="w-8 h-8 text-[var(--text-muted)] mx-auto opacity-50" />
+              <p className="text-sm font-semibold text-[var(--foreground)]">No generated clips yet</p>
+              <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
                 Upload or import a YouTube or direct cloud video in Create Clips to automatically generate high-retention 9:16 vertical shorts.
               </p>
               <Link href="/dashboard/create">
@@ -231,7 +217,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {displayedClips.slice(0, 6).map((clip) => {
+              {clips.slice(0, 6).map((clip) => {
                 const thumb = clip.thumbnail_url
                   ? clip.thumbnail_url.startsWith('http')
                     ? clip.thumbnail_url
@@ -242,10 +228,10 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={clip.id}
-                    className="group rounded-2xl bg-[#0a0a0a] border border-white/[0.06] hover:border-blue-500/40 p-4 transition-all flex flex-col justify-between shadow-xl"
+                    className="group rounded-2xl bg-[var(--card)] border border-[var(--card-border)] hover:border-blue-500/40 p-4 transition-all flex flex-col justify-between shadow-sm"
                   >
                     {/* Clip Video Thumbnail & Overlay */}
-                    <div className="relative rounded-xl overflow-hidden aspect-[9/16] max-h-72 w-full bg-zinc-900 border border-white/[0.06] mb-4">
+                    <div className="relative rounded-xl overflow-hidden aspect-[9/16] max-h-72 w-full bg-black border border-[var(--card-border)] mb-4">
                       {thumb ? (
                         <img
                           src={thumb}
@@ -289,15 +275,15 @@ export default function DashboardPage() {
                     {/* Clip Meta */}
                     <div className="space-y-2 flex-1 flex flex-col justify-between">
                       <div>
-                        <h3 className="text-sm font-bold text-white line-clamp-1 group-hover:text-blue-300 transition-colors">
+                        <h3 className="text-sm font-bold text-[var(--foreground)] line-clamp-1 group-hover:text-blue-500 transition-colors">
                           {clip.title}
                         </h3>
-                        <p className="text-xs text-zinc-400 mt-1 line-clamp-2 italic">
+                        <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2 italic">
                           &quot;{clip.hook || clip.hook_sentence || clip.short_description || 'Viral moment extracted by AI'}&quot;
                         </p>
                       </div>
 
-                      <div className="pt-3 border-t border-white/[0.06] flex items-center gap-2">
+                      <div className="pt-3 border-t border-[var(--card-border)] flex items-center gap-2">
                         <Button
                           onClick={() => setActiveClipModal(clip)}
                           size="sm"
@@ -310,7 +296,7 @@ export default function DashboardPage() {
                           <a
                             href={api.getClipDownloadUrl(clip.id)}
                             download={`${clip.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_9x16.mp4`}
-                            className="p-2 rounded-xl bg-zinc-800 hover:bg-emerald-600 hover:text-white text-zinc-300 transition-colors cursor-pointer"
+                            className="p-2 rounded-xl bg-[var(--surface)] hover:bg-emerald-600 hover:text-white text-[var(--text-muted)] border border-[var(--card-border)] transition-colors cursor-pointer"
                             title="Direct Download MP4"
                           >
                             <Download className="w-3.5 h-3.5" />
@@ -319,7 +305,7 @@ export default function DashboardPage() {
                         <button
                           onClick={(e) => handleDeleteClip(clip.id, e)}
                           disabled={deletingClipId === clip.id}
-                          className="p-2 rounded-xl bg-zinc-800 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-400 border border-transparent hover:border-rose-900/40 transition-colors"
+                          className="p-2 rounded-xl bg-[var(--surface)] hover:bg-rose-950/60 text-[var(--text-muted)] hover:text-rose-500 border border-[var(--card-border)] hover:border-rose-900/40 transition-colors"
                           title="Delete Clip"
                         >
                           {deletingClipId === clip.id ? (
@@ -340,20 +326,20 @@ export default function DashboardPage() {
         {/* 3. RECENT PROJECTS SECTION */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Video className="w-4 h-4 text-blue-400" />
+            <h2 className="text-base font-bold text-[var(--foreground)] flex items-center gap-2">
+              <Video className="w-4 h-4 text-blue-500" />
               Source Video Projects ({videos.length})
             </h2>
 
-            <Link href="/dashboard/projects" className="text-xs font-semibold text-zinc-400 hover:text-white">
+            <Link href="/dashboard/projects" className="text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--foreground)]">
               View All Projects →
             </Link>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.06] bg-[#0a0a0a] overflow-hidden">
+          <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-white/[0.02] border-b border-white/[0.06] text-zinc-400 uppercase tracking-wider text-[10px]">
+                <thead className="bg-[var(--surface)] border-b border-[var(--card-border)] text-[var(--text-muted)] uppercase tracking-wider text-[10px]">
                   <tr>
                     <th className="px-5 py-3.5">Video Title</th>
                     <th className="px-5 py-3.5">Duration</th>
@@ -362,10 +348,10 @@ export default function DashboardPage() {
                     <th className="px-5 py-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04]">
+                <tbody className="divide-y divide-[var(--card-border)]">
                   {videos.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-5 py-8 text-center text-zinc-500">
+                      <td colSpan={5} className="px-5 py-8 text-center text-[var(--text-muted)]">
                         No videos uploaded yet. Click &quot;Import Video&quot; above to get started.
                       </td>
                     </tr>
@@ -376,7 +362,7 @@ export default function DashboardPage() {
                         : null;
 
                       return (
-                        <tr key={vid.id} className="hover:bg-white/[0.02] transition-colors">
+                        <tr key={vid.id} className="hover:bg-[var(--surface)]/50 transition-colors">
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-7 rounded-lg overflow-hidden bg-zinc-800 shrink-0">
@@ -389,15 +375,15 @@ export default function DashboardPage() {
                                 )}
                               </div>
                               <div>
-                                <p className="font-semibold text-white line-clamp-1">{vid.title}</p>
-                                <p className="text-[11px] text-zinc-500 font-mono mt-0.5">{vid.id}</p>
+                                <p className="font-semibold text-[var(--foreground)] line-clamp-1">{vid.title}</p>
+                                <p className="text-[11px] text-[var(--text-muted)] font-mono mt-0.5">{vid.id}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-5 py-4 font-mono text-zinc-300">
+                          <td className="px-5 py-4 font-mono text-[var(--foreground)]">
                             {formatDuration(vid.duration || 0)}
                           </td>
-                          <td className="px-5 py-4 font-mono text-zinc-300">
+                          <td className="px-5 py-4 font-mono text-[var(--foreground)]">
                             {formatFileSize(vid.file_size_mb || 0)}
                           </td>
                           <td className="px-5 py-4">
@@ -411,15 +397,15 @@ export default function DashboardPage() {
                           <td className="px-5 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <Link href="/dashboard/create">
-                                <Button size="sm" variant="ghost" className="text-xs hover:text-blue-300">
-                                  Clip Video →
+                                <Button size="sm" variant="ghost" className="text-xs hover:text-blue-500">
+                                   Clip Video →
                                 </Button>
                               </Link>
                               <button
                                 onClick={(e) => handleDeleteVideo(vid.id, e)}
                                 disabled={deletingVideoId === vid.id}
-                                className="p-1.5 rounded-lg border border-white/10 text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors"
-                                title="Delete project and all its clips"
+                                className="p-1.5 rounded-lg border border-[var(--card-border)] text-[var(--text-muted)] hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                                title="Delete project"
                               >
                                 {deletingVideoId === vid.id ? (
                                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -443,17 +429,17 @@ export default function DashboardPage() {
       {/* Video Clip Modal Preview */}
       {activeClipModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0a0a0a] border border-white/[0.1] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl space-y-4 p-5">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+          <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl space-y-4 p-5 text-[var(--foreground)]">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--card-border)]">
               <div>
-                <h3 className="text-sm font-bold text-white line-clamp-1">{activeClipModal.title}</h3>
-                <span className="text-[11px] text-blue-400 font-mono">
+                <h3 className="text-sm font-bold text-[var(--foreground)] line-clamp-1">{activeClipModal.title}</h3>
+                <span className="text-[11px] text-blue-500 font-mono">
                   Virality: {Math.round(activeClipModal.virality_score || activeClipModal.overall_score || 0)}%
                 </span>
               </div>
               <button
                 onClick={() => setActiveClipModal(null)}
-                className="text-zinc-400 hover:text-white p-1 text-sm font-bold"
+                className="text-[var(--text-muted)] hover:text-[var(--foreground)] p-1 text-sm font-bold"
               >
                 ✕
               </button>
@@ -482,7 +468,7 @@ export default function DashboardPage() {
             </div>
 
             {activeClipModal.hook && (
-              <p className="text-xs text-zinc-300 italic">
+              <p className="text-xs text-[var(--text-muted)] italic">
                 &quot;{activeClipModal.hook}&quot;
               </p>
             )}
@@ -493,7 +479,7 @@ export default function DashboardPage() {
                 size="sm"
                 onClick={() => handleDeleteClip(activeClipModal.id)}
                 disabled={deletingClipId === activeClipModal.id}
-                className="rounded-xl text-xs text-rose-400 border-rose-900/40 hover:bg-rose-950/40"
+                className="rounded-xl text-xs text-rose-500 border-rose-500/40 hover:bg-rose-500/10"
               >
                 {deletingClipId === activeClipModal.id ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
