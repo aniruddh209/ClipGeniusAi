@@ -1,5 +1,6 @@
 import re
 import asyncio
+from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from urllib.parse import urlparse, parse_qs
@@ -159,6 +160,12 @@ class YouTubeSourceProvider(BaseSourceProvider):
         api_source = "youtube_data_api_v3" if api_item else "youtube_verified_stream"
 
         # Phase 3: Probe actual media stream formats via yt-dlp to confirm available resolutions
+        cookie_path = None
+        for cand in [settings.BASE_DIR / "cookies.txt", Path.cwd() / "cookies.txt", Path.home() / ".config" / "yt-dlp" / "cookies.txt"]:
+            if cand.exists() and cand.is_file() and cand.stat().st_size > 0:
+                cookie_path = str(cand)
+                break
+
         ydl_opts = {
             "extract_flat": False,
             "quiet": True,
@@ -170,6 +177,8 @@ class YouTubeSourceProvider(BaseSourceProvider):
                 "Accept-Language": "en-US,en;q=0.9",
             },
         }
+        if cookie_path:
+            ydl_opts["cookiefile"] = cookie_path
 
         probe_error: Optional[Exception] = None
 
@@ -178,6 +187,11 @@ class YouTubeSourceProvider(BaseSourceProvider):
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     return ydl.extract_info(clean_url, download=False)
             except Exception as e:
+                err_text = str(e).lower()
+                # If video is genuinely removed, deleted, unavailable, or private, raise immediately
+                if any(x in err_text for x in ["unavailable", "not available", "removed", "private", "does not exist"]):
+                    raise e
+
                 logger.warning(f"Standard yt-dlp probe failed ({e}), attempting fallback client...")
                 fallback_opts = {
                     "extract_flat": False,
@@ -195,6 +209,9 @@ class YouTubeSourceProvider(BaseSourceProvider):
                         }
                     }
                 }
+                if cookie_path:
+                    fallback_opts["cookiefile"] = cookie_path
+
                 with yt_dlp.YoutubeDL(fallback_opts) as ydl:
                     return ydl.extract_info(clean_url, download=False)
 

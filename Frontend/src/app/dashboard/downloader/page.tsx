@@ -559,11 +559,21 @@ function VideoDownloaderContent() {
 
                 {/* Error Banner */}
                 {analysisError && (
-                  <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs flex items-start gap-2.5">
+                  <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs flex items-start gap-3">
                     <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-semibold text-rose-200">Analysis Error</p>
-                      <p className="mt-0.5 text-rose-300/90 text-[11px]">{analysisError}</p>
+                    <div className="flex-1 space-y-1.5">
+                      <p className="font-bold text-rose-200">Analysis Error</p>
+                      <p className="text-rose-300/90 text-xs leading-relaxed">{analysisError}</p>
+                      {(analysisError.toLowerCase().includes('sign-in') || analysisError.toLowerCase().includes('bot') || analysisError.toLowerCase().includes('unavailable')) && (
+                        <div className="mt-2 pt-2 border-t border-rose-500/20 text-[11px] text-zinc-300 space-y-1">
+                          <p className="font-semibold text-rose-300">Tips to resolve this:</p>
+                          <ul className="list-disc list-inside space-y-0.5 text-zinc-400">
+                            <li>Check that the YouTube link is valid and publicly accessible (not private or removed).</li>
+                            <li>If YouTube has an age restriction or bot challenge on this video, place a Netscape <code className="text-emerald-400 bg-black/40 px-1 py-0.2 rounded font-mono">cookies.txt</code> in the project folder to authorize downloads.</li>
+                            <li>You can also paste any direct video URL (MP4, WebM, MOV) or use the <strong>AI Clipper</strong> direct uploader.</li>
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

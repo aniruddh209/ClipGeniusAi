@@ -161,6 +161,12 @@ class DownloaderManager:
         Extracts rich metadata and selectable quality streams without downloading
         """
         clean_url = sanitize_media_url(raw_url)
+        cookie_path = None
+        for cand in [settings.BASE_DIR / "cookies.txt", Path.cwd() / "cookies.txt", Path.home() / ".config" / "yt-dlp" / "cookies.txt"]:
+            if cand.exists() and cand.is_file() and cand.stat().st_size > 0:
+                cookie_path = str(cand)
+                break
+
         ydl_opts = {
             "extract_flat": False,
             "quiet": True,
@@ -168,11 +174,17 @@ class DownloaderManager:
             "skip_download": True,
             "socket_timeout": 30,
         }
+        if cookie_path:
+            ydl_opts["cookiefile"] = cookie_path
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(clean_url, download=False)
-        except Exception:
+        except Exception as e:
+            err_text = str(e).lower()
+            if any(x in err_text for x in ["unavailable", "not available", "removed", "private", "does not exist"]):
+                raise e
+
             fallback_opts = {
                 "extract_flat": False,
                 "quiet": True,
@@ -185,6 +197,9 @@ class DownloaderManager:
                     }
                 }
             }
+            if cookie_path:
+                fallback_opts["cookiefile"] = cookie_path
+
             with yt_dlp.YoutubeDL(fallback_opts) as ydl:
                 info = ydl.extract_info(clean_url, download=False)
 
@@ -501,6 +516,14 @@ class DownloaderManager:
                 "Accept-Language": "en-US,en;q=0.9",
             },
         }
+
+        cookie_path = None
+        for cand in [settings.BASE_DIR / "cookies.txt", Path.cwd() / "cookies.txt", Path.home() / ".config" / "yt-dlp" / "cookies.txt"]:
+            if cand.exists() and cand.is_file() and cand.stat().st_size > 0:
+                cookie_path = str(cand)
+                break
+        if cookie_path:
+            ydl_opts["cookiefile"] = cookie_path
 
         # If audio format chosen, configure audio extraction
         if ext in ["mp3", "m4a"]:
