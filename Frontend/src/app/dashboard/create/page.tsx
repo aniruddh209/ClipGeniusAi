@@ -309,7 +309,7 @@ function CreateClipsContent() {
         action={
           <Link
             href="/dashboard/projects"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-semibold border border-white/10 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-[var(--foreground)] text-xs font-semibold border border-[var(--card-border)] transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back to Projects
@@ -324,7 +324,7 @@ function CreateClipsContent() {
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
               <div>
-                <p className="text-sm font-bold text-white">AI Clip Generation Queued!</p>
+                <p className="text-sm font-bold text-[var(--foreground)]">AI Clip Generation Queued!</p>
                 <p className="text-xs text-zinc-300">
                   Faster-Whisper is analyzing speech hooks and FFmpeg is preparing 9:16 vertical cuts for &quot;{activeVideo?.title}&quot;.
                 </p>
@@ -344,7 +344,7 @@ function CreateClipsContent() {
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
               <span>{errorMessage}</span>
             </div>
-            <button onClick={() => setErrorMessage(null)} className="text-zinc-400 hover:text-white">✕</button>
+            <button onClick={() => setErrorMessage(null)} className="text-[var(--text-muted)] hover:text-[var(--foreground)]">✕</button>
           </div>
         )}
 
@@ -353,7 +353,7 @@ function CreateClipsContent() {
           <div className={`${isGalleryExpanded ? 'w-full' : 'lg:col-span-7'} space-y-6`}>
             {/* Mode Switcher */}
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-2">
                 <Film className="w-4 h-4 text-blue-400" />
                 Source Video Ingestion
               </span>
@@ -363,7 +363,7 @@ function CreateClipsContent() {
                   <button
                     type="button"
                     onClick={() => setIsGalleryExpanded(!isGalleryExpanded)}
-                    className="px-2.5 py-1 text-xs font-medium rounded-lg bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white flex items-center gap-1.5 transition-all"
+                    className="px-2.5 py-1 text-xs font-medium rounded-lg bg-[var(--surface)] border border-[var(--card-border)] text-[var(--text-muted)] hover:text-[var(--foreground)] flex items-center gap-1.5 transition-all"
                     title={isGalleryExpanded ? "Exit full width" : "Expand gallery to full width"}
                   >
                     {isGalleryExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5 text-blue-400" />}
@@ -371,14 +371,14 @@ function CreateClipsContent() {
                   </button>
                 )}
 
-                <div className="flex p-1 rounded-xl bg-[#0a0a0a] border border-white/[0.06]">
+                <div className="flex p-1 rounded-xl bg-[var(--surface)] border border-[var(--card-border)]">
                   <button
                     type="button"
                     onClick={() => setIngestMode('upload')}
                     className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${
                       ingestMode === 'upload'
                         ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
-                        : 'text-zinc-400 hover:text-white'
+                        : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
                     Direct Upload
@@ -389,7 +389,7 @@ function CreateClipsContent() {
                     className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
                       ingestMode === 'direct_cloud'
                         ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30'
-                        : 'text-zinc-400 hover:text-white'
+                        : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
                     <Globe className="w-3 h-3" />
@@ -401,7 +401,7 @@ function CreateClipsContent() {
                     className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${
                       ingestMode === 'url'
                         ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
-                        : 'text-zinc-400 hover:text-white'
+                        : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
                     YouTube / Link
@@ -430,20 +430,20 @@ function CreateClipsContent() {
 
             {/* Ingest Mode 2: Direct Cloud URL (Range-Seeking Stream Processing) */}
             {ingestMode === 'direct_cloud' && (
-              <Card className="p-6 bg-[#0a0a0a] border-white/[0.08] space-y-4">
+              <Card className="p-6 bg-[var(--card)] border-[var(--card-border)] space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-emerald-950/50 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                       <Globe className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-[var(--foreground)] flex items-center gap-2">
                         Direct Cloud Video Stream
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                           Zero Full Download
                         </span>
                       </h4>
-                      <p className="text-[11px] text-zinc-400">
+                      <p className="text-[11px] text-[var(--text-muted)]">
                         Process remote MP4/WebM videos directly via HTTP Range requests without downloading the full video.
                       </p>
                     </div>
@@ -458,7 +458,7 @@ function CreateClipsContent() {
                       value={cloudUrl}
                       disabled={isProbingCloudUrl || isRegisteringCloud}
                       onChange={(e) => setCloudUrl(e.target.value)}
-                      className="flex-1 bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 disabled:opacity-50 font-mono"
+                      className="flex-1 bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:outline-none focus:border-blue-500 disabled:opacity-50 font-mono"
                     />
                     <Button
                       onClick={handleAnalyzeCloudUrl}
@@ -472,14 +472,14 @@ function CreateClipsContent() {
                   </div>
 
                   {/* Security Guard Notice */}
-                  <div className="flex items-center gap-2 text-[11px] text-zinc-500">
+                  <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)]">
                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
                     <span>SSRF Guard active · Private IP blocking · HTTP Range streaming · No local download</span>
                   </div>
 
                   {/* Smart YouTube / Social Link Banner */}
                   {(cloudUrl.toLowerCase().includes('youtube.com') || cloudUrl.toLowerCase().includes('youtu.be') || cloudUrl.toLowerCase().includes('vimeo.com')) && (
-                    <div className="p-3.5 rounded-xl bg-blue-950/40 border border-blue-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-blue-200 animate-in fade-in">
+                    <div className="p-3.5 rounded-xl bg-blue-950/40 border border-blue-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-blue-600 dark:text-blue-200 animate-in fade-in">
                       <div className="flex items-center gap-2.5">
                         <Video className="w-4 h-4 text-blue-400 shrink-0" />
                         <span>Detected video platform link! YouTube videos should be processed via the YouTube Engine.</span>
@@ -530,16 +530,16 @@ function CreateClipsContent() {
 
                   {/* Probed Remote Media Card */}
                   {cloudProbeResult && (
-                    <div className="p-4 rounded-xl bg-zinc-900/90 border border-white/[0.1] space-y-4 animate-in fade-in duration-200">
+                    <div className="p-4 rounded-xl bg-[var(--surface)]/90 border border-[var(--card-border)] space-y-4 animate-in fade-in duration-200">
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block">
                             Remote Media Validated
                           </span>
-                          <h5 className="text-sm font-bold text-white mt-0.5 line-clamp-1">
+                          <h5 className="text-sm font-bold text-[var(--foreground)] mt-0.5 line-clamp-1">
                             {cloudProbeResult.title || 'Cloud Remote Video'}
                           </h5>
-                          <span className="text-[11px] text-zinc-400 font-mono break-all line-clamp-1 mt-0.5">
+                          <span className="text-[11px] text-[var(--text-muted)] font-mono break-all line-clamp-1 mt-0.5">
                             {cloudProbeResult.url}
                           </span>
                         </div>
@@ -550,26 +550,26 @@ function CreateClipsContent() {
 
                       {/* Video Stream Specs */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-white/[0.04]">
-                          <span className="text-[10px] text-zinc-500 block">Duration</span>
+                        <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--card-border)]">
+                          <span className="text-[10px] text-[var(--text-muted)] block">Duration</span>
                           <span className="font-semibold text-white font-mono">{cloudProbeResult.duration_formatted} ({cloudProbeResult.duration}s)</span>
                         </div>
-                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-white/[0.04]">
-                          <span className="text-[10px] text-zinc-500 block">Resolution &amp; FPS</span>
+                        <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--card-border)]">
+                          <span className="text-[10px] text-[var(--text-muted)] block">Resolution &amp; FPS</span>
                           <span className="font-semibold text-white font-mono">{cloudProbeResult.resolution} @ {cloudProbeResult.fps}fps</span>
                         </div>
-                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-white/[0.04]">
-                          <span className="text-[10px] text-zinc-500 block">File Size</span>
+                        <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--card-border)]">
+                          <span className="text-[10px] text-[var(--text-muted)] block">File Size</span>
                           <span className="font-semibold text-white font-mono">{cloudProbeResult.file_size_mb} MB</span>
                         </div>
-                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-white/[0.04]">
-                          <span className="text-[10px] text-zinc-500 block">Audio Track</span>
+                        <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--card-border)]">
+                          <span className="text-[10px] text-[var(--text-muted)] block">Audio Track</span>
                           <span className="font-semibold text-emerald-400 font-mono">{cloudProbeResult.has_audio ? '16kHz Audio Stream' : 'None'}</span>
                         </div>
                       </div>
 
                       {/* Live Online HTML5 Video Player */}
-                      <div className="relative rounded-xl overflow-hidden aspect-video max-h-52 w-full bg-black border border-white/[0.06]">
+                      <div className="relative rounded-xl overflow-hidden aspect-video max-h-52 w-full bg-black border border-[var(--card-border)]">
                         <video
                           src={cloudProbeResult.url}
                           controls
@@ -580,7 +580,7 @@ function CreateClipsContent() {
                       </div>
 
                       <div className="flex items-center justify-between pt-1">
-                        <span className="text-[11px] text-zinc-400">
+                        <span className="text-[11px] text-[var(--text-muted)]">
                           Stream verified. Click to register and configure your AI clips.
                         </span>
                         <Button
@@ -601,11 +601,11 @@ function CreateClipsContent() {
 
             {/* Ingest Mode 3: YouTube / Web URL Download & Direct Fast 4K Clipping */}
             {ingestMode === 'url' && (
-              <Card className="p-6 bg-[#0a0a0a] border-white/[0.08] space-y-4">
+              <Card className="p-6 bg-[var(--card)] border-[var(--card-border)] space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <LinkIcon className="w-4 h-4 text-blue-400" />
-                    <h4 className="text-sm font-bold text-white">YouTube & Online Video AI Clipper</h4>
+                    <h4 className="text-sm font-bold text-[var(--foreground)]">YouTube & Online Video AI Clipper</h4>
                   </div>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold uppercase">
                     4K Supported
@@ -613,7 +613,7 @@ function CreateClipsContent() {
                 </div>
 
                 {/* Mode Selector Toggle: Direct 4K Fast Clipping vs Full Video Ingest */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1 rounded-xl bg-zinc-950 border border-white/[0.08]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1 rounded-xl bg-[var(--surface)] border border-[var(--card-border)]">
                   <button
                     type="button"
                     onClick={() => setYoutubeMode('direct_fast')}
@@ -621,7 +621,7 @@ function CreateClipsContent() {
                       'flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer',
                       youtubeMode === 'direct_fast'
                         ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                        : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                        : 'text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-white/[0.04]'
                     )}
                   >
                     <Zap className="w-3.5 h-3.5 text-amber-300" />
@@ -634,7 +634,7 @@ function CreateClipsContent() {
                       'flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer',
                       youtubeMode === 'download_full'
                         ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                        : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                        : 'text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-white/[0.04]'
                     )}
                   >
                     <DownloadCloud className="w-3.5 h-3.5 text-zinc-300" />
@@ -643,21 +643,21 @@ function CreateClipsContent() {
                 </div>
 
                 {youtubeMode === 'direct_fast' ? (
-                  <div className="p-3 rounded-xl bg-blue-950/20 border border-blue-500/30 flex items-start gap-2.5 text-xs text-blue-200">
+                  <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-start gap-2.5 text-xs text-blue-600 dark:text-blue-200">
                     <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-white">Direct 4K Clipping Mode Active</p>
-                      <p className="text-[11px] text-zinc-400">
+                      <p className="text-[11px] text-[var(--text-muted)]">
                         Zero waiting for full video download. Fetches audio in ~2 seconds for instant Whisper transcription and viral scoring. Renders clips in pristine 4K UHD directly on demand!
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 rounded-xl bg-zinc-900/60 border border-white/[0.08] flex items-start gap-2.5 text-xs text-zinc-300">
+                  <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)] flex items-start gap-2.5 text-xs text-zinc-300">
                     <DownloadCloud className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-white">Full Video Ingest Mode</p>
-                      <p className="text-[11px] text-zinc-400">
+                      <p className="text-[11px] text-[var(--text-muted)]">
                         Downloads the entire master video file to your local disk storage first before processing.
                       </p>
                     </div>
@@ -672,7 +672,7 @@ function CreateClipsContent() {
                       value={youtubeUrl}
                       disabled={isDownloadingUrl}
                       onChange={(e) => setYoutubeUrl(cleanYoutubeUrl(e.target.value))}
-                      className="flex-1 bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+                      className="flex-1 bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:outline-none focus:border-blue-500 disabled:opacity-50"
                     />
                     <Button
                       onClick={handleYoutubeSubmit}
@@ -688,7 +688,7 @@ function CreateClipsContent() {
                   </div>
 
                   {isDownloadingUrl && (
-                    <div className="p-3 rounded-xl bg-blue-950/30 border border-blue-800/40 flex items-center gap-3 text-xs text-blue-200">
+                    <div className="p-3 rounded-xl bg-blue-950/30 border border-blue-800/40 flex items-center gap-3 text-xs text-blue-600 dark:text-blue-200">
                       <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin shrink-0" />
                       <div>
                         <p className="font-semibold text-white">
@@ -696,7 +696,7 @@ function CreateClipsContent() {
                             ? 'Analyzing YouTube 4K stream & extracting speech audio...'
                             : 'Fetching & downloading full video streams...'}
                         </p>
-                        <p className="text-[11px] text-zinc-400">
+                        <p className="text-[11px] text-[var(--text-muted)]">
                           {youtubeMode === 'direct_fast'
                             ? 'Instant mode: Only lightweight audio is pulled for Whisper transcription. Fast & no gigabytes wasted!'
                             : 'yt-dlp is downloading the complete video file. This may take some time depending on video length.'}
@@ -715,7 +715,7 @@ function CreateClipsContent() {
                     </div>
                   )}
 
-                  <p className="text-[11px] text-zinc-500">
+                  <p className="text-[11px] text-[var(--text-muted)]">
                     Supports YouTube Videos, YouTube Shorts, Live Stream VODs, and Twitch clips.
                   </p>
                 </div>
@@ -725,14 +725,14 @@ function CreateClipsContent() {
             {/* AI Studio Tabs: Speech, Moments, Reframing & Subtitles */}
             {activeVideo && (
               <div className="space-y-4">
-                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#0a0a0a] border border-white/[0.08] overflow-x-auto">
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--surface)] border border-[var(--card-border)] overflow-x-auto">
                   <button
                     type="button"
                     onClick={() => setStudioTab('clips')}
                     className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                       studioTab === 'clips'
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
-                        : 'text-zinc-400 hover:text-white'
+                        : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
                     <Flame className="w-3.5 h-3.5" />
@@ -745,7 +745,7 @@ function CreateClipsContent() {
                     className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                       studioTab === 'transcript'
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
-                        : 'text-zinc-400 hover:text-white'
+                        : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
                     <Cpu className="w-3.5 h-3.5" />
@@ -758,7 +758,7 @@ function CreateClipsContent() {
                     className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                       studioTab === 'reframing'
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
-                        : 'text-zinc-400 hover:text-white'
+                        : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
@@ -771,7 +771,7 @@ function CreateClipsContent() {
                     className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                       studioTab === 'subtitles'
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
-                        : 'text-zinc-400 hover:text-white'
+                        : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
                     <Sliders className="w-3.5 h-3.5" />
@@ -813,10 +813,10 @@ function CreateClipsContent() {
                       videoUrl={activeVideo.video_url ? api.getServerUrl(activeVideo.video_url) : undefined}
                     />
                   ) : (
-                    <Card className="p-8 bg-[#0a0a0a] border-white/[0.08] text-center space-y-3">
+                    <Card className="p-8 bg-[var(--card)] border-[var(--card-border)] text-center space-y-3">
                       <Subtitles className="w-8 h-8 text-blue-400 mx-auto" />
-                      <h4 className="text-sm font-bold text-white">No Clip Selected for Subtitle Editing</h4>
-                      <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+                      <h4 className="text-sm font-bold text-[var(--foreground)]">No Clip Selected for Subtitle Editing</h4>
+                      <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
                         Please detect or select a clip in the &quot;AI Moments &amp; Scoring&quot; tab first to customize its subtitle animation styles.
                       </p>
                       <Button
@@ -836,14 +836,14 @@ function CreateClipsContent() {
 
           {/* Right Column: Generation Settings & Action */}
           <div className={`${isGalleryExpanded ? 'w-full' : 'lg:col-span-5'} space-y-6`}>
-            <Card className="border-white/[0.08] bg-[#0a0a0a] p-6 space-y-6">
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+            <Card className="border-[var(--card-border)] bg-[var(--card)] p-6 space-y-6">
+              <div className="flex items-center justify-between pb-3 border-b border-[var(--card-border)]">
                 <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-[var(--foreground)] flex items-center gap-2">
                     <Sliders className="w-4 h-4 text-blue-400" />
                     Viral Studio Parameters
                   </h3>
-                  <p className="text-[11px] text-zinc-500 mt-0.5">Inspired by Wayin.ai intelligent clipping & streamer layouts</p>
+                  <p className="text-[11px] text-[var(--text-muted)] mt-0.5">Inspired by Wayin.ai intelligent clipping & streamer layouts</p>
                 </div>
                 {activeVideo ? (
                   <Badge variant="success" className="text-[10px]">Video Loaded</Badge>
@@ -854,7 +854,7 @@ function CreateClipsContent() {
 
               {/* 1. Content Category Selector */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] block">
                   1. Video Content Type
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -873,15 +873,15 @@ function CreateClipsContent() {
                         onClick={() => handleContentTypeChange(cat.id as any)}
                         className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                           isSelected
-                            ? 'border-blue-500 bg-blue-950/40 text-white shadow-md shadow-blue-950/30'
-                            : 'border-white/[0.06] bg-zinc-950/60 text-zinc-400 hover:border-zinc-700'
+                            ? 'border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-300 shadow-md shadow-blue-950/30'
+                            : 'border-[var(--card-border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-zinc-700'
                         }`}
                       >
                         <div className="flex items-center gap-1.5">
-                          <IconComp className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-400' : 'text-zinc-500'}`} />
+                          <IconComp className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-400' : 'text-[var(--text-muted)]'}`} />
                           <span className="text-xs font-bold truncate">{cat.label}</span>
                         </div>
-                        <span className="text-[9px] text-zinc-500 mt-1 line-clamp-1">{cat.desc}</span>
+                        <span className="text-[9px] text-[var(--text-muted)] mt-1 line-clamp-1">{cat.desc}</span>
                       </button>
                     );
                   })}
@@ -889,14 +889,14 @@ function CreateClipsContent() {
               </div>
 
               {/* 1.5 Moments to Find & Video Range Slicer (WayinVideo Style) */}
-              <div className="space-y-4 pt-1 pb-2 border-y border-white/[0.06]">
+              <div className="space-y-4 pt-1 pb-2 border-y border-[var(--card-border)]">
                 {/* Moments Filter */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-zinc-300">
-                      What moments do you want to find? <span className="text-zinc-500 font-normal">(Optional)</span>
+                      What moments do you want to find? <span className="text-[var(--text-muted)] font-normal">(Optional)</span>
                     </label>
-                    <span className="text-[10px] text-zinc-500">Click to filter</span>
+                    <span className="text-[10px] text-[var(--text-muted)]">Click to filter</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {[
@@ -921,7 +921,7 @@ function CreateClipsContent() {
                           className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
                             isSel
                               ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm'
-                              : 'bg-zinc-900 border border-white/[0.08] text-zinc-400 hover:border-white/20 hover:text-white'
+                              : 'bg-[var(--surface)] border border-[var(--card-border)] text-[var(--text-muted)] hover:border-white/20 hover:text-[var(--foreground)]'
                           }`}
                         >
                           {m}
@@ -938,18 +938,18 @@ function CreateClipsContent() {
                       <label className="text-xs font-semibold text-zinc-300 block">
                         Choose where to find clips
                       </label>
-                      <p className="text-[10px] text-zinc-500">
+                      <p className="text-[10px] text-[var(--text-muted)]">
                         {rangeStartTime === 0 && (!rangeEndTime || rangeEndTime >= (activeVideo?.duration || 0))
                           ? 'Scanning full video length'
                           : `Scanning from ${formatTimeStr(rangeStartTime)} to ${formatTimeStr(rangeEndTime || activeVideo?.duration || 0)}`}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 font-mono text-xs">
-                      <span className="px-2 py-0.5 rounded bg-zinc-900 border border-white/10 text-emerald-400 font-bold">
+                      <span className="px-2 py-0.5 rounded bg-[var(--surface)] border border-[var(--card-border)] text-emerald-400 font-bold">
                         {formatTimeStr(rangeStartTime)}
                       </span>
                       <span className="text-zinc-600">—</span>
-                      <span className="px-2 py-0.5 rounded bg-zinc-900 border border-white/10 text-emerald-400 font-bold">
+                      <span className="px-2 py-0.5 rounded bg-[var(--surface)] border border-[var(--card-border)] text-emerald-400 font-bold">
                         {formatTimeStr(rangeEndTime || activeVideo?.duration || 180)}
                       </span>
                     </div>
@@ -958,7 +958,7 @@ function CreateClipsContent() {
                   {/* Range Sliders */}
                   <div className="space-y-1.5 pt-1">
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] text-zinc-500 w-10">Start:</span>
+                      <span className="text-[10px] text-[var(--text-muted)] w-10">Start:</span>
                       <input
                         type="range"
                         min={0}
@@ -970,13 +970,13 @@ function CreateClipsContent() {
                         }}
                         className="flex-1 accent-emerald-500 cursor-pointer"
                       />
-                      <span className="text-[10px] font-mono text-zinc-400 w-14 text-right">
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] w-14 text-right">
                         {formatTimeStr(rangeStartTime)}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] text-zinc-500 w-10">End:</span>
+                      <span className="text-[10px] text-[var(--text-muted)] w-10">End:</span>
                       <input
                         type="range"
                         min={10}
@@ -988,7 +988,7 @@ function CreateClipsContent() {
                         }}
                         className="flex-1 accent-emerald-500 cursor-pointer"
                       />
-                      <span className="text-[10px] font-mono text-zinc-400 w-14 text-right">
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] w-14 text-right">
                         {formatTimeStr(rangeEndTime || activeVideo?.duration || 300)}
                       </span>
                     </div>
@@ -1009,7 +1009,7 @@ function CreateClipsContent() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] px-2 py-0.5 rounded-lg bg-zinc-900 border border-white/10 text-white font-mono font-bold">
+                    <span className="text-[11px] px-2 py-0.5 rounded-lg bg-[var(--surface)] border border-[var(--card-border)] text-white font-mono font-bold">
                       9:16 Vertical
                     </span>
                   </div>
@@ -1078,11 +1078,11 @@ function CreateClipsContent() {
                         className={`group relative rounded-2xl p-2.5 transition-all cursor-pointer flex flex-col justify-between ${
                           isSelected
                             ? 'ring-2 ring-emerald-500 bg-emerald-950/20 shadow-xl shadow-emerald-950/40 border border-emerald-500/50'
-                            : 'border border-white/[0.08] bg-[#0a0a0a] hover:border-white/20 hover:bg-zinc-900/60'
+                            : 'border border-[var(--card-border)] bg-[var(--surface)] hover:border-blue-500/40'
                         }`}
                       >
                         {/* 9:16 Miniature Screen Frame */}
-                        <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-black border border-white/10 mb-2 shadow-inner flex flex-col">
+                        <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-black border border-[var(--card-border)] mb-2 shadow-inner flex flex-col">
                           {/* Selection indicator matching WayinVideo */}
                           <div className="absolute top-2 left-2 z-20">
                             {isSelected ? (
@@ -1104,7 +1104,7 @@ function CreateClipsContent() {
                                   PURE GAMEPLAY
                                 </span>
                               </div>
-                              <span className="text-[6.5px] text-zinc-400 mt-1">Creator Cam Cut</span>
+                              <span className="text-[6.5px] text-[var(--text-muted)] mt-1">Creator Cam Cut</span>
                             </div>
                           )}
 
@@ -1141,7 +1141,7 @@ function CreateClipsContent() {
                           {tmpl.previewType === 'blur_fit' && (
                             /* GTA 6 Fit: Blurred ambient background with centered 16:9 */
                             <div className="w-full h-full relative bg-gradient-to-b from-blue-950 via-zinc-900 to-indigo-950 flex items-center justify-center p-1 overflow-hidden">
-                              <div className="w-full h-12 bg-zinc-900 border border-white/30 rounded shadow-2xl flex flex-col items-center justify-center z-10 p-1">
+                              <div className="w-full h-12 bg-[var(--surface)] border border-white/30 rounded shadow-2xl flex flex-col items-center justify-center z-10 p-1">
                                 <span className="text-[7px] font-black uppercase text-amber-300 bg-black/80 px-1 rounded">
                                   16:9 FIT
                                 </span>
@@ -1155,7 +1155,7 @@ function CreateClipsContent() {
                             <div className="w-full h-full relative bg-gradient-to-b from-zinc-900 to-black flex items-center justify-center p-1">
                               <Gamepad2 className="w-6 h-6 text-zinc-600" />
                               <div className="absolute top-2 right-2 w-7 h-5 bg-blue-900/80 border border-blue-400 rounded flex items-center justify-center shadow-lg">
-                                <User className="w-2.5 h-2.5 text-blue-200" />
+                                <User className="w-2.5 h-2.5 text-blue-600 dark:text-blue-200" />
                               </div>
                             </div>
                           )}
@@ -1173,10 +1173,10 @@ function CreateClipsContent() {
 
                         {/* Title & Description Below Preview */}
                         <div className="text-left space-y-0.5">
-                          <h4 className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">
+                          <h4 className="text-xs font-bold text-[var(--foreground)] group-hover:text-emerald-400 transition-colors">
                             {tmpl.title}
                           </h4>
-                          <p className="text-[10px] text-zinc-400 line-clamp-1">
+                          <p className="text-[10px] text-[var(--text-muted)] line-clamp-1">
                             {tmpl.subtitle}
                           </p>
                         </div>
@@ -1189,10 +1189,10 @@ function CreateClipsContent() {
               {/* 3. Subtitle / Caption Styling (with No Caption Option) */}
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] block">
                     3. Dynamic Subtitles
                   </label>
-                  <span className="text-[10px] text-zinc-500">Karaoke word sync</span>
+                  <span className="text-[10px] text-[var(--text-muted)]">Karaoke word sync</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -1201,7 +1201,7 @@ function CreateClipsContent() {
                       id: 'none',
                       name: 'No Captions',
                       sub: 'Clean Video',
-                      color: 'text-zinc-400',
+                      color: 'text-[var(--text-muted)]',
                       icon: VolumeX,
                     },
                     {
@@ -1238,17 +1238,17 @@ function CreateClipsContent() {
                         onClick={() => setCaptionPreset(style.id as any)}
                         className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
                           isSelected
-                            ? 'border-blue-500 bg-blue-950/40 text-white shadow-sm'
-                            : 'border-white/[0.06] bg-zinc-950/60 hover:border-zinc-700 text-zinc-400'
+                            ? 'border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-300 shadow-sm'
+                            : 'border-[var(--card-border)] bg-[var(--surface)] hover:border-zinc-700 text-[var(--text-muted)]'
                         }`}
                       >
                         <div className="flex items-center justify-center gap-1">
-                          {IconComp && <IconComp className="w-3 h-3 text-zinc-400" />}
+                          {IconComp && <IconComp className="w-3 h-3 text-[var(--text-muted)]" />}
                           <span className={`text-[11px] font-black uppercase block ${style.color}`}>
                             {style.name}
                           </span>
                         </div>
-                        <span className="text-[9px] text-zinc-500 block mt-0.5">{style.sub}</span>
+                        <span className="text-[9px] text-[var(--text-muted)] block mt-0.5">{style.sub}</span>
                       </button>
                     );
                   })}
@@ -1259,7 +1259,7 @@ function CreateClipsContent() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Export Quality */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] block">
                     Export Quality
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1273,12 +1273,12 @@ function CreateClipsContent() {
                         onClick={() => setExportQuality(q.id as any)}
                         className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
                           exportQuality === q.id
-                            ? 'border-blue-500 bg-blue-950/30 text-white font-semibold'
-                            : 'border-white/[0.06] bg-zinc-950/60 text-zinc-400 text-xs'
+                            ? 'border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-300 font-semibold'
+                            : 'border-[var(--card-border)] bg-[var(--surface)] text-[var(--text-muted)] text-xs'
                         }`}
                       >
                         <span className="text-xs block font-bold">{q.label}</span>
-                        <span className="text-[9px] text-zinc-500 block">{q.sub}</span>
+                        <span className="text-[9px] text-[var(--text-muted)] block">{q.sub}</span>
                       </button>
                     ))}
                   </div>
@@ -1286,7 +1286,7 @@ function CreateClipsContent() {
 
                 {/* Clips Count Target */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] block">
                     Clips Count Target
                   </label>
                   <div className="grid grid-cols-4 gap-2">
@@ -1297,12 +1297,12 @@ function CreateClipsContent() {
                         onClick={() => setMaxClips(cnt)}
                         className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
                           maxClips === cnt
-                            ? 'border-blue-500 bg-blue-950/30 text-white font-semibold'
-                            : 'border-white/[0.06] bg-zinc-950/60 text-zinc-400 text-xs'
+                            ? 'border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-300 font-semibold'
+                            : 'border-[var(--card-border)] bg-[var(--surface)] text-[var(--text-muted)] text-xs'
                         }`}
                       >
                         <span className="text-xs block font-bold">{cnt}</span>
-                        <span className="text-[9px] text-zinc-500 block">clips</span>
+                        <span className="text-[9px] text-[var(--text-muted)] block">clips</span>
                       </button>
                     ))}
                   </div>
@@ -1310,7 +1310,7 @@ function CreateClipsContent() {
 
                 {/* Duration Window */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] block">
                     Duration Target
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1324,12 +1324,12 @@ function CreateClipsContent() {
                         onClick={() => setDurationRange(dur.id as any)}
                         className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
                           durationRange === dur.id
-                            ? 'border-blue-500 bg-blue-950/30 text-white font-semibold'
-                            : 'border-white/[0.06] bg-zinc-950/60 text-zinc-400 text-xs'
+                            ? 'border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-300 font-semibold'
+                            : 'border-[var(--card-border)] bg-[var(--surface)] text-[var(--text-muted)] text-xs'
                         }`}
                       >
                         <span className="text-xs block font-bold">{dur.label}</span>
-                        <span className="text-[9px] text-zinc-500 block">{dur.sub}</span>
+                        <span className="text-[9px] text-[var(--text-muted)] block">{dur.sub}</span>
                       </button>
                     ))}
                   </div>
@@ -1350,7 +1350,7 @@ function CreateClipsContent() {
                   onChange={(e) => setViralitySensitivity(Number(e.target.value))}
                   className="w-full accent-blue-600 bg-zinc-800 h-1.5 rounded-lg appearance-none cursor-pointer"
                 />
-                <div className="flex justify-between text-[10px] text-zinc-500">
+                <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
                   <span>More Clips (50%)</span>
                   <span>Strict Viral Only (95%)</span>
                 </div>
@@ -1370,7 +1370,7 @@ function CreateClipsContent() {
                     ? 'AI Clipping & Rendering in Progress...'
                     : 'Generate Clips'}
                 </Button>
-                <p className="text-[10px] text-zinc-500 text-center">
+                <p className="text-[10px] text-[var(--text-muted)] text-center">
                   By continuing, AI processes clips from the full footage with {templateLayout === 'full_screen' ? 'pure gameplay (creator screen cut)' : 'selected template layout'} &amp; 1-click direct MP4 downloads.
                 </p>
               </div>
@@ -1415,7 +1415,7 @@ export default function CreateClipsPage() {
         <div className="flex-1 flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-3">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto" />
-            <p className="text-sm font-medium text-zinc-400">Loading Clip Studio...</p>
+            <p className="text-sm font-medium text-[var(--text-muted)]">Loading Clip Studio...</p>
           </div>
         </div>
       }

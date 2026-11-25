@@ -81,7 +81,7 @@ export default function SettingsPage() {
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex p-1 rounded-xl bg-[#0a0a0a] border border-white/[0.06] w-fit">
+        <div className="flex p-1 rounded-xl bg-[var(--card)] border border-[var(--card-border)] w-fit">
           {[
             { id: 'profile', label: 'User Profile', icon: User },
             { id: 'preferences', label: 'AI Engine & Pipeline', icon: Cpu },
@@ -95,7 +95,7 @@ export default function SettingsPage() {
                 className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 cursor-pointer ${
                   tab === item.id
                     ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
-                    : 'text-zinc-400 hover:text-white'
+                    : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -107,8 +107,8 @@ export default function SettingsPage() {
 
         {/* 1. USER PROFILE TAB */}
         {tab === 'profile' && (
-          <Card className="border-white/[0.08] bg-[#0a0a0a] p-6 space-y-6">
-            <div className="flex items-center gap-4 pb-6 border-b border-white/[0.06]">
+          <Card className="border-[var(--card-border)] bg-[var(--card)] p-6 space-y-6">
+            <div className="flex items-center gap-4 pb-6 border-b border-[var(--card-border)]">
               <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-tr from-blue-500 to-blue-500 p-[2px]">
                 <img
                   src={DEFAULT_USER_PREFERENCES.avatarUrl}
@@ -135,7 +135,7 @@ export default function SettingsPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -147,13 +147,13 @@ export default function SettingsPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
             </div>
 
             {/* Current Storage Meter */}
-            <div className="p-4 rounded-2xl bg-zinc-950/60 border border-white/[0.06] space-y-2">
+            <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--card-border)] space-y-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                 <span className="text-zinc-400 font-medium flex items-center gap-1.5">
                   <HardDrive className="w-4 h-4 text-blue-400" />
@@ -188,7 +188,7 @@ export default function SettingsPage() {
 
         {/* 2. PREFERENCES (AI ENGINE & PIPELINE) TAB */}
         {tab === 'preferences' && (
-          <Card className="border-white/[0.08] bg-[#0a0a0a] p-6 space-y-6">
+          <Card className="border-[var(--card-border)] bg-[var(--card)] p-6 space-y-6">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-blue-400" />
@@ -213,7 +213,7 @@ export default function SettingsPage() {
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                     whisperModel === model.id
                       ? 'border-blue-500 bg-blue-950/30'
-                      : 'border-white/[0.06] bg-zinc-950/60 hover:border-zinc-700'
+                      : 'border-[var(--card-border)] bg-[var(--surface)] hover:border-zinc-700'
                   }`}
                 >
                   <span className="text-xs font-bold text-white block">{model.name}</span>
@@ -224,7 +224,7 @@ export default function SettingsPage() {
             </div>
 
             {/* OpenCV Face Centering Toggle */}
-            <div className="pt-4 border-t border-white/[0.06] flex items-center justify-between">
+            <div className="pt-4 border-t border-[var(--card-border)] flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-white block">Auto Speaker Face Tracking</span>
                 <span className="text-xs text-zinc-400">
@@ -250,7 +250,7 @@ export default function SettingsPage() {
 
         {/* 3. EXPORT SETTINGS TAB */}
         {tab === 'export' && (
-          <Card className="border-white/[0.08] bg-[#0a0a0a] p-6 space-y-6">
+          <Card className="border-[var(--card-border)] bg-[var(--card)] p-6 space-y-6">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Download className="w-4 h-4 text-blue-400" />
@@ -269,7 +269,7 @@ export default function SettingsPage() {
                 <select
                   value={defaultAspectRatio}
                   onChange={(e) => setDefaultAspectRatio(e.target.value as any)}
-                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
                 >
                   <option value="9:16">9:16 Vertical (Shorts/Reels/TikTok)</option>
                   <option value="1:1">1:1 Square (Feed)</option>
@@ -284,7 +284,7 @@ export default function SettingsPage() {
                 <select
                   value={defaultResolution}
                   onChange={(e) => setDefaultResolution(e.target.value as any)}
-                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
                 >
                   <option value="1080p">1080x1920 (Full HD)</option>
                   <option value="4K">2160x3840 (4K Ultra HD)</option>
@@ -299,7 +299,7 @@ export default function SettingsPage() {
                 <select
                   value={fps}
                   onChange={(e) => setFps(e.target.value)}
-                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
                 >
                   <option value="30">30 FPS (Standard)</option>
                   <option value="60">60 FPS (High Smoothness)</option>
@@ -345,7 +345,7 @@ export default function SettingsPage() {
                 type="text"
                 value={fileNamePattern}
                 onChange={(e) => setFileNamePattern(e.target.value)}
-                className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-blue-500"
+                className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-blue-500"
               />
               <p className="text-[10px] text-zinc-500">
                 Variables: &#123;title&#125;, &#123;index&#125;, &#123;virality&#125;, &#123;date&#125;
@@ -355,7 +355,7 @@ export default function SettingsPage() {
         )}
 
         {/* Save Bar */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-white/[0.06]">
+        <div className="flex justify-end gap-3 pt-4 border-t border-[var(--card-border)]">
           <Button
             onClick={handleSave}
             variant="primary"

@@ -130,3 +130,11 @@ html.light .gradient-text {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* Hide Next.js dev indicator */
+nextjs-portal,
+[data-nextjs-toast],
+[data-nextjs-dev-indicator],
+[data-nextjs-dialog] {
+  display: none !important;
+}

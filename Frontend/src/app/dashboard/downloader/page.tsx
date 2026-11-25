@@ -405,7 +405,7 @@ function VideoDownloaderContent() {
   const availableQualities = analysisResult?.confirmed_qualities || analysisResult?.formats || [];
 
   return (
-    <div className="flex-1 min-h-screen bg-[#000000] text-zinc-100 flex flex-col">
+    <div className="flex-1 min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col">
       {/* Toast Notification */}
       {notification && (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -426,7 +426,7 @@ function VideoDownloaderContent() {
       )}
 
       {/* Header Banner */}
-      <div className="border-b border-white/[0.08] bg-[#0c0c12]/80 backdrop-blur-md sticky top-0 z-30 px-6 py-4">
+      <div className="border-b border-[var(--card-border)] bg-[var(--surface)]/90 backdrop-blur-md sticky top-0 z-30 px-6 py-4">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-400 flex items-center justify-center shadow-lg shadow-blue-600/30">
@@ -439,14 +439,14 @@ function VideoDownloaderContent() {
                   4K / HD
                 </Badge>
               </div>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-[var(--text-muted)]">
                 Download high-speed video streams directly to your Mac or import to AI Clipper for viral short creation.
               </p>
             </div>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-2 bg-white/[0.04] p-1 rounded-xl border border-white/[0.06]">
+          <div className="flex items-center gap-2 bg-white/[0.04] p-1 rounded-xl border border-[var(--card-border)]">
             <button
               onClick={() => {
                 setActiveTab('downloader');
@@ -456,7 +456,7 @@ function VideoDownloaderContent() {
                 'px-4 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer',
                 activeTab === 'downloader'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+                  : 'text-[var(--text-muted)] hover:text-zinc-200 hover:bg-white/[0.04]'
               )}
             >
               <DownloadCloud className="w-3.5 h-3.5" />
@@ -477,7 +477,7 @@ function VideoDownloaderContent() {
                 'px-4 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer',
                 activeTab === 'history'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+                  : 'text-[var(--text-muted)] hover:text-zinc-200 hover:bg-white/[0.04]'
               )}
             >
               <Clock className="w-3.5 h-3.5" />
@@ -497,7 +497,7 @@ function VideoDownloaderContent() {
         {activeTab === 'downloader' ? (
           <>
             {/* FIRST PHASE: YOUTUBE VIDEO ANALYSIS INPUT */}
-            <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-transparent p-6 shadow-xl relative overflow-hidden">
+            <div className="rounded-2xl border border-[var(--card-border)] bg-gradient-to-b from-white/[0.04] to-transparent p-6 shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
               <div className="max-w-3xl space-y-4">
@@ -509,7 +509,7 @@ function VideoDownloaderContent() {
                 <h2 className="text-xl font-bold text-white tracking-tight">
                   Enter Video or Media Link
                 </h2>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-[var(--text-muted)]">
                   Paste any YouTube video link, podcast, interview, or direct media URL (MP4, WebM, MOV).
                 </p>
 
@@ -517,14 +517,14 @@ function VideoDownloaderContent() {
                   <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                        <Video className="w-4 h-4 text-zinc-500" />
+                        <Video className="w-4 h-4 text-[var(--text-muted)]" />
                       </div>
                       <input
                         type="url"
                         value={urlInput}
                         onChange={(e) => setUrlInput(e.target.value)}
                         placeholder="https://www.youtube.com/watch?v=... or direct MP4 link"
-                        className="w-full h-11 pl-10 pr-24 rounded-xl bg-[#0a0a0a] border border-white/[0.1] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/80 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono"
+                        className="w-full h-11 pl-10 pr-24 rounded-xl bg-[var(--card)] border border-[var(--card-border)] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/80 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono"
                       />
                       <button
                         type="button"
@@ -567,7 +567,7 @@ function VideoDownloaderContent() {
                       {(analysisError.toLowerCase().includes('sign-in') || analysisError.toLowerCase().includes('bot') || analysisError.toLowerCase().includes('unavailable')) && (
                         <div className="mt-2 pt-2 border-t border-rose-500/20 text-[11px] text-zinc-300 space-y-1">
                           <p className="font-semibold text-rose-300">Tips to resolve this:</p>
-                          <ul className="list-disc list-inside space-y-0.5 text-zinc-400">
+                          <ul className="list-disc list-inside space-y-0.5 text-[var(--text-muted)]">
                             <li>Check that the YouTube link is valid and publicly accessible (not private or removed).</li>
                             <li>If YouTube has an age restriction or bot challenge on this video, place a Netscape <code className="text-emerald-400 bg-black/40 px-1 py-0.2 rounded font-mono">cookies.txt</code> in the project folder to authorize downloads.</li>
                             <li>You can also paste any direct video URL (MP4, WebM, MOV) or use the <strong>AI Clipper</strong> direct uploader.</li>
@@ -579,13 +579,13 @@ function VideoDownloaderContent() {
                 )}
 
                 {/* Platform Support Pills */}
-                <div className="pt-2 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
-                  <span className="font-medium text-zinc-400">Supported:</span>
-                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-300 flex items-center gap-1">
+                <div className="pt-2 flex flex-wrap items-center gap-2 text-[11px] text-[var(--text-muted)]">
+                  <span className="font-medium text-[var(--text-muted)]">Supported:</span>
+                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-[var(--card-border)] text-zinc-300 flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3 text-emerald-400" />
                     <span>YouTube (4K • 1080p • Shorts)</span>
                   </span>
-                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400">
+                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-[var(--card-border)] text-[var(--text-muted)]">
                     Direct Cloud MP4 / MOV / WebM
                   </span>
                 </div>
@@ -596,20 +596,20 @@ function VideoDownloaderContent() {
             {analysisResult && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-300">
                 {/* Permitted Public Metadata Card */}
-                <div className="rounded-2xl border border-white/[0.08] bg-[#080808] p-6 shadow-2xl space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
+                <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-2xl space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--card-border)] pb-4">
                     <div className="flex items-center gap-2">
                       <Badge variant="blue" className="text-[10px] uppercase font-semibold">
                         {analysisResult.provider === 'youtube' ? 'YouTube Stream' : 'Direct Media'}
                       </Badge>
-                      <span className="text-xs text-zinc-400 flex items-center gap-1.5">
+                      <span className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">
                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                         <span>Source Verified ({analysisResult.api_source || 'YouTube Data API'})</span>
                       </span>
                     </div>
 
                     {/* Ownership Toggle - Phase 2 */}
-                    <div className="flex items-center gap-2 bg-white/[0.04] p-1 rounded-xl border border-white/[0.08]">
+                    <div className="flex items-center gap-2 bg-white/[0.04] p-1 rounded-xl border border-[var(--card-border)]">
                       <button
                         type="button"
                         onClick={() => setIsCreatorOwned(false)}
@@ -617,7 +617,7 @@ function VideoDownloaderContent() {
                           'px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5',
                           !isCreatorOwned
                             ? 'bg-blue-600 text-white font-semibold shadow-sm'
-                            : 'text-zinc-400 hover:text-zinc-200'
+                            : 'text-[var(--text-muted)] hover:text-zinc-200'
                         )}
                       >
                         <Video className="w-3.5 h-3.5" />
@@ -631,7 +631,7 @@ function VideoDownloaderContent() {
                           'px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5',
                           isCreatorOwned
                             ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white font-semibold shadow-md shadow-red-600/30'
-                            : 'text-zinc-400 hover:text-zinc-200'
+                            : 'text-[var(--text-muted)] hover:text-zinc-200'
                         )}
                       >
                         <UserCheck className="w-3.5 h-3.5 text-red-300" />
@@ -644,7 +644,7 @@ function VideoDownloaderContent() {
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     {/* Left: Thumbnail & Duration */}
                     <div className="lg:col-span-5 space-y-3">
-                      <div className="relative aspect-video rounded-xl overflow-hidden border border-white/[0.1] bg-black group shadow-lg">
+                      <div className="relative aspect-video rounded-xl overflow-hidden border border-[var(--card-border)] bg-black group shadow-lg">
                         {analysisResult.thumbnail ? (
                           <Image
                             src={analysisResult.thumbnail}
@@ -654,28 +654,28 @@ function VideoDownloaderContent() {
                             className="object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-600">
+                          <div className="w-full h-full flex items-center justify-center bg-[var(--surface)] text-zinc-600">
                             <FileVideo className="w-12 h-12" />
                           </div>
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 
                         {/* Duration Pill */}
-                        <div className="absolute bottom-3 right-3 px-2 py-1 rounded-md bg-black/85 backdrop-blur-md text-white text-[11px] font-mono font-medium border border-white/10 flex items-center gap-1">
+                        <div className="absolute bottom-3 right-3 px-2 py-1 rounded-md bg-black/85 backdrop-blur-md text-white text-[11px] font-mono font-medium border border-[var(--card-border)] flex items-center gap-1">
                           <Clock className="w-3 h-3 text-blue-400" />
                           <span>{analysisResult.duration_formatted}</span>
                         </div>
 
                         {/* Views Pill */}
-                        <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/75 backdrop-blur-md text-zinc-300 text-[10px] font-medium border border-white/10 flex items-center gap-1">
+                        <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/75 backdrop-blur-md text-zinc-300 text-[10px] font-medium border border-[var(--card-border)] flex items-center gap-1">
                           <Eye className="w-3 h-3 text-cyan-400" />
                           <span>{analysisResult.view_count_formatted}</span>
                         </div>
                       </div>
 
                       {/* Video ID & Direct Link */}
-                      <div className="flex items-center justify-between text-[11px] text-zinc-500 px-1">
-                        <span>Video ID: <code className="text-zinc-400 font-mono">{analysisResult.video_id}</code></span>
+                      <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] px-1">
+                        <span>Video ID: <code className="text-[var(--text-muted)] font-mono">{analysisResult.video_id}</code></span>
                         <a
                           href={analysisResult.url}
                           target="_blank"
@@ -695,10 +695,10 @@ function VideoDownloaderContent() {
                           {analysisResult.title}
                         </h3>
 
-                        <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-zinc-400 mt-2">
+                        <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-[var(--text-muted)] mt-2">
                           {/* Channel Name */}
                           <div className="flex items-center gap-1.5">
-                            <span className="text-zinc-500">Channel:</span>
+                            <span className="text-[var(--text-muted)]">Channel:</span>
                             {analysisResult.channel_url ? (
                               <a
                                 href={analysisResult.channel_url}
@@ -719,8 +719,8 @@ function VideoDownloaderContent() {
                           <span>•</span>
 
                           {/* Published Date */}
-                          <div className="flex items-center gap-1 text-zinc-400">
-                            <Calendar className="w-3.5 h-3.5 text-zinc-500" />
+                          <div className="flex items-center gap-1 text-[var(--text-muted)]">
+                            <Calendar className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                             <span>{analysisResult.published_date_formatted || 'Published recently'}</span>
                           </div>
 
@@ -740,8 +740,8 @@ function VideoDownloaderContent() {
 
                       {/* Description snippet */}
                       {analysisResult.description && (
-                        <div className="space-y-1 bg-white/[0.02] p-3 rounded-xl border border-white/[0.04]">
-                          <p className={cn('text-xs text-zinc-400 leading-relaxed', !showFullDescription && 'line-clamp-2')}>
+                        <div className="space-y-1 bg-white/[0.02] p-3 rounded-xl border border-[var(--card-border)]">
+                          <p className={cn('text-xs text-[var(--text-muted)] leading-relaxed', !showFullDescription && 'line-clamp-2')}>
                             {analysisResult.description}
                           </p>
                           {analysisResult.description.length > 140 && (
@@ -759,11 +759,11 @@ function VideoDownloaderContent() {
                       {/* Public Tags */}
                       {analysisResult.tags && analysisResult.tags.length > 0 && (
                         <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                          <Tag className="w-3 h-3 text-zinc-500 shrink-0" />
+                          <Tag className="w-3 h-3 text-[var(--text-muted)] shrink-0" />
                           {analysisResult.tags.slice(0, 6).map((tag, idx) => (
                             <span
                               key={idx}
-                              className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-[10px] text-zinc-400 font-mono"
+                              className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-[var(--card-border)] text-[10px] text-[var(--text-muted)] font-mono"
                             >
                               #{tag}
                             </span>
@@ -786,7 +786,7 @@ function VideoDownloaderContent() {
                           <h3 className="font-bold text-sm text-white">
                             Creator Authorized Video Download Workflow
                           </h3>
-                          <p className="text-[11px] text-zinc-400">
+                          <p className="text-[11px] text-[var(--text-muted)]">
                             Download your original master MP4 file directly via official YouTube Studio.
                           </p>
                         </div>
@@ -807,7 +807,7 @@ function VideoDownloaderContent() {
 
                     {/* Step-by-Step Official Instructions */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-3 bg-black/40 p-4 rounded-xl border border-white/[0.06]">
+                      <div className="space-y-3 bg-black/40 p-4 rounded-xl border border-[var(--card-border)]">
                         <h4 className="text-xs font-semibold text-red-300 uppercase tracking-wider flex items-center gap-1.5">
                           <Layers className="w-3.5 h-3.5" />
                           <span>Official Download Steps:</span>
@@ -826,23 +826,23 @@ function VideoDownloaderContent() {
                       </div>
 
                       {/* Official API Disclaimer & Safety Guidelines */}
-                      <div className="space-y-3 bg-black/40 p-4 rounded-xl border border-white/[0.06] flex flex-col justify-between">
+                      <div className="space-y-3 bg-black/40 p-4 rounded-xl border border-[var(--card-border)] flex flex-col justify-between">
                         <div className="space-y-2">
                           <h4 className="text-xs font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                             <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
                             <span>Official YouTube Data API Policy</span>
                           </h4>
-                          <p className="text-xs text-zinc-400 leading-relaxed">
+                          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                             {analysisResult.workflow.disclaimer}
                           </p>
                         </div>
 
-                        <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2">
+                        <div className="pt-2 border-t border-[var(--card-border)] flex items-center justify-between gap-2">
                           <a
                             href={analysisResult.workflow.learn_more_url || 'https://support.google.com/youtube/answer/56100'}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[11px] text-zinc-400 hover:text-white flex items-center gap-1 transition-colors"
+                            className="text-[11px] text-[var(--text-muted)] hover:text-[var(--foreground)] flex items-center gap-1 transition-colors"
                           >
                             <span>Google Support Guide</span>
                             <ExternalLink className="w-3 h-3" />
@@ -865,7 +865,7 @@ function VideoDownloaderContent() {
 
                 {/* VIDEO QUALITY & FORMAT SELECTOR */}
                 <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-b from-[#0a0a0a] to-[#000000] p-6 shadow-2xl space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--card-border)] pb-4">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
                         <FileVideo className="w-4 h-4" />
@@ -874,7 +874,7 @@ function VideoDownloaderContent() {
                         <h3 className="font-bold text-sm text-white">
                           Select Download Quality
                         </h3>
-                        <p className="text-[11px] text-zinc-400">
+                        <p className="text-[11px] text-[var(--text-muted)]">
                           Choose your desired resolution and audio profile.
                         </p>
                       </div>
@@ -894,7 +894,7 @@ function VideoDownloaderContent() {
                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                         <span>Available Video & Audio Streams</span>
                       </label>
-                      <span className="text-[11px] text-zinc-500">
+                      <span className="text-[11px] text-[var(--text-muted)]">
                         Direct high-fidelity streams
                       </span>
                     </div>
@@ -914,7 +914,7 @@ function VideoDownloaderContent() {
                               'p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer group',
                               isSelected
                                 ? 'bg-blue-600/20 border-blue-500 shadow-lg shadow-blue-600/25 ring-1 ring-blue-500/60'
-                                : 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.15]'
+                                : 'bg-white/[0.03] border-[var(--card-border)] hover:bg-white/[0.06] hover:border-white/[0.15]'
                             )}
                           >
                             <div className="flex items-start justify-between gap-2">
@@ -934,7 +934,7 @@ function VideoDownloaderContent() {
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-[11px] text-zinc-400 truncate">
+                                <p className="text-[11px] text-[var(--text-muted)] truncate">
                                   {fmt.label}
                                 </p>
                               </div>
@@ -947,8 +947,8 @@ function VideoDownloaderContent() {
                               </div>
                             </div>
 
-                            <div className="mt-3 pt-2 border-t border-white/[0.06] flex items-center justify-between text-[10px]">
-                              <span className="text-zinc-400 font-medium flex items-center gap-1">
+                            <div className="mt-3 pt-2 border-t border-[var(--card-border)] flex items-center justify-between text-[10px]">
+                              <span className="text-[var(--text-muted)] font-medium flex items-center gap-1">
                                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
                                 <span>{fmt.badge}</span>
                               </span>
@@ -963,7 +963,7 @@ function VideoDownloaderContent() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                       {/* Format Selector */}
                       <div>
-                        <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
+                        <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider block mb-1.5">
                           Output Container Format
                         </label>
                         <div className="flex items-center gap-2">
@@ -978,7 +978,7 @@ function VideoDownloaderContent() {
                                     'flex-1 py-2 rounded-lg border text-xs font-semibold uppercase transition-all cursor-pointer',
                                     selectedExt === ext
                                       ? 'bg-blue-600/20 border-blue-500 text-blue-300'
-                                      : 'bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-zinc-200'
+                                      : 'bg-white/[0.03] border-[var(--card-border)] text-[var(--text-muted)] hover:text-zinc-200'
                                   )}
                                 >
                                   {ext}
@@ -996,7 +996,7 @@ function VideoDownloaderContent() {
                                     'flex-1 py-2 rounded-lg border text-xs font-semibold uppercase transition-all cursor-pointer',
                                     selectedExt === ext
                                       ? 'bg-blue-600/20 border-blue-500 text-blue-300'
-                                      : 'bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-zinc-200'
+                                      : 'bg-white/[0.03] border-[var(--card-border)] text-[var(--text-muted)] hover:text-zinc-200'
                                   )}
                                 >
                                   {ext}
@@ -1009,13 +1009,13 @@ function VideoDownloaderContent() {
 
                       {/* Destination Selector */}
                       <div>
-                        <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
+                        <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider block mb-1.5">
                           Save Destination
                         </label>
                         <select
                           value={saveDestination}
                           onChange={(e: any) => setSaveDestination(e.target.value)}
-                          className="w-full h-9 px-3 rounded-lg bg-[#0a0a0a] border border-white/[0.1] text-xs text-zinc-200 focus:outline-none focus:border-blue-500/80 cursor-pointer"
+                          className="w-full h-9 px-3 rounded-lg bg-[var(--card)] border border-[var(--card-border)] text-xs text-zinc-200 focus:outline-none focus:border-blue-500/80 cursor-pointer"
                         >
                           <option value="downloads">💻 Save to My Mac (Downloads)</option>
                           <option value="projects">✂️ Save to AI Studio (Auto-Clip Ready)</option>
@@ -1027,13 +1027,13 @@ function VideoDownloaderContent() {
                     {/* Custom Folder Input if selected */}
                     {saveDestination === 'custom' && (
                       <div className="space-y-1 animate-in fade-in duration-200">
-                        <label className="text-[11px] text-zinc-400">Custom Destination Folder Path</label>
+                        <label className="text-[11px] text-[var(--text-muted)]">Custom Destination Folder Path</label>
                         <input
                           type="text"
                           value={customPath}
                           onChange={(e) => setCustomPath(e.target.value)}
                           placeholder="/Users/username/Downloads/MyVideos"
-                          className="w-full h-9 px-3 rounded-lg bg-[#0a0a0a] border border-white/[0.1] text-xs text-white font-mono placeholder-zinc-600 focus:outline-none focus:border-blue-500"
+                          className="w-full h-9 px-3 rounded-lg bg-[var(--card)] border border-[var(--card-border)] text-xs text-white font-mono placeholder-zinc-600 focus:outline-none focus:border-blue-500"
                         />
                       </div>
                     )}
@@ -1068,7 +1068,7 @@ function VideoDownloaderContent() {
 
             {/* DOWNLOAD MANAGER (ACTIVE TASKS & REAL-TIME CONTROLS) */}
             <div ref={managerRef} className="space-y-4 pt-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--card-border)] pb-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
                     <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
@@ -1078,8 +1078,8 @@ function VideoDownloaderContent() {
                       </Badge>
                     </h2>
                   </div>
-                  <p className="text-[11px] text-zinc-500 flex items-center gap-1.5">
-                    <Info className="w-3 h-3 text-zinc-500 shrink-0" />
+                  <p className="text-[11px] text-[var(--text-muted)] flex items-center gap-1.5">
+                    <Info className="w-3 h-3 text-[var(--text-muted)] shrink-0" />
                     <span>Actual transfer speed is determined by your connection bandwidth and source server limits.</span>
                   </p>
                 </div>
@@ -1087,19 +1087,19 @@ function VideoDownloaderContent() {
                 {/* Batch Actions Toolbar */}
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-zinc-500 absolute inset-y-0 left-2.5 my-auto" />
+                    <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute inset-y-0 left-2.5 my-auto" />
                     <input
                       type="text"
                       placeholder="Filter downloads..."
                       value={searchFilter}
                       onChange={(e) => setSearchFilter(e.target.value)}
-                      className="w-40 sm:w-48 h-8 pl-8 pr-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50"
+                      className="w-40 sm:w-48 h-8 pl-8 pr-2.5 rounded-lg bg-white/[0.04] border border-[var(--card-border)] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50"
                     />
                   </div>
 
                   <button
                     onClick={() => handleSelectAllVisible(filteredTasks)}
-                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Select or deselect all items"
                   >
                     <CheckSquare className="w-3.5 h-3.5 text-blue-400" />
@@ -1108,7 +1108,7 @@ function VideoDownloaderContent() {
 
                   <button
                     onClick={() => handleBatch('resume_all')}
-                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Resume all paused and interrupted downloads"
                   >
                     <Play className="w-3.5 h-3.5 text-emerald-400" />
@@ -1117,7 +1117,7 @@ function VideoDownloaderContent() {
 
                   <button
                     onClick={() => handleBatch('pause_all')}
-                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Pause all active downloads"
                   >
                     <Pause className="w-3.5 h-3.5 text-amber-400" />
@@ -1126,7 +1126,7 @@ function VideoDownloaderContent() {
 
                   <button
                     onClick={() => handleBatch('retry_failed')}
-                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-blue-300 hover:text-white border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-blue-300 hover:text-white border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Retry all failed and interrupted downloads"
                   >
                     <RotateCcw className="w-3.5 h-3.5 text-blue-400" />
@@ -1135,7 +1135,7 @@ function VideoDownloaderContent() {
 
                   <button
                     onClick={() => handleBatch('cancel_all')}
-                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-[var(--text-muted)] hover:text-rose-400 border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Cancel all active downloads"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -1144,7 +1144,7 @@ function VideoDownloaderContent() {
 
                   <button
                     onClick={() => handleBatch('clear_completed')}
-                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-zinc-200 border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[var(--text-muted)] hover:text-zinc-200 border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Clear completed tasks from view"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
@@ -1158,8 +1158,8 @@ function VideoDownloaderContent() {
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span className="font-semibold text-white">Resumable Download Engine</span>
-                  <span className="text-zinc-500 hidden sm:inline">•</span>
-                  <span className="text-zinc-400 text-[11px] hidden sm:inline">Auto-reconnects on network drops without file corruption.</span>
+                  <span className="text-[var(--text-muted)] hidden sm:inline">•</span>
+                  <span className="text-[var(--text-muted)] text-[11px] hidden sm:inline">Auto-reconnects on network drops without file corruption.</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono shrink-0">
@@ -1193,7 +1193,7 @@ function VideoDownloaderContent() {
                       size="sm"
                       variant="ghost"
                       onClick={() => setSelectedTaskIds(new Set())}
-                      className="rounded-xl text-xs py-1.5 text-zinc-400 hover:text-white"
+                      className="rounded-xl text-xs py-1.5 text-[var(--text-muted)] hover:text-[var(--foreground)]"
                     >
                       Deselect
                     </Button>
@@ -1203,12 +1203,12 @@ function VideoDownloaderContent() {
 
               {/* Downloads Task List */}
               {filteredTasks.length === 0 ? (
-                <div className="rounded-2xl border border-white/[0.06] bg-[#0c0c12]/50 p-12 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto text-zinc-500">
+                <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-12 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-[var(--card-border)] flex items-center justify-center mx-auto text-[var(--text-muted)]">
                     <DownloadCloud className="w-6 h-6" />
                   </div>
                   <h3 className="font-semibold text-sm text-zinc-300">No Active Downloads</h3>
-                  <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                  <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
                     Paste a YouTube link above and click Analyze to begin downloading high-definition videos with verified source qualities.
                   </p>
                 </div>
@@ -1236,7 +1236,7 @@ function VideoDownloaderContent() {
                           isInterrupted && 'bg-orange-950/15 border-orange-500/30',
                           isCompleted && 'bg-emerald-950/15 border-emerald-500/30',
                           isFailed && 'bg-rose-950/15 border-rose-500/30',
-                          !isDownloading && !isConnecting && !isVerifying && !isPaused && !isInterrupted && !isCompleted && !isFailed && 'bg-white/[0.02] border-white/[0.06]'
+                          !isDownloading && !isConnecting && !isVerifying && !isPaused && !isInterrupted && !isCompleted && !isFailed && 'bg-white/[0.02] border-[var(--card-border)]'
                         )}
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1245,7 +1245,7 @@ function VideoDownloaderContent() {
                             <button
                               type="button"
                               onClick={() => handleToggleSelectTask(task.task_id)}
-                              className="shrink-0 p-1 text-zinc-500 hover:text-blue-400 cursor-pointer"
+                              className="shrink-0 p-1 text-[var(--text-muted)] hover:text-blue-400 cursor-pointer"
                               title={selectedTaskIds.has(task.task_id) ? "Deselect" : "Select"}
                             >
                               {selectedTaskIds.has(task.task_id) ? (
@@ -1255,7 +1255,7 @@ function VideoDownloaderContent() {
                               )}
                             </button>
 
-                            <div className="w-16 h-10 rounded-lg overflow-hidden bg-black shrink-0 relative border border-white/10">
+                            <div className="w-16 h-10 rounded-lg overflow-hidden bg-black shrink-0 relative border border-[var(--card-border)]">
                               {task.thumbnail ? (
                                 <Image
                                   src={task.thumbnail}
@@ -1278,14 +1278,14 @@ function VideoDownloaderContent() {
                               <h4 className="text-xs font-semibold text-white truncate leading-tight">
                                 {task.title}
                               </h4>
-                              <div className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-400 mt-0.5">
+                              <div className="flex flex-wrap items-center gap-2 text-[11px] text-[var(--text-muted)] mt-0.5">
                                 <span className="uppercase font-mono font-medium text-blue-400">
                                   {task.ext}
                                 </span>
                                 <span>•</span>
                                 <span>{task.resolution}</span>
                                 <span>•</span>
-                                <span className="font-mono text-zinc-400">
+                                <span className="font-mono text-[var(--text-muted)]">
                                   {task.total_bytes > 0
                                     ? `${(task.downloaded_bytes / (1024 * 1024)).toFixed(1)} / ${(task.total_bytes / (1024 * 1024)).toFixed(1)} MB`
                                     : 'Calculating size...'}
@@ -1317,7 +1317,7 @@ function VideoDownloaderContent() {
                                     <Zap className="w-3 h-3 text-cyan-400 animate-pulse" />
                                     <span>{task.speed_formatted}</span>
                                   </div>
-                                  <div className="text-zinc-500 font-mono text-[10px]">
+                                  <div className="text-[var(--text-muted)] font-mono text-[10px]">
                                     ETA: {task.eta_formatted}
                                   </div>
                                 </>
@@ -1412,7 +1412,7 @@ function VideoDownloaderContent() {
                               {(isDownloading || isPaused || isConnecting || isInterrupted) && (
                                 <button
                                   onClick={() => handleCancel(task.task_id)}
-                                  className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
+                                  className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-rose-500/20 text-[var(--text-muted)] hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
                                   title="Cancel download"
                                 >
                                   <X className="w-4 h-4" />
@@ -1475,7 +1475,7 @@ function VideoDownloaderContent() {
 
                               <button
                                 onClick={() => promptDeleteSingle(task)}
-                                className="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
+                                className="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-[var(--text-muted)] hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
                                 title="Delete task and media file"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -1502,7 +1502,7 @@ function VideoDownloaderContent() {
                             />
                           </div>
 
-                          <div className="flex items-center justify-between text-[10px] text-zinc-500 font-mono">
+                          <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
                             <span>
                               {isConnecting
                                 ? 'Connecting to remote host...'
@@ -1550,32 +1550,32 @@ function VideoDownloaderContent() {
         ) : (
           /* DOWNLOAD HISTORY TAB */
           <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--card-border)] pb-4">
               <div>
                 <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
                   <Clock className="w-5 h-5 text-blue-400" />
                   <span>Download History</span>
                 </h2>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-[var(--text-muted)]">
                   Archived library of media downloaded via ClipGenius Downloader.
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-zinc-500 absolute inset-y-0 left-2.5 my-auto" />
+                  <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute inset-y-0 left-2.5 my-auto" />
                   <input
                     type="text"
                     placeholder="Search history..."
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
-                    className="w-48 h-8 pl-8 pr-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50"
+                    className="w-48 h-8 pl-8 pr-2.5 rounded-lg bg-white/[0.04] border border-[var(--card-border)] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50"
                   />
                 </div>
 
                 <button
                   onClick={() => handleBatch('clear_completed')}
-                  className="h-8 px-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-zinc-200 border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="h-8 px-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[var(--text-muted)] hover:text-zinc-200 border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Clear History</span>
@@ -1584,12 +1584,12 @@ function VideoDownloaderContent() {
             </div>
 
             {filteredHistory.length === 0 ? (
-              <div className="rounded-2xl border border-white/[0.06] bg-[#0c0c12]/50 p-16 text-center space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto text-zinc-500">
+              <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-16 text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-[var(--card-border)] flex items-center justify-center mx-auto text-[var(--text-muted)]">
                   <Clock className="w-6 h-6" />
                 </div>
                 <h3 className="font-semibold text-sm text-zinc-300">No Download History Yet</h3>
-                <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
                   Completed downloads will appear here with instant offline access and one-click AI clipping.
                 </p>
                 <div className="pt-2">
@@ -1606,10 +1606,10 @@ function VideoDownloaderContent() {
                 {filteredHistory.map((item) => (
                   <div
                     key={item.task_id}
-                    className="rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04] transition-all p-4 space-y-3 flex flex-col justify-between group"
+                    className="rounded-xl border border-[var(--card-border)] bg-white/[0.02] hover:bg-white/[0.04] transition-all p-4 space-y-3 flex flex-col justify-between group"
                   >
                     <div className="space-y-3">
-                      <div className="relative aspect-video rounded-lg overflow-hidden bg-black border border-white/10">
+                      <div className="relative aspect-video rounded-lg overflow-hidden bg-black border border-[var(--card-border)]">
                         {/* Multi-Select Checkbox */}
                         <button
                           type="button"
@@ -1620,7 +1620,7 @@ function VideoDownloaderContent() {
                           {selectedTaskIds.has(item.task_id) ? (
                             <CheckSquare className="w-3.5 h-3.5 text-blue-400" />
                           ) : (
-                            <Square className="w-3.5 h-3.5 text-zinc-400" />
+                            <Square className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                           )}
                         </button>
 
@@ -1646,7 +1646,7 @@ function VideoDownloaderContent() {
                         <h4 className="font-semibold text-xs text-white line-clamp-2 leading-snug">
                           {item.title}
                         </h4>
-                        <div className="flex items-center gap-2 text-[11px] text-zinc-400 mt-1">
+                        <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] mt-1">
                           <span className="uppercase font-mono text-blue-400">{item.ext}</span>
                           <span>•</span>
                           <span>{(item.total_bytes / (1024 * 1024)).toFixed(1)} MB</span>
@@ -1656,7 +1656,7 @@ function VideoDownloaderContent() {
                       </div>
                     </div>
 
-                    <div className="space-y-2 pt-2 border-t border-white/[0.06]">
+                    <div className="space-y-2 pt-2 border-t border-[var(--card-border)]">
                       {/* macOS Native Actions Row */}
                       <div className="grid grid-cols-4 gap-1.5">
                         <button
@@ -1685,7 +1685,7 @@ function VideoDownloaderContent() {
 
                         <button
                           onClick={() => setDetailsModalTask(item as any)}
-                          className="h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 border border-white/[0.08] flex items-center justify-center transition-colors cursor-pointer"
+                          className="h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 border border-[var(--card-border)] flex items-center justify-center transition-colors cursor-pointer"
                           title="File Specs & Location"
                         >
                           <Info className="w-3.5 h-3.5" />
@@ -1714,7 +1714,7 @@ function VideoDownloaderContent() {
 
                         <button
                           onClick={() => promptDeleteSingle(item as any)}
-                          className="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
+                          className="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-[var(--text-muted)] hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
                           title="Delete from history and disk"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1766,7 +1766,7 @@ function VideoDownloaderContent() {
       {/* Permanent Deletion Confirmation Modal */}
       {deleteConfirmState && deleteConfirmState.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl bg-[#111116] border border-rose-500/30 p-6 space-y-4 shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl bg-[var(--card)] border border-rose-500/30 p-6 space-y-4 shadow-2xl">
             <div className="flex items-start gap-3">
               <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 shrink-0">
                 <Trash2 className="w-6 h-6" />
@@ -1788,7 +1788,7 @@ function VideoDownloaderContent() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setDeleteConfirmState(null)}
-                className="text-xs text-zinc-400 hover:text-white"
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--foreground)]"
               >
                 Cancel
               </Button>
@@ -1812,10 +1812,10 @@ export default function VideoDownloaderPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex-1 min-h-[60vh] bg-[#000000] text-zinc-100 flex items-center justify-center">
+        <div className="flex-1 min-h-[60vh] bg-[var(--background)] text-[var(--foreground)] flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <RefreshCw className="w-7 h-7 text-blue-500 animate-spin" />
-            <p className="text-xs font-medium text-zinc-400">Loading Video Downloader...</p>
+            <p className="text-xs font-medium text-[var(--text-muted)]">Loading Video Downloader...</p>
           </div>
         </div>
       }

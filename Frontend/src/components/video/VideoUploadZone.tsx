@@ -200,7 +200,7 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
           </div>
           <button
             onClick={() => setErrorMessage(null)}
-            className="text-zinc-400 hover:text-white p-1"
+            className="text-[var(--text-muted)] hover:text-[var(--foreground)] p-1"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -209,7 +209,7 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
 
       {/* STATE 1: ACTIVE UPLOADING (REAL PROGRESS TRACKING) */}
       {uploadProgress !== null && currentFile && (
-        <div className="p-8 rounded-3xl bg-[#111116] border border-purple-500/40 text-center space-y-5 shadow-2xl">
+        <div className="p-8 rounded-3xl bg-[var(--card)] border border-purple-500/40 text-center space-y-5 shadow-2xl">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-950/60 border border-purple-800/60 text-purple-400 flex items-center justify-center">
             <RefreshCw className="w-6 h-6 animate-spin text-purple-400" />
           </div>
@@ -245,9 +245,9 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
 
       {/* STATE 2: UPLOAD SUCCESS & VIDEO PREVIEW PLAYER */}
       {uploadProgress === null && uploadedVideo && (
-        <div className="rounded-3xl bg-[#111116] border border-white/[0.08] overflow-hidden shadow-2xl space-y-5 p-6">
+        <div className="rounded-3xl bg-[var(--card)] border border-[var(--card-border)] overflow-hidden shadow-2xl space-y-5 p-6">
           {/* Header Action Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[var(--card-border)]">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-emerald-950/70 border border-emerald-800/60 text-emerald-400 flex items-center justify-center">
                 <CheckCircle2 className="w-4 h-4" />
@@ -310,7 +310,7 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
               </span>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                <div className="p-3 rounded-xl bg-zinc-950/80 border border-white/[0.06]">
+                <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)]">
                   <span className="text-[10px] text-zinc-500 uppercase font-semibold block">Duration</span>
                   <span className="text-xs font-mono font-bold text-white mt-0.5 block">
                     {formatDuration(uploadedVideo.duration)}
@@ -320,7 +320,7 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-zinc-950/80 border border-white/[0.06]">
+                <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)]">
                   <span className="text-[10px] text-zinc-500 uppercase font-semibold block">File Size</span>
                   <span className="text-xs font-mono font-bold text-white mt-0.5 block">
                     {formatFileSize(uploadedVideo.file_size_mb)}
@@ -330,7 +330,7 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-zinc-950/80 border border-white/[0.06]">
+                <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)]">
                   <span className="text-[10px] text-zinc-500 uppercase font-semibold block">Resolution</span>
                   <span className="text-xs font-mono font-bold text-white mt-0.5 block">
                     {uploadedVideo.metadata?.width || 1920}x{uploadedVideo.metadata?.height || 1080}
@@ -340,7 +340,7 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-zinc-950/80 border border-white/[0.06]">
+                <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)]">
                   <span className="text-[10px] text-zinc-500 uppercase font-semibold block">Frame Rate</span>
                   <span className="text-xs font-mono font-bold text-white mt-0.5 block">
                     {uploadedVideo.metadata?.fps || 30} FPS
@@ -354,7 +354,7 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
               {/* Extra technical details badge row */}
               <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-zinc-400">
                 <span className="text-[11px] text-zinc-500">Storage Filename:</span>
-                <code className="px-2 py-0.5 rounded bg-zinc-950 text-[10px] text-purple-300 font-mono border border-white/[0.06]">
+                <code className="px-2 py-0.5 rounded bg-[var(--surface)] text-[10px] text-purple-300 font-mono border border-[var(--card-border)]">
                   {uploadedVideo.stored_filename}
                 </code>
                 {uploadedVideo.metadata?.audio_codec && (
@@ -378,7 +378,7 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
               </span>
 
               {thumbnailStreamUrl ? (
-                <div className="relative rounded-xl overflow-hidden aspect-video bg-zinc-950 border border-white/[0.08] shadow-md group">
+                <div className="relative rounded-xl overflow-hidden aspect-video bg-[var(--surface)] border border-[var(--card-border)] shadow-md group">
                   <img
                     src={thumbnailStreamUrl}
                     alt="Video thumbnail"
@@ -391,7 +391,7 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="rounded-xl aspect-video bg-zinc-950 border border-white/[0.06] flex items-center justify-center text-zinc-600 text-xs">
+                <div className="rounded-xl aspect-video bg-[var(--surface)] border border-[var(--card-border)] flex items-center justify-center text-zinc-600 text-xs">
                   No thumbnail
                 </div>
               )}
@@ -411,7 +411,7 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
           className={`border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center transition-all cursor-pointer relative overflow-hidden group ${
             dragActive
               ? 'border-purple-500 bg-purple-950/25 shadow-2xl shadow-purple-950/40 scale-[1.01]'
-              : 'border-white/[0.1] hover:border-purple-500/50 bg-[#111116] hover:bg-[#14141b]'
+              : 'border-[var(--card-border)] hover:border-purple-500/50 bg-[var(--card)] hover:bg-[#14141b]'
           }`}
         >
           {/* Hidden HTML File Input */}
@@ -450,11 +450,11 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
           </div>
 
           {/* Supported Format Tags */}
-          <div className="mt-6 pt-5 border-t border-white/[0.06] flex flex-wrap items-center justify-center gap-3 text-[11px] text-zinc-500">
+          <div className="mt-6 pt-5 border-t border-[var(--card-border)] flex flex-wrap items-center justify-center gap-3 text-[11px] text-zinc-500">
             <span className="font-semibold text-zinc-400">Supported Formats:</span>
-            <span className="px-2 py-0.5 rounded-md bg-zinc-950 border border-white/[0.06] text-purple-300 font-mono">MP4</span>
-            <span className="px-2 py-0.5 rounded-md bg-zinc-950 border border-white/[0.06] text-blue-300 font-mono">MOV</span>
-            <span className="px-2 py-0.5 rounded-md bg-zinc-950 border border-white/[0.06] text-pink-300 font-mono">WebM</span>
+            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] text-purple-300 font-mono">MP4</span>
+            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] text-blue-300 font-mono">MOV</span>
+            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] text-pink-300 font-mono">WebM</span>
             <span>•</span>
             <span>Max Size: <strong className="text-zinc-300">500MB</strong></span>
           </div>

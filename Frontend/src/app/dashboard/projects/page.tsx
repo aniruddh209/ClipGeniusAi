@@ -262,7 +262,7 @@ export default function MyProjectsPage() {
         action={
           <div className="flex items-center gap-2">
             {storageInfo && (
-              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-900 border border-white/10 text-xs">
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-900 border border-[var(--card-border)] text-xs">
                 <HardDrive className="w-3.5 h-3.5 text-blue-400" />
                 <span className="text-white/70">
                   Storage: <strong className="text-white font-mono">{storageInfo.total_storage_mb} MB</strong>
@@ -299,7 +299,7 @@ export default function MyProjectsPage() {
         {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Tabs */}
-          <div className="flex p-1 rounded-xl bg-[#0a0a0a] border border-white/[0.06] w-fit">
+          <div className="flex p-1 rounded-xl bg-[var(--card)] border border-[var(--card-border)] w-fit">
             {[
               { id: 'all', label: 'All Projects', count: projects.length },
               { id: 'completed', label: 'Completed / Ready', count: projects.filter(v => v.status === 'completed' || v.status === 'ready').length },
@@ -312,7 +312,7 @@ export default function MyProjectsPage() {
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                   filterTab === tab.id
                     ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
-                    : 'text-zinc-400 hover:text-white'
+                    : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                 }`}
               >
                 <span>{tab.label}</span>
@@ -331,7 +331,7 @@ export default function MyProjectsPage() {
               placeholder="Search by title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#0a0a0a] border border-white/[0.08] rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+              className="w-full bg-[var(--card)] border border-[var(--card-border)] rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500"
             />
           </div>
         </div>
@@ -357,7 +357,7 @@ export default function MyProjectsPage() {
             </div>
 
             {allClips.length === 0 ? (
-              <div className="p-12 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] text-center text-xs text-zinc-400">
+              <div className="p-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-center text-xs text-zinc-400">
                 No saved clips yet. Use the AI Clipper to generate viral 9:16 shorts.
               </div>
             ) : (
@@ -369,7 +369,7 @@ export default function MyProjectsPage() {
                     return (
                       <div
                         key={clip.id}
-                        className="p-4 rounded-2xl bg-[#0a0a0a] border border-white/[0.08] hover:border-blue-500/40 transition-all flex flex-col justify-between group shadow-xl"
+                        className="p-4 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] hover:border-blue-500/40 transition-all flex flex-col justify-between group shadow-xl"
                       >
                         <div className="relative rounded-xl overflow-hidden aspect-[9/16] max-h-60 w-full bg-black mb-3">
                           {thumb ? (
@@ -396,7 +396,7 @@ export default function MyProjectsPage() {
 
                         <div className="space-y-2 flex-1 flex flex-col justify-between">
                           <h4 className="text-xs font-bold text-white line-clamp-2">{clip.title}</h4>
-                          <div className="pt-2 border-t border-white/[0.06] flex items-center gap-2">
+                          <div className="pt-2 border-t border-[var(--card-border)] flex items-center gap-2">
                             <Button
                               onClick={() => setPreviewClip(clip)}
                               size="sm"
@@ -432,7 +432,7 @@ export default function MyProjectsPage() {
             )}
           </div>
         ) : projects.length === 0 ? (
-          <div className="py-20 px-6 text-center rounded-3xl bg-[#0a0a0a] border border-white/[0.08] space-y-4 max-w-2xl mx-auto shadow-2xl">
+          <div className="py-20 px-6 text-center rounded-3xl bg-[var(--card)] border border-[var(--card-border)] space-y-4 max-w-2xl mx-auto shadow-2xl">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600/20 to-pink-600/20 border border-blue-500/30 flex items-center justify-center mx-auto text-blue-400">
               <Film className="w-8 h-8" />
             </div>
@@ -460,7 +460,7 @@ export default function MyProjectsPage() {
               </span>
 
               {filteredProjects.length === 0 ? (
-                <div className="p-8 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] text-center text-xs text-zinc-400">
+                <div className="p-8 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-center text-xs text-zinc-400">
                   No projects match your search query.
                 </div>
               ) : (
@@ -477,7 +477,7 @@ export default function MyProjectsPage() {
                       className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                         isSelected
                           ? 'border-blue-500/60 bg-blue-950/20 shadow-lg shadow-blue-950/20'
-                          : 'border-white/[0.06] bg-[#0a0a0a] hover:border-zinc-700'
+                          : 'border-[var(--card-border)] bg-[var(--card)] hover:border-zinc-700'
                       }`}
                     >
                       <div className="flex gap-3 items-start">
@@ -525,7 +525,7 @@ export default function MyProjectsPage() {
                       </div>
 
                       {proj.status === 'transcribing' && (
-                        <div className="mt-3 pt-2 border-t border-white/[0.06] space-y-1">
+                        <div className="mt-3 pt-2 border-t border-[var(--card-border)] space-y-1">
                           <div className="flex justify-between text-[10px] text-zinc-400 font-mono">
                             <span>Faster-Whisper Processing</span>
                             <span>{proj.progress_percentage}%</span>
@@ -548,7 +548,7 @@ export default function MyProjectsPage() {
           <div className="lg:col-span-7 space-y-5">
             {/* Selected Project Card */}
             {selectedProject && (
-              <Card className="border-white/[0.08] bg-[#0a0a0a] p-5 space-y-4">
+              <Card className="border-[var(--card-border)] bg-[var(--card)] p-5 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -591,7 +591,7 @@ export default function MyProjectsPage() {
 
                 {/* HTML Video Player if real video URL exists */}
                 {selectedProject.video_url && (
-                  <div className="relative rounded-2xl overflow-hidden aspect-video bg-black border border-white/[0.08] shadow-inner mt-2">
+                  <div className="relative rounded-2xl overflow-hidden aspect-video bg-black border border-[var(--card-border)] shadow-inner mt-2">
                     <video
                       src={api.getServerUrl(selectedProject.video_url)}
                       controls
@@ -615,12 +615,12 @@ export default function MyProjectsPage() {
               </div>
 
               {isLoadingClips ? (
-                <div className="p-12 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] text-center text-xs text-zinc-400">
+                <div className="p-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-center text-xs text-zinc-400">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-400 mb-2" />
                   Loading candidate clips...
                 </div>
               ) : projectClips.length === 0 ? (
-                <div className="p-12 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] text-center space-y-3">
+                <div className="p-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-center space-y-3">
                   <Scissors className="w-8 h-8 text-zinc-600 mx-auto" />
                   <p className="text-sm font-semibold text-white">No clips generated for this video yet</p>
                   <p className="text-xs text-zinc-400 max-w-sm mx-auto">
@@ -658,9 +658,9 @@ export default function MyProjectsPage() {
                     return (
                       <div
                         key={clip.id}
-                        className="p-4 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] hover:border-blue-500/40 transition-all flex flex-col justify-between group shadow-lg"
+                        className="p-4 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] hover:border-blue-500/40 transition-all flex flex-col justify-between group shadow-lg"
                       >
-                        <div className="relative rounded-xl overflow-hidden aspect-[9/16] max-h-56 w-full bg-zinc-950 mb-3">
+                        <div className="relative rounded-xl overflow-hidden aspect-[9/16] max-h-56 w-full bg-[var(--surface)] mb-3">
                           {thumb ? (
                             <img
                               src={thumb}
@@ -685,7 +685,7 @@ export default function MyProjectsPage() {
                           </div>
 
                           <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 z-10 text-center">
-                            <span className="inline-block bg-black/85 px-2 py-1 rounded text-[10px] font-black uppercase text-[#FFDD00] shadow-xl border border-white/10">
+                            <span className="inline-block bg-black/85 px-2 py-1 rounded text-[10px] font-black uppercase text-[#FFDD00] shadow-xl border border-[var(--card-border)]">
                               {clip.title.slice(0, 24)}...
                             </span>
                           </div>
@@ -705,7 +705,7 @@ export default function MyProjectsPage() {
                             )}
                           </div>
 
-                          <div className="pt-2 border-t border-white/[0.06] flex items-center gap-2">
+                          <div className="pt-2 border-t border-[var(--card-border)] flex items-center gap-2">
                             <Button
                               onClick={() => setPreviewClip(clip)}
                               size="sm"
@@ -740,7 +740,7 @@ export default function MyProjectsPage() {
                             <button
                               onClick={(e) => handleDeleteClip(clip.id, e)}
                               disabled={deletingClipId === clip.id}
-                              className="p-2 rounded-xl border border-white/10 text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors"
+                              className="p-2 rounded-xl border border-[var(--card-border)] text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors"
                               title="Delete clip"
                             >
                               {deletingClipId === clip.id ? (
@@ -765,8 +765,8 @@ export default function MyProjectsPage() {
       {/* Clip Preview Modal */}
       {previewClip && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg rounded-3xl bg-[#0a0a0a] border border-white/[0.1] p-6 space-y-4 shadow-2xl relative">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+          <div className="w-full max-w-lg rounded-3xl bg-[var(--card)] border border-[var(--card-border)] p-6 space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--card-border)]">
               <div className="space-y-1 pr-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-white line-clamp-1">{previewClip.title}</span>
@@ -785,7 +785,7 @@ export default function MyProjectsPage() {
                 <CircularScore score={previewClip.overall_score ?? previewClip.virality_score} size="sm" showLabel={false} />
                 <button
                   onClick={() => setPreviewClip(null)}
-                  className="text-zinc-400 hover:text-white text-sm p-1"
+                  className="text-[var(--text-muted)] hover:text-[var(--foreground)] text-sm p-1"
                 >
                   ✕
                 </button>
@@ -793,7 +793,7 @@ export default function MyProjectsPage() {
             </div>
 
             {previewClip.video_url ? (
-              <div className="relative rounded-2xl overflow-hidden aspect-[9/16] max-h-80 mx-auto bg-black border border-white/[0.08]">
+              <div className="relative rounded-2xl overflow-hidden aspect-[9/16] max-h-80 mx-auto bg-black border border-[var(--card-border)]">
                 <video
                   src={api.getServerUrl(previewClip.video_url)}
                   controls
@@ -803,7 +803,7 @@ export default function MyProjectsPage() {
                 />
               </div>
             ) : (
-              <div className="relative rounded-2xl overflow-hidden aspect-[9/16] max-h-72 mx-auto bg-zinc-950 border border-white/[0.08]">
+              <div className="relative rounded-2xl overflow-hidden aspect-[9/16] max-h-72 mx-auto bg-[var(--surface)] border border-[var(--card-border)]">
                 {previewClip.thumbnail_url ? (
                   <img
                     src={
@@ -823,7 +823,7 @@ export default function MyProjectsPage() {
                   <span className="text-[10px] bg-blue-600 text-white font-bold px-2 py-0.5 rounded self-end">
                     {Math.round(previewClip.overall_score ?? previewClip.virality_score)} Quality Score
                   </span>
-                  <span className="inline-block bg-black/90 px-3 py-1.5 rounded-lg text-xs font-black uppercase text-[#FFDD00] shadow-xl border border-white/10 mx-auto">
+                  <span className="inline-block bg-black/90 px-3 py-1.5 rounded-lg text-xs font-black uppercase text-[#FFDD00] shadow-xl border border-[var(--card-border)] mx-auto">
                     &quot;{previewClip.hook || previewClip.hook_sentence || previewClip.title}&quot;
                   </span>
                   <span className="text-[10px] text-zinc-400 font-mono">
@@ -835,7 +835,7 @@ export default function MyProjectsPage() {
 
             {/* Score Reasons & Evidence in Modal */}
             {previewClip.score_reasons && previewClip.score_reasons.length > 0 && (
-              <div className="p-3 rounded-xl bg-zinc-950/80 border border-white/[0.06] text-xs space-y-1">
+              <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)] text-xs space-y-1">
                 <span className="text-[10px] uppercase font-bold text-zinc-400 block tracking-wider">
                   Quality Scoring Evidence:
                 </span>
