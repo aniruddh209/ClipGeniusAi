@@ -135,6 +135,50 @@ async def import_video_from_url(payload: VideoCreateFromUrl):
 
     return VideoResponse(**video_doc)
 
+@router.post("/direct-youtube-clip", response_model=VideoResponse, status_code=status.HTTP_201_CREATED)
+async def direct_youtube_clip_ingest(payload: VideoCreateFromUrl):
+    """
+    Direct Fast 4K Clipping Ingest:
+    Extracts metadata and audio without downloading the full multi-gigabyte video file.
+    Enables instant transcription, moment detection, and direct on-demand 4K clipping!
+    """
+    logger.info(f"Incoming direct fast 4K clipping request: {payload.url}")
+    file_info = await video_downloader.prepare_direct_youtube_clip(payload.url)
+    video_id = file_info["id"]
+
+    video_doc = {
+        "id": video_id,
+        "title": file_info["title"],
+        "original_filename": file_info["original_filename"],
+        "stored_filename": file_info["stored_filename"],
+        "source_type": VideoSourceType.YOUTUBE_URL,
+        "source_url": payload.url,
+        "file_path": file_info["file_path"],
+        "file_size_mb": file_info["file_size_mb"],
+        "duration": file_info["duration"],
+        "video_url": file_info["video_url"],
+        "thumbnail_url": file_info["thumbnail_url"],
+        "metadata": file_info["metadata"],
+        "status": VideoStatus.READY,
+        "progress_percentage": 100,
+        "current_step": "Direct 4K YouTube stream ready for clipping",
+        "transcript_available": False,
+        "clips_count": 0,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+
+    db = get_database()
+    if db is not None:
+        try:
+            await db.videos.insert_one(dict(video_doc))
+        except Exception as e:
+            logger.warning(f"Could not save video to MongoDB: {e}")
+
+    _in_memory_videos[video_id] = video_doc
+    logger.info(f"Direct fast YouTube clip ingest successful: {video_id} ({file_info['duration']}s)")
+    return VideoResponse(**video_doc)
+
 @router.post("/probe-url", response_model=ProbeUrlResponse)
 async def probe_video_url(request: ProbeUrlRequest):
     """
@@ -309,13 +353,14 @@ async def get_video(video_id: str):
 @router.delete("/{video_id}", response_model=VideoDeleteResponse)
 async def delete_video(video_id: str):
     """
-    Deletes an uploaded video:
-    - Removes video file from disk
-    - Removes thumbnail from disk
-    - Deletes document from MongoDB
-    - Cleans up in-memory cache
+    Deletes an uploaded video record and its source media file:
+    - Removes original source video file from disk
+    - Removes temporary extracted audio files (.wav) from disk
+    - Removes original video thumbnail from disk
+    - Deletes video document from MongoDB
+    - PRESERVES all generated clips and their media files so user retains their clips!
     """
-    logger.info(f"Requested deletion of video {video_id}")
+    logger.info(f"Requested deletion of video {video_id} (preserving generated clips)")
     video_doc = None
 
     db = get_database()
@@ -323,43 +368,15 @@ async def delete_video(video_id: str):
         try:
             video_doc = await db.videos.find_one({"id": video_id})
             if video_doc:
-                # Find and delete all physical clip files for this video
-                try:
-                    clips_cursor = db.clips.find({"video_id": video_id})
-                    clips_list = await clips_cursor.to_list(length=1000)
-                    for clip in clips_list:
-                        cid = clip.get("id")
-                        if cid:
-                            if settings.GENERATED_CLIPS_DIR.exists():
-                                for f in settings.GENERATED_CLIPS_DIR.glob(f"{cid}*"):
-                                    try:
-                                        f.unlink()
-                                        logger.info(f"Deleted clip file {f}")
-                                    except Exception as e:
-                                        logger.warning(f"Error removing clip file {f}: {e}")
-                            if settings.THUMBNAIL_DIR.exists():
-                                for f in settings.THUMBNAIL_DIR.glob(f"{cid}*"):
-                                    try:
-                                        f.unlink()
-                                    except Exception as e:
-                                        logger.warning(f"Error removing clip thumb {f}: {e}")
-                except Exception as e:
-                    logger.warning(f"Error deleting clip files: {e}")
-
-                # Delete from DB
+                # Delete video document from DB (do NOT delete clips)
                 await db.videos.delete_one({"id": video_id})
-                await db.clips.delete_many({"video_id": video_id})
                 await db.transcripts.delete_many({"video_id": video_id})
+                logger.info(f"Video {video_id} removed from DB; clips preserved.")
         except Exception as e:
             logger.warning(f"MongoDB deletion warning: {e}")
 
-    # Clean in-memory caches
+    # Clean in-memory caches (preserve clips)
     _in_memory_videos.pop(video_id, None)
-    try:
-        from app.api.v1.endpoints.clips import _in_memory_clips_by_video
-        _in_memory_clips_by_video.pop(video_id, None)
-    except Exception:
-        pass
     try:
         from app.api.v1.endpoints.transcription import _in_memory_transcripts
         _in_memory_transcripts.pop(video_id, None)
@@ -374,7 +391,7 @@ async def delete_video(video_id: str):
     if file_path and os.path.exists(file_path):
         try:
             os.remove(file_path)
-            logger.info(f"Deleted video file {file_path}")
+            logger.info(f"Deleted source video file {file_path}")
         except Exception as e:
             logger.error(f"Error removing file {file_path}: {e}")
 
@@ -386,19 +403,21 @@ async def delete_video(video_id: str):
             except Exception:
                 pass
 
-    # Delete video thumbnail if present
+    # Delete original video thumbnail if present
     if settings.THUMBNAIL_DIR.exists():
         for thumb in settings.THUMBNAIL_DIR.glob(f"{video_id}*"):
-            try:
-                thumb.unlink()
-                logger.info(f"Deleted thumbnail {thumb}")
-            except Exception as e:
-                logger.error(f"Error removing thumbnail {thumb}: {e}")
+            # Do NOT delete clips thumbnails (clips have prefix clip_)
+            if not thumb.name.startswith("clip_"):
+                try:
+                    thumb.unlink()
+                    logger.info(f"Deleted video thumbnail {thumb}")
+                except Exception as e:
+                    logger.error(f"Error removing thumbnail {thumb}: {e}")
 
     return VideoDeleteResponse(
         id=video_id,
         success=True,
-        message=f"Video '{video_doc.get('title', video_id)}' and its clips successfully deleted."
+        message=f"Video '{video_doc.get('title', video_id)}' successfully deleted. All generated clips remain preserved."
     )
 
 @router.get("/storage/summary")

@@ -81,7 +81,7 @@ export default function SettingsPage() {
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex p-1 rounded-xl bg-[#090e1a] border border-white/[0.06] w-fit">
+        <div className="flex p-1 rounded-xl bg-[#0a0a0a] border border-white/[0.06] w-fit">
           {[
             { id: 'profile', label: 'User Profile', icon: User },
             { id: 'preferences', label: 'AI Engine & Pipeline', icon: Cpu },
@@ -107,7 +107,7 @@ export default function SettingsPage() {
 
         {/* 1. USER PROFILE TAB */}
         {tab === 'profile' && (
-          <Card className="border-white/[0.08] bg-[#090e1a] p-6 space-y-6">
+          <Card className="border-white/[0.08] bg-[#0a0a0a] p-6 space-y-6">
             <div className="flex items-center gap-4 pb-6 border-b border-white/[0.06]">
               <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-tr from-blue-500 to-blue-500 p-[2px]">
                 <img
@@ -188,7 +188,7 @@ export default function SettingsPage() {
 
         {/* 2. PREFERENCES (AI ENGINE & PIPELINE) TAB */}
         {tab === 'preferences' && (
-          <Card className="border-white/[0.08] bg-[#090e1a] p-6 space-y-6">
+          <Card className="border-white/[0.08] bg-[#0a0a0a] p-6 space-y-6">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-blue-400" />
@@ -250,7 +250,7 @@ export default function SettingsPage() {
 
         {/* 3. EXPORT SETTINGS TAB */}
         {tab === 'export' && (
-          <Card className="border-white/[0.08] bg-[#090e1a] p-6 space-y-6">
+          <Card className="border-white/[0.08] bg-[#0a0a0a] p-6 space-y-6">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Download className="w-4 h-4 text-blue-400" />

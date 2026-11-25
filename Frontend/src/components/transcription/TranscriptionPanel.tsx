@@ -123,7 +123,7 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
   });
 
   return (
-    <Card className="border-white/[0.08] bg-[#090e1a] p-6 space-y-6 shadow-2xl">
+    <Card className="border-white/[0.08] bg-[#0a0a0a] p-6 space-y-6 shadow-2xl">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
         <div>

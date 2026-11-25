@@ -37,12 +37,13 @@ import { api } from '@/lib/api';
 import { PipelineProgressModal } from '@/components/video/PipelineProgressModal';
 
 export default function MyProjectsPage() {
-  const [filterTab, setFilterTab] = useState<'all' | 'completed' | 'processing'>('all');
+  const [filterTab, setFilterTab] = useState<'all' | 'completed' | 'processing' | 'clips'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [projects, setProjects] = useState<VideoItem[]>([]);
   const [selectedProject, setSelectedProject] = useState<VideoItem | null>(null);
   const [previewClip, setPreviewClip] = useState<any | null>(null);
   const [projectClips, setProjectClips] = useState<any[]>([]);
+  const [allClips, setAllClips] = useState<any[]>([]);
   const [isLoadingClips, setIsLoadingClips] = useState(false);
   const [renderingClipId, setRenderingClipId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,9 +84,10 @@ export default function MyProjectsPage() {
   const fetchLiveVideos = async () => {
     setIsLoading(true);
     try {
-      const [liveVideos, storage] = await Promise.all([
+      const [liveVideos, storage, clips] = await Promise.all([
         api.getVideos().catch(() => []),
-        api.getStorageSummary().catch(() => null)
+        api.getStorageSummary().catch(() => null),
+        api.getAllClips().catch(() => [])
       ]);
       if (liveVideos && liveVideos.length > 0) {
         setProjects(liveVideos);
@@ -96,6 +98,9 @@ export default function MyProjectsPage() {
       }
       if (storage) {
         setStorageInfo(storage);
+      }
+      if (clips) {
+        setAllClips(clips);
       }
     } catch (err) {
       console.warn('Could not fetch live videos:', err);
@@ -178,8 +183,8 @@ export default function MyProjectsPage() {
     }
   };
 
-  const handleDeleteClip = async (clipId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDeleteClip = async (clipId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     if (!confirm('Are you sure you want to permanently delete this clip from the server?')) {
       return;
     }
@@ -199,6 +204,7 @@ export default function MyProjectsPage() {
       }
       const storage = await api.getStorageSummary().catch(() => null);
       if (storage) setStorageInfo(storage);
+      setAllClips((prev) => prev.filter((c) => c.id !== clipId));
       window.dispatchEvent(new Event('projects-updated'));
     } catch (err: any) {
       alert(`Clip deletion error: ${err.message}`);
@@ -209,7 +215,7 @@ export default function MyProjectsPage() {
 
   const handleDeleteProject = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to remove this video and its generated assets from the server?')) {
+    if (!confirm('Are you sure you want to delete this source video? All your generated clips will remain safely preserved.')) {
       return;
     }
     setDeletingId(id);
@@ -226,8 +232,12 @@ export default function MyProjectsPage() {
           setPreviewClip(null);
         }
       }
-      const storage = await api.getStorageSummary().catch(() => null);
+      const [storage, clips] = await Promise.all([
+        api.getStorageSummary().catch(() => null),
+        api.getAllClips().catch(() => [])
+      ]);
       if (storage) setStorageInfo(storage);
+      if (clips) setAllClips(clips);
       window.dispatchEvent(new Event('projects-updated'));
     } catch (err: any) {
       alert(`Deletion error: ${err.message}`);
@@ -289,10 +299,11 @@ export default function MyProjectsPage() {
         {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Tabs */}
-          <div className="flex p-1 rounded-xl bg-[#090e1a] border border-white/[0.06] w-fit">
+          <div className="flex p-1 rounded-xl bg-[#0a0a0a] border border-white/[0.06] w-fit">
             {[
               { id: 'all', label: 'All Projects', count: projects.length },
               { id: 'completed', label: 'Completed / Ready', count: projects.filter(v => v.status === 'completed' || v.status === 'ready').length },
+              { id: 'clips', label: 'All Saved Clips', count: allClips.length },
               { id: 'processing', label: 'In Pipeline', count: projects.filter(v => v.status !== 'completed' && v.status !== 'ready').length },
             ].map((tab) => (
               <button
@@ -320,14 +331,108 @@ export default function MyProjectsPage() {
               placeholder="Search by title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#090e1a] border border-white/[0.08] rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+              className="w-full bg-[#0a0a0a] border border-white/[0.08] rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500"
             />
           </div>
         </div>
 
-        {/* Master-Detail Projects View or Clean Empty State */}
-        {projects.length === 0 ? (
-          <div className="py-20 px-6 text-center rounded-3xl bg-[#090e1a] border border-white/[0.08] space-y-4 max-w-2xl mx-auto shadow-2xl">
+        {/* All Saved Clips Tab or Projects View */}
+        {filterTab === 'clips' || (projects.length === 0 && allClips.length > 0) ? (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Scissors className="w-4 h-4 text-blue-400" />
+                  All Saved Clips ({allClips.length})
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  These clips remain preserved on your server even if source videos are removed. Delete them individually whenever you choose.
+                </p>
+              </div>
+              <Link href="/dashboard/create">
+                <Button size="sm" variant="primary" className="rounded-xl text-xs bg-blue-600 hover:bg-blue-500">
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Create More Clips
+                </Button>
+              </Link>
+            </div>
+
+            {allClips.length === 0 ? (
+              <div className="p-12 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] text-center text-xs text-zinc-400">
+                No saved clips yet. Use the AI Clipper to generate viral 9:16 shorts.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {allClips
+                  .filter((c) => !searchQuery || c.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((clip) => {
+                    const thumb = clip.thumbnail_url ? api.getServerUrl(clip.thumbnail_url) : null;
+                    return (
+                      <div
+                        key={clip.id}
+                        className="p-4 rounded-2xl bg-[#0a0a0a] border border-white/[0.08] hover:border-blue-500/40 transition-all flex flex-col justify-between group shadow-xl"
+                      >
+                        <div className="relative rounded-xl overflow-hidden aspect-[9/16] max-h-60 w-full bg-black mb-3">
+                          {thumb ? (
+                            <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                              <Film className="w-8 h-8" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/60" />
+                          <div className="absolute top-2 left-2 right-2 flex justify-between items-center z-10">
+                            <span className="text-[9px] bg-black/80 px-1.5 py-0.5 rounded font-mono text-zinc-300">
+                              9:16 Short
+                            </span>
+                            <span className="text-[10px] bg-blue-600 px-2 py-0.5 rounded font-extrabold text-white flex items-center gap-0.5 shadow">
+                              <Flame className="w-2.5 h-2.5 fill-current text-amber-300" />
+                              {Math.round(clip.virality_score || 75)}%
+                            </span>
+                          </div>
+                          <div className="absolute bottom-2 left-2 z-10 text-[9px] font-mono text-zinc-300 bg-black/70 px-1.5 py-0.5 rounded">
+                            {Math.round(clip.duration || 30)}s
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 flex-1 flex flex-col justify-between">
+                          <h4 className="text-xs font-bold text-white line-clamp-2">{clip.title}</h4>
+                          <div className="pt-2 border-t border-white/[0.06] flex items-center gap-2">
+                            <Button
+                              onClick={() => setPreviewClip(clip)}
+                              size="sm"
+                              variant="secondary"
+                              className="flex-1 rounded-xl text-xs py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white"
+                            >
+                              <Play className="w-3 h-3 mr-1 text-blue-400" /> Preview
+                            </Button>
+                            {clip.video_url && (
+                              <a
+                                href={api.getClipDownloadUrl(clip.id)}
+                                download={`${clip.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_9x16.mp4`}
+                                className="inline-flex items-center justify-center px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all cursor-pointer"
+                                title="Download 9:16 Video Directly"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                            <button
+                              onClick={() => handleDeleteClip(clip.id)}
+                              disabled={deletingClipId === clip.id}
+                              className="p-1.5 text-zinc-500 hover:text-rose-400 rounded-lg transition-colors cursor-pointer"
+                              title="Delete this clip"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="py-20 px-6 text-center rounded-3xl bg-[#0a0a0a] border border-white/[0.08] space-y-4 max-w-2xl mx-auto shadow-2xl">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600/20 to-pink-600/20 border border-blue-500/30 flex items-center justify-center mx-auto text-blue-400">
               <Film className="w-8 h-8" />
             </div>
@@ -355,7 +460,7 @@ export default function MyProjectsPage() {
               </span>
 
               {filteredProjects.length === 0 ? (
-                <div className="p-8 rounded-2xl bg-[#090e1a] border border-white/[0.06] text-center text-xs text-zinc-400">
+                <div className="p-8 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] text-center text-xs text-zinc-400">
                   No projects match your search query.
                 </div>
               ) : (
@@ -372,7 +477,7 @@ export default function MyProjectsPage() {
                       className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                         isSelected
                           ? 'border-blue-500/60 bg-blue-950/20 shadow-lg shadow-blue-950/20'
-                          : 'border-white/[0.06] bg-[#090e1a] hover:border-zinc-700'
+                          : 'border-white/[0.06] bg-[#0a0a0a] hover:border-zinc-700'
                       }`}
                     >
                       <div className="flex gap-3 items-start">
@@ -443,7 +548,7 @@ export default function MyProjectsPage() {
           <div className="lg:col-span-7 space-y-5">
             {/* Selected Project Card */}
             {selectedProject && (
-              <Card className="border-white/[0.08] bg-[#090e1a] p-5 space-y-4">
+              <Card className="border-white/[0.08] bg-[#0a0a0a] p-5 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -510,12 +615,12 @@ export default function MyProjectsPage() {
               </div>
 
               {isLoadingClips ? (
-                <div className="p-12 rounded-2xl bg-[#090e1a] border border-white/[0.06] text-center text-xs text-zinc-400">
+                <div className="p-12 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] text-center text-xs text-zinc-400">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-400 mb-2" />
                   Loading candidate clips...
                 </div>
               ) : projectClips.length === 0 ? (
-                <div className="p-12 rounded-2xl bg-[#090e1a] border border-white/[0.06] text-center space-y-3">
+                <div className="p-12 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] text-center space-y-3">
                   <Scissors className="w-8 h-8 text-zinc-600 mx-auto" />
                   <p className="text-sm font-semibold text-white">No clips generated for this video yet</p>
                   <p className="text-xs text-zinc-400 max-w-sm mx-auto">
@@ -553,7 +658,7 @@ export default function MyProjectsPage() {
                     return (
                       <div
                         key={clip.id}
-                        className="p-4 rounded-2xl bg-[#090e1a] border border-white/[0.06] hover:border-blue-500/40 transition-all flex flex-col justify-between group shadow-lg"
+                        className="p-4 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] hover:border-blue-500/40 transition-all flex flex-col justify-between group shadow-lg"
                       >
                         <div className="relative rounded-xl overflow-hidden aspect-[9/16] max-h-56 w-full bg-zinc-950 mb-3">
                           {thumb ? (
@@ -660,7 +765,7 @@ export default function MyProjectsPage() {
       {/* Clip Preview Modal */}
       {previewClip && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg rounded-3xl bg-[#090e1a] border border-white/[0.1] p-6 space-y-4 shadow-2xl relative">
+          <div className="w-full max-w-lg rounded-3xl bg-[#0a0a0a] border border-white/[0.1] p-6 space-y-4 shadow-2xl relative">
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
               <div className="space-y-1 pr-2">
                 <div className="flex items-center gap-2">

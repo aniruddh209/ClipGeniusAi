@@ -30,7 +30,7 @@ import { Badge } from '@/components/ui/Badge';
 
 export default function HomePage() {
   return (
-    <div className="relative overflow-hidden bg-[#09090b]">
+    <div className="relative overflow-hidden bg-[#000000]">
       {/* Background Glow Mesh */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[680px] overflow-hidden -z-10 pointer-events-none opacity-40">
         <div className="absolute -top-32 left-1/4 w-[550px] h-[550px] bg-blue-600/30 rounded-full blur-[150px]" />
@@ -74,7 +74,7 @@ export default function HomePage() {
 
         {/* Hero Visual Mockup */}
         <div className="mt-16 max-w-5xl mx-auto rounded-3xl p-1 bg-gradient-to-b from-white/[0.12] via-white/[0.04] to-transparent shadow-2xl shadow-blue-950/40">
-          <div className="rounded-[22px] bg-[#0c0c12] border border-white/[0.06] p-4 sm:p-6 overflow-hidden">
+          <div className="rounded-[22px] bg-[#0a0a0a] border border-white/[0.06] p-4 sm:p-6 overflow-hidden">
             {/* Mockup Topbar */}
             <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] text-xs text-zinc-500">
               <div className="flex items-center gap-2">
@@ -212,7 +212,7 @@ export default function HomePage() {
       </section>
 
       {/* 2. HOW IT WORKS SECTION */}
-      <section id="how-it-works" className="py-24 border-t border-white/[0.08] bg-[#0c0c11]/50">
+      <section id="how-it-works" className="py-24 border-t border-white/[0.08] bg-[#050505]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Badge variant="blue" className="mb-3">
@@ -354,7 +354,7 @@ export default function HomePage() {
       </section>
 
       {/* 4. PRICING SECTION */}
-      <section id="pricing" className="py-24 border-t border-white/[0.08] bg-[#0c0c11]/60">
+      <section id="pricing" className="py-24 border-t border-white/[0.08] bg-[#050505]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Badge variant="blue" className="mb-3">

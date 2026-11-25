@@ -147,6 +147,19 @@ class ApiClient {
     return res.json();
   }
 
+  async submitDirectYoutubeClip(url: string): Promise<VideoItem> {
+    const res = await fetch(`${this.baseUrl}/videos/direct-youtube-clip`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to analyze YouTube video for direct clipping');
+    }
+    return res.json();
+  }
+
   // AI Transcription Methods
   async getWhisperModels(): Promise<WhisperModelItem[]> {
     const res = await fetch(`${this.baseUrl}/transcription/models`, {

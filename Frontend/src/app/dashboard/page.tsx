@@ -132,7 +132,7 @@ export default function DashboardPage() {
       <div className="px-6 sm:px-8 pt-8 space-y-8 max-w-7xl mx-auto">
         {/* 1. OVERVIEW STATISTICS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-5 border-white/[0.06] bg-[#090e1a] hover:border-blue-500/30 transition-all">
+          <Card className="p-5 border-white/[0.06] bg-[#0a0a0a] hover:border-blue-500/30 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-zinc-400">Total Videos Processed</span>
               <div className="w-8 h-8 rounded-lg bg-blue-950/50 border border-blue-800/40 text-blue-400 flex items-center justify-center">
@@ -148,7 +148,7 @@ export default function DashboardPage() {
             <p className="text-[11px] text-zinc-500 mt-1">{hoursFootage} hrs total source footage</p>
           </Card>
 
-          <Card className="p-5 border-white/[0.06] bg-[#090e1a] hover:border-pink-500/30 transition-all">
+          <Card className="p-5 border-white/[0.06] bg-[#0a0a0a] hover:border-pink-500/30 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-zinc-400">Viral Shorts Generated</span>
               <div className="w-8 h-8 rounded-lg bg-pink-950/50 border border-pink-800/40 text-pink-400 flex items-center justify-center">
@@ -162,7 +162,7 @@ export default function DashboardPage() {
             <p className="text-[11px] text-zinc-500 mt-1">Ready for Reels, Shorts, TikTok</p>
           </Card>
 
-          <Card className="p-5 border-white/[0.06] bg-[#090e1a] hover:border-amber-500/30 transition-all">
+          <Card className="p-5 border-white/[0.06] bg-[#0a0a0a] hover:border-amber-500/30 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-zinc-400">Avg. Virality Score</span>
               <div className="w-8 h-8 rounded-lg bg-amber-950/50 border border-amber-800/40 text-amber-400 flex items-center justify-center">
@@ -178,7 +178,7 @@ export default function DashboardPage() {
             <p className="text-[11px] text-zinc-500 mt-1">Faster-Whisper & PySceneDetect scored</p>
           </Card>
 
-          <Card className="p-5 border-white/[0.06] bg-[#090e1a] hover:border-blue-500/30 transition-all">
+          <Card className="p-5 border-white/[0.06] bg-[#0a0a0a] hover:border-blue-500/30 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-zinc-400">Editing Hours Saved</span>
               <div className="w-8 h-8 rounded-lg bg-blue-950/50 border border-blue-800/40 text-blue-400 flex items-center justify-center">
@@ -212,12 +212,12 @@ export default function DashboardPage() {
           </div>
 
           {isLoading ? (
-            <div className="p-12 rounded-2xl bg-[#090e1a] border border-white/[0.06] text-center text-xs text-zinc-400">
+            <div className="p-12 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] text-center text-xs text-zinc-400">
               <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-400 mb-2" />
               Loading real clips from database...
             </div>
           ) : displayedClips.length === 0 ? (
-            <div className="p-10 rounded-2xl bg-[#090e1a] border border-white/[0.06] text-center space-y-3">
+            <div className="p-10 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] text-center space-y-3">
               <Scissors className="w-8 h-8 text-zinc-600 mx-auto" />
               <p className="text-sm font-semibold text-white">No generated clips yet</p>
               <p className="text-xs text-zinc-400 max-w-sm mx-auto">
@@ -242,7 +242,7 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={clip.id}
-                    className="group rounded-2xl bg-[#090e1a] border border-white/[0.06] hover:border-blue-500/40 p-4 transition-all flex flex-col justify-between shadow-xl"
+                    className="group rounded-2xl bg-[#0a0a0a] border border-white/[0.06] hover:border-blue-500/40 p-4 transition-all flex flex-col justify-between shadow-xl"
                   >
                     {/* Clip Video Thumbnail & Overlay */}
                     <div className="relative rounded-xl overflow-hidden aspect-[9/16] max-h-72 w-full bg-zinc-900 border border-white/[0.06] mb-4">
@@ -350,7 +350,7 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.06] bg-[#090e1a] overflow-hidden">
+          <div className="rounded-2xl border border-white/[0.06] bg-[#0a0a0a] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-white/[0.02] border-b border-white/[0.06] text-zinc-400 uppercase tracking-wider text-[10px]">
@@ -443,7 +443,7 @@ export default function DashboardPage() {
       {/* Video Clip Modal Preview */}
       {activeClipModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#090e1a] border border-white/[0.1] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl space-y-4 p-5">
+          <div className="bg-[#0a0a0a] border border-white/[0.1] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl space-y-4 p-5">
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
               <div>
                 <h3 className="text-sm font-bold text-white line-clamp-1">{activeClipModal.title}</h3>

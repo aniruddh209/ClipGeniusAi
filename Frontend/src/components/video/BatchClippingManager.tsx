@@ -246,7 +246,7 @@ export const BatchClippingManager: React.FC<BatchClippingManagerProps> = ({
 
       {/* 2. REAL-TIME JOB PROCESSING STATUS PANEL */}
       {currentJob && (
-        <Card className="p-6 rounded-3xl bg-[#090e1a] border border-blue-500/30 shadow-2xl space-y-5">
+        <Card className="p-6 rounded-3xl bg-[#0a0a0a] border border-blue-500/30 shadow-2xl space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.06]">
             <div className="flex items-center gap-2.5">
               {isJobProcessing ? (

@@ -1,30 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  --background: #030712;
-  --surface: #090e1a;
-  --foreground: #f8fafc;
-  --card: #0d1527;
-  --card-border: rgba(59, 130, 246, 0.16);
+  --background: #000000;
+  --surface: #080808;
+  --foreground: #ffffff;
+  --card: #0c0c0c;
+  --card-border: rgba(255, 255, 255, 0.08);
   --accent-blue: #3b82f6;
-  --accent-blue-dark: #1d4ed8;
+  --accent-blue-dark: #2563eb;
   --accent-blue-light: #60a5fa;
   --accent-cyan: #06b6d4;
-  --text-muted: #94a3b8;
+  --text-muted: #a1a1aa;
   --border-subtle: rgba(255, 255, 255, 0.08);
 }
 
 .light {
-  --background: #f8fafc;
-  --surface: #ffffff;
-  --foreground: #0f172a;
+  --background: #ffffff;
+  --surface: #f9fafb;
+  --foreground: #09090b;
   --card: #ffffff;
-  --card-border: rgba(203, 213, 225, 0.8);
+  --card-border: rgba(0, 0, 0, 0.1);
   --accent-blue: #2563eb;
-  --accent-blue-dark: #1e40af;
+  --accent-blue-dark: #1d4ed8;
   --accent-blue-light: #3b82f6;
   --accent-cyan: #0891b2;
-  --text-muted: #64748b;
+  --text-muted: #71717a;
   --border-subtle: rgba(0, 0, 0, 0.08);
 }
 
@@ -36,18 +36,18 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom linear dark-blue scrollbars */
+/* Custom linear pitch-black scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #030712;
+  background: #000000;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #1f1f23;
   border-radius: 9999px;
 }
 
@@ -55,12 +55,12 @@ body {
   background: #3b82f6;
 }
 
-/* Premium Glassmorphism & Electric Blue Glows */
+/* Premium Pitch-Black Glassmorphism & Electric Blue Glows */
 .glass-panel {
-  background: rgba(13, 21, 39, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(59, 130, 246, 0.14);
+  background: rgba(12, 12, 12, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-panel-hover {
@@ -68,18 +68,18 @@ body {
 }
 
 .glass-panel-hover:hover {
-  border-color: rgba(59, 130, 246, 0.45);
-  box-shadow: 0 0 25px -5px rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 25px -5px rgba(59, 130, 246, 0.3);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #e4e4e7 50%, #a1a1aa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gradient-blue-text {
-  background: linear-gradient(135deg, #93c5fd 0%, #3b82f6 50%, #1d4ed8 100%);
+  background: linear-gradient(135deg, #93c5fd 0%, #3b82f6 50%, #2563eb 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -88,22 +88,4 @@ body {
   background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 50%, #2563eb 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-}
-
-.gradient-border {
-  position: relative;
-}
-
-.gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.5), rgba(14, 165, 233, 0.3), transparent);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
 }

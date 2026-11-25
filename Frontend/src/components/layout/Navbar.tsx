@@ -15,7 +15,7 @@ export const Navbar: React.FC = () => {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-blue-900/20 bg-[#070c18]/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-blue-900/20 bg-[#050505]/90 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-400 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">

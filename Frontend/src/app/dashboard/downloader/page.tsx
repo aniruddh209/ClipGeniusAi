@@ -405,7 +405,7 @@ function VideoDownloaderContent() {
   const availableQualities = analysisResult?.confirmed_qualities || analysisResult?.formats || [];
 
   return (
-    <div className="flex-1 min-h-screen bg-[#030712] text-zinc-100 flex flex-col">
+    <div className="flex-1 min-h-screen bg-[#000000] text-zinc-100 flex flex-col">
       {/* Toast Notification */}
       {notification && (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -524,7 +524,7 @@ function VideoDownloaderContent() {
                         value={urlInput}
                         onChange={(e) => setUrlInput(e.target.value)}
                         placeholder="https://www.youtube.com/watch?v=... or direct MP4 link"
-                        className="w-full h-11 pl-10 pr-24 rounded-xl bg-[#090e1a] border border-white/[0.1] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/80 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono"
+                        className="w-full h-11 pl-10 pr-24 rounded-xl bg-[#0a0a0a] border border-white/[0.1] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/80 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono"
                       />
                       <button
                         type="button"
@@ -596,7 +596,7 @@ function VideoDownloaderContent() {
             {analysisResult && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-300">
                 {/* Permitted Public Metadata Card */}
-                <div className="rounded-2xl border border-white/[0.08] bg-[#060a14] p-6 shadow-2xl space-y-6">
+                <div className="rounded-2xl border border-white/[0.08] bg-[#080808] p-6 shadow-2xl space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
                     <div className="flex items-center gap-2">
                       <Badge variant="blue" className="text-[10px] uppercase font-semibold">
@@ -864,7 +864,7 @@ function VideoDownloaderContent() {
                 )}
 
                 {/* VIDEO QUALITY & FORMAT SELECTOR */}
-                <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-b from-[#090e1a] to-[#040814] p-6 shadow-2xl space-y-6">
+                <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-b from-[#0a0a0a] to-[#000000] p-6 shadow-2xl space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
@@ -1015,7 +1015,7 @@ function VideoDownloaderContent() {
                         <select
                           value={saveDestination}
                           onChange={(e: any) => setSaveDestination(e.target.value)}
-                          className="w-full h-9 px-3 rounded-lg bg-[#090e1a] border border-white/[0.1] text-xs text-zinc-200 focus:outline-none focus:border-blue-500/80 cursor-pointer"
+                          className="w-full h-9 px-3 rounded-lg bg-[#0a0a0a] border border-white/[0.1] text-xs text-zinc-200 focus:outline-none focus:border-blue-500/80 cursor-pointer"
                         >
                           <option value="downloads">💻 Save to My Mac (Downloads)</option>
                           <option value="projects">✂️ Save to AI Studio (Auto-Clip Ready)</option>
@@ -1033,7 +1033,7 @@ function VideoDownloaderContent() {
                           value={customPath}
                           onChange={(e) => setCustomPath(e.target.value)}
                           placeholder="/Users/username/Downloads/MyVideos"
-                          className="w-full h-9 px-3 rounded-lg bg-[#090e1a] border border-white/[0.1] text-xs text-white font-mono placeholder-zinc-600 focus:outline-none focus:border-blue-500"
+                          className="w-full h-9 px-3 rounded-lg bg-[#0a0a0a] border border-white/[0.1] text-xs text-white font-mono placeholder-zinc-600 focus:outline-none focus:border-blue-500"
                         />
                       </div>
                     )}
@@ -1812,7 +1812,7 @@ export default function VideoDownloaderPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex-1 min-h-[60vh] bg-[#030712] text-zinc-100 flex items-center justify-center">
+        <div className="flex-1 min-h-[60vh] bg-[#000000] text-zinc-100 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <RefreshCw className="w-7 h-7 text-blue-500 animate-spin" />
             <p className="text-xs font-medium text-zinc-400">Loading Video Downloader...</p>

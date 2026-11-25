@@ -222,7 +222,7 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-[#090e1a] border border-white/[0.12] rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl space-y-6 p-6 sm:p-7 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[#0a0a0a] border border-white/[0.12] rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl space-y-6 p-6 sm:p-7 animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">

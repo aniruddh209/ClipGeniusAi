@@ -222,30 +222,24 @@ async def detect_clips_endpoint(
 
 @router.get("", response_model=List[CandidateClip])
 async def list_all_clips():
-    """Lists all candidate / generated clips across all valid projects in descending order."""
+    """Lists all candidate / generated clips across all projects, preserving clips even if parent video was deleted."""
     db = get_database()
     clips = []
     if db is not None:
         try:
-            # 1. Fetch valid project IDs
-            valid_videos = await db.videos.find({}, {"id": 1}).to_list(length=1000)
-            valid_video_ids = [v["id"] for v in valid_videos]
-            if not valid_video_ids:
-                # No projects exist -> clean up any stale orphan clips
-                await db.clips.delete_many({})
-                return []
-
-            # Purge any orphan clips whose parent video no longer exists
-            await db.clips.delete_many({"video_id": {"$nin": valid_video_ids}})
-
-            cursor = db.clips.find({"video_id": {"$in": valid_video_ids}}).sort("virality_score", -1)
-            docs = await cursor.to_list(length=100)
+            # Fetch all generated clips directly (do NOT delete clips if parent video was removed)
+            cursor = db.clips.find({}).sort("created_at", -1)
+            docs = await cursor.to_list(length=200)
             clips = [CandidateClip(**d) for d in docs]
             return clips
         except Exception as e:
-            logger.warning(f"MongoDB list_all_clips error: {e}")
+            logger.warning(f"MongoDB fetch all clips error: {e}")
 
-    return []
+    # Fallback in-memory
+    for clist in _in_memory_clips_by_video.values():
+        for c in clist:
+            clips.append(CandidateClip(**c))
+    return sorted(clips, key=lambda x: x.virality_score or 0, reverse=True)
 
 @router.get("/tasks/{task_id}", response_model=ClipDetectionTaskResponse)
 async def get_task_status(task_id: str):
@@ -476,7 +470,30 @@ async def render_single_clip(
         raise HTTPException(status_code=404, detail=f"Parent video {video_id} not found.")
 
     file_path = video_doc.get("file_path")
-    if not file_path or not Path(file_path).exists():
+    is_direct_youtube = (
+        (video_doc.get("source_type") in ["youtube_direct_stream", VideoSourceType.YOUTUBE_URL] or video_doc.get("is_direct_stream"))
+        and video_doc.get("source_url")
+        and (not file_path or not Path(file_path).exists() or Path(file_path).suffix.lower() in [".mp3", ".wav", ".m4a"])
+    )
+
+    clean_input_path = file_path
+    render_start = start_time
+    render_end = end_time
+    temp_slice = None
+
+    if is_direct_youtube:
+        from app.services.video.downloader import video_downloader
+        logger.info(f"Direct on-demand 4K slice for clip {clip_id}: {start_time}s - {end_time}s")
+        temp_slice = await video_downloader.cut_direct_youtube_slice(
+            url=video_doc["source_url"],
+            start_time=start_time,
+            end_time=end_time,
+            max_height=2160
+        )
+        clean_input_path = temp_slice
+        render_start = 0.0
+        render_end = end_time - start_time
+    elif not file_path or not Path(file_path).exists():
         raise HTTPException(status_code=400, detail="Source video file is missing on server.")
 
     aspect_slug = aspect_ratio.replace(":", "x")
@@ -487,9 +504,6 @@ async def render_single_clip(
 
     thumb_filename = f"{clip_id}_{aspect_slug}.jpg"
     thumb_path = settings.THUMBNAIL_DIR / thumb_filename
-
-    start_time = float(clip_doc.get("start_time", 0.0))
-    end_time = float(clip_doc.get("end_time", 0.0))
 
     try:
         try:
@@ -503,14 +517,20 @@ async def render_single_clip(
             aspect_enum = ReframingAspectRatio.VERTICAL_9_16
 
         await video_reframer.render_reframed_video(
-            input_video_path=file_path,
+            input_video_path=clean_input_path,
             output_video_path=str(output_path),
-            start_time=start_time,
-            end_time=end_time,
+            start_time=render_start,
+            end_time=render_end,
             aspect_ratio=aspect_enum,
             mode=mode_enum,
             manual_offset=0.5
         )
+
+        if temp_slice:
+            try:
+                os.remove(temp_slice)
+            except Exception:
+                pass
 
         # Duplicate into OUTPUT_DIR for compatibility
         try:
@@ -1156,8 +1176,37 @@ async def _run_full_end_to_end_pipeline(
             thumb_path = str(settings.THUMBNAIL_DIR / thumb_filename)
 
             try:
-                # 8. Intelligent Video Reframing (Direct Remote HTTP Range or Local File)
-                if is_remote_cloud:
+                # 8. Intelligent Video Reframing (Direct 4K YouTube Slice, Direct Remote HTTP Range or Local File)
+                is_direct_yt = (
+                    (video_doc.get("source_type") in ["youtube_direct_stream", VideoSourceType.YOUTUBE_URL] or video_doc.get("is_direct_stream"))
+                    and video_doc.get("source_url")
+                    and (not source_path or not Path(source_path).exists() or Path(source_path).suffix.lower() in [".mp3", ".wav", ".m4a"])
+                )
+
+                if is_direct_yt:
+                    from app.services.video.downloader import video_downloader
+                    job["current_step"] = f"5. Fetching 4K stream slice {clip_idx_str}: '{clip.title}'..."
+                    job["updated_at"] = datetime.utcnow()
+                    slice_path = await video_downloader.cut_direct_youtube_slice(
+                        url=video_doc["source_url"],
+                        start_time=clip.start_time,
+                        end_time=clip.end_time,
+                        max_height=2160
+                    )
+                    await video_reframer.render_reframed_video(
+                        input_video_path=slice_path,
+                        output_video_path=cut_path,
+                        start_time=0.0,
+                        end_time=clip.duration,
+                        aspect_ratio=aspect_enum,
+                        mode=crop_mode_enum,
+                        manual_offset=0.5
+                    )
+                    try:
+                        os.remove(slice_path)
+                    except Exception:
+                        pass
+                elif is_remote_cloud:
                     from app.services.video.remote_stream_processor import remote_stream_processor
                     v_meta = video_doc.get("metadata", {}) if isinstance(video_doc.get("metadata"), dict) else {}
                     await remote_stream_processor.cut_and_reframe_remote_segment(

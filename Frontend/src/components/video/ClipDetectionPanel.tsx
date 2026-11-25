@@ -273,7 +273,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
   };
 
   return (
-    <Card className="border-white/[0.08] bg-[#090e1a] p-6 space-y-6 shadow-2xl">
+    <Card className="border-white/[0.08] bg-[#0a0a0a] p-6 space-y-6 shadow-2xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
         <div>
@@ -537,7 +537,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                     </div>
 
                     {/* Circular Score Indicator */}
-                    <div className="shrink-0 flex items-center justify-center p-1 rounded-2xl bg-[#090e1a] border border-white/[0.06]">
+                    <div className="shrink-0 flex items-center justify-center p-1 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
                       <CircularScore score={overallScore} size="sm" showLabel={false} />
                     </div>
                   </div>
@@ -875,7 +875,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
       {/* Edit Clip Timestamps & Title Modal */}
       {editingClip && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#090e1a] border border-white/[0.1] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl p-6 space-y-5 animate-in fade-in duration-200">
+          <div className="bg-[#0a0a0a] border border-white/[0.1] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl p-6 space-y-5 animate-in fade-in duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
               <div className="flex items-center gap-2">
                 <Edit3 className="w-4 h-4 text-blue-400" />

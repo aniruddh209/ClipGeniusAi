@@ -32,7 +32,9 @@ import {
   Minimize2,
   Check,
   User,
-  Globe
+  Globe,
+  Zap,
+  DownloadCloud
 } from 'lucide-react';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { Button } from '@/components/ui/Button';
@@ -45,6 +47,7 @@ import { ReframingStudio } from '@/components/video/ReframingStudio';
 import { SubtitleEditor } from '@/components/video/SubtitleEditor';
 import { PipelineProgressModal } from '@/components/video/PipelineProgressModal';
 import { api } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import { VideoItem, TranscriptionResponse, CandidateClip, ProbeUrlResponse } from '@/types';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -56,6 +59,7 @@ function CreateClipsContent() {
   // Ingest mode tab: 'upload' | 'direct_cloud' | 'url'
   const [ingestMode, setIngestMode] = useState<'upload' | 'direct_cloud' | 'url'>('upload');
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [youtubeMode, setYoutubeMode] = useState<'direct_fast' | 'download_full'>('direct_fast');
   const [isDownloadingUrl, setIsDownloadingUrl] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
 
@@ -193,12 +197,17 @@ function CreateClipsContent() {
 
     setIsDownloadingUrl(true);
     try {
-      const vid = await api.submitYoutubeUrl(targetUrl);
+      let vid: VideoItem;
+      if (youtubeMode === 'direct_fast') {
+        vid = await api.submitDirectYoutubeClip(targetUrl);
+      } else {
+        vid = await api.submitYoutubeUrl(targetUrl);
+      }
       setActiveVideo(vid);
-      setIngestMode('upload'); // Switch to view uploaded video
+      setIngestMode('upload'); // Switch to view active project
       window.dispatchEvent(new Event('projects-updated'));
     } catch (err: any) {
-      setUrlError(err.message || 'Failed to download from URL.');
+      setUrlError(err.message || 'Failed to process YouTube URL.');
     } finally {
       setIsDownloadingUrl(false);
     }
@@ -362,7 +371,7 @@ function CreateClipsContent() {
                   </button>
                 )}
 
-                <div className="flex p-1 rounded-xl bg-[#090e1a] border border-white/[0.06]">
+                <div className="flex p-1 rounded-xl bg-[#0a0a0a] border border-white/[0.06]">
                   <button
                     type="button"
                     onClick={() => setIngestMode('upload')}
@@ -421,7 +430,7 @@ function CreateClipsContent() {
 
             {/* Ingest Mode 2: Direct Cloud URL (Range-Seeking Stream Processing) */}
             {ingestMode === 'direct_cloud' && (
-              <Card className="p-6 bg-[#090e1a] border-white/[0.08] space-y-4">
+              <Card className="p-6 bg-[#0a0a0a] border-white/[0.08] space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-emerald-950/50 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
@@ -590,19 +599,73 @@ function CreateClipsContent() {
               </Card>
             )}
 
-            {/* Ingest Mode 3: YouTube / Web URL Download */}
+            {/* Ingest Mode 3: YouTube / Web URL Download & Direct Fast 4K Clipping */}
             {ingestMode === 'url' && (
-              <Card className="p-6 bg-[#090e1a] border-white/[0.08] space-y-4">
-                <div className="flex items-center gap-2">
-                  <LinkIcon className="w-4 h-4 text-blue-400" />
-                  <h4 className="text-sm font-bold text-white">Import Video from YouTube or Web URL</h4>
+              <Card className="p-6 bg-[#0a0a0a] border-white/[0.08] space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <LinkIcon className="w-4 h-4 text-blue-400" />
+                    <h4 className="text-sm font-bold text-white">YouTube & Online Video AI Clipper</h4>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold uppercase">
+                    4K Supported
+                  </span>
                 </div>
-                <p className="text-xs text-zinc-400">
-                  Enter the URL of an online video, podcast, or interview. yt-dlp will download the media directly into your backend storage.
-                </p>
+
+                {/* Mode Selector Toggle: Direct 4K Fast Clipping vs Full Video Ingest */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1 rounded-xl bg-zinc-950 border border-white/[0.08]">
+                  <button
+                    type="button"
+                    onClick={() => setYoutubeMode('direct_fast')}
+                    className={cn(
+                      'flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer',
+                      youtubeMode === 'direct_fast'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                    )}
+                  >
+                    <Zap className="w-3.5 h-3.5 text-amber-300" />
+                    <span>⚡ Direct Fast 4K Clip (No Download)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setYoutubeMode('download_full')}
+                    className={cn(
+                      'flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer',
+                      youtubeMode === 'download_full'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                    )}
+                  >
+                    <DownloadCloud className="w-3.5 h-3.5 text-zinc-300" />
+                    <span>💾 Download Full Video to Storage</span>
+                  </button>
+                </div>
+
+                {youtubeMode === 'direct_fast' ? (
+                  <div className="p-3 rounded-xl bg-blue-950/20 border border-blue-500/30 flex items-start gap-2.5 text-xs text-blue-200">
+                    <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-white">Direct 4K Clipping Mode Active</p>
+                      <p className="text-[11px] text-zinc-400">
+                        Zero waiting for full video download. Fetches audio in ~2 seconds for instant Whisper transcription and viral scoring. Renders clips in pristine 4K UHD directly on demand!
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-zinc-900/60 border border-white/[0.08] flex items-start gap-2.5 text-xs text-zinc-300">
+                    <DownloadCloud className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-white">Full Video Ingest Mode</p>
+                      <p className="text-[11px] text-zinc-400">
+                        Downloads the entire master video file to your local disk storage first before processing.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-3">
-                    <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="url"
                       placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
@@ -616,9 +679,11 @@ function CreateClipsContent() {
                       isLoading={isDownloadingUrl}
                       variant="primary"
                       size="sm"
-                      className="rounded-xl px-5 text-xs whitespace-nowrap"
+                      className="rounded-xl px-5 text-xs whitespace-nowrap bg-blue-600 hover:bg-blue-500"
                     >
-                      {isDownloadingUrl ? 'Downloading...' : 'Fetch & Save'}
+                      {isDownloadingUrl
+                        ? (youtubeMode === 'direct_fast' ? 'Analyzing 4K Stream...' : 'Downloading Video...')
+                        : (youtubeMode === 'direct_fast' ? '⚡ Start Direct 4K Clipping' : 'Download & Ingest')}
                     </Button>
                   </div>
 
@@ -626,8 +691,16 @@ function CreateClipsContent() {
                     <div className="p-3 rounded-xl bg-blue-950/30 border border-blue-800/40 flex items-center gap-3 text-xs text-blue-200">
                       <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin shrink-0" />
                       <div>
-                        <p className="font-semibold text-white">Fetching & downloading video streams...</p>
-                        <p className="text-[11px] text-zinc-400">yt-dlp is downloading the video and generating thumbnail preview. This may take a moment depending on video length.</p>
+                        <p className="font-semibold text-white">
+                          {youtubeMode === 'direct_fast'
+                            ? 'Analyzing YouTube 4K stream & extracting speech audio...'
+                            : 'Fetching & downloading full video streams...'}
+                        </p>
+                        <p className="text-[11px] text-zinc-400">
+                          {youtubeMode === 'direct_fast'
+                            ? 'Instant mode: Only lightweight audio is pulled for Whisper transcription. Fast & no gigabytes wasted!'
+                            : 'yt-dlp is downloading the complete video file. This may take some time depending on video length.'}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -643,7 +716,7 @@ function CreateClipsContent() {
                   )}
 
                   <p className="text-[11px] text-zinc-500">
-                    Works with YouTube, Twitch VODs, Vimeo, and direct MP4/WebM HTTP links.
+                    Supports YouTube Videos, YouTube Shorts, Live Stream VODs, and Twitch clips.
                   </p>
                 </div>
               </Card>
@@ -652,7 +725,7 @@ function CreateClipsContent() {
             {/* AI Studio Tabs: Speech, Moments, Reframing & Subtitles */}
             {activeVideo && (
               <div className="space-y-4">
-                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#090e1a] border border-white/[0.08] overflow-x-auto">
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#0a0a0a] border border-white/[0.08] overflow-x-auto">
                   <button
                     type="button"
                     onClick={() => setStudioTab('clips')}
@@ -740,7 +813,7 @@ function CreateClipsContent() {
                       videoUrl={activeVideo.video_url ? api.getServerUrl(activeVideo.video_url) : undefined}
                     />
                   ) : (
-                    <Card className="p-8 bg-[#090e1a] border-white/[0.08] text-center space-y-3">
+                    <Card className="p-8 bg-[#0a0a0a] border-white/[0.08] text-center space-y-3">
                       <Subtitles className="w-8 h-8 text-blue-400 mx-auto" />
                       <h4 className="text-sm font-bold text-white">No Clip Selected for Subtitle Editing</h4>
                       <p className="text-xs text-zinc-400 max-w-sm mx-auto">
@@ -763,7 +836,7 @@ function CreateClipsContent() {
 
           {/* Right Column: Generation Settings & Action */}
           <div className={`${isGalleryExpanded ? 'w-full' : 'lg:col-span-5'} space-y-6`}>
-            <Card className="border-white/[0.08] bg-[#090e1a] p-6 space-y-6">
+            <Card className="border-white/[0.08] bg-[#0a0a0a] p-6 space-y-6">
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -1005,7 +1078,7 @@ function CreateClipsContent() {
                         className={`group relative rounded-2xl p-2.5 transition-all cursor-pointer flex flex-col justify-between ${
                           isSelected
                             ? 'ring-2 ring-emerald-500 bg-emerald-950/20 shadow-xl shadow-emerald-950/40 border border-emerald-500/50'
-                            : 'border border-white/[0.08] bg-[#090e1a] hover:border-white/20 hover:bg-zinc-900/60'
+                            : 'border border-white/[0.08] bg-[#0a0a0a] hover:border-white/20 hover:bg-zinc-900/60'
                         }`}
                       >
                         {/* 9:16 Miniature Screen Frame */}
