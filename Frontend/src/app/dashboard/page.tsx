@@ -308,12 +308,10 @@ export default function DashboardPage() {
                         </Button>
                         {clip.download_url && (
                           <a
-                            href={api.getServerUrl(clip.download_url)}
-                            download
-                            target="_blank"
-                            rel="noreferrer"
-                            className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors"
-                            title="Download MP4"
+                            href={api.getClipDownloadUrl(clip.id)}
+                            download={`${clip.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_9x16.mp4`}
+                            className="p-2 rounded-xl bg-zinc-800 hover:bg-emerald-600 hover:text-white text-zinc-300 transition-colors cursor-pointer"
+                            title="Direct Download MP4"
                           >
                             <Download className="w-3.5 h-3.5" />
                           </a>
@@ -506,11 +504,9 @@ export default function DashboardPage() {
               </Button>
               {activeClipModal.download_url && (
                 <a
-                  href={api.getServerUrl(activeClipModal.download_url)}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1"
+                  href={api.getClipDownloadUrl(activeClipModal.id)}
+                  download={`${activeClipModal.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_9x16.mp4`}
+                  className="flex-1 cursor-pointer"
                 >
                   <Button variant="primary" size="sm" className="w-full rounded-xl text-xs">
                     <Download className="w-3.5 h-3.5 mr-1.5" /> Download Video

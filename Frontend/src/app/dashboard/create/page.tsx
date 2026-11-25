@@ -122,6 +122,23 @@ function CreateClipsContent() {
   const [generationSuccess, setGenerationSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isGalleryExpanded, setIsGalleryExpanded] = useState(false);
+  const [rangeStartTime, setRangeStartTime] = useState<number>(0);
+  const [rangeEndTime, setRangeEndTime] = useState<number>(0);
+  const [selectedMoments, setSelectedMoments] = useState<string[]>(['Clutch wins', 'High-energy scenes']);
+
+  useEffect(() => {
+    if (activeVideo?.duration && rangeEndTime === 0) {
+      setRangeEndTime(Math.round(activeVideo.duration));
+    }
+  }, [activeVideo?.duration, rangeEndTime]);
+
+  const formatTimeStr = (seconds: number) => {
+    const s = Math.max(0, Math.floor(seconds || 0));
+    const hrs = Math.floor(s / 3600);
+    const mins = Math.floor((s % 3600) / 60);
+    const secs = s % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleContentTypeChange = (type: 'gaming' | 'podcast' | 'education' | 'general') => {
     setContentType(type);
@@ -246,6 +263,7 @@ function CreateClipsContent() {
     setIsGenerating(true);
     try {
       // Trigger 10-step full AI clipping & reframing pipeline with Wayin.ai templates & subtitle settings
+      const hasCustomRange = rangeStartTime > 0 || (rangeEndTime > 0 && rangeEndTime < (activeVideo.duration || 999999));
       const res = await api.triggerPipeline({
         video_id: activeVideo.id,
         target_aspect_ratio: aspectRatio,
@@ -260,6 +278,9 @@ function CreateClipsContent() {
         smart_reframing: faceTracking,
         whisper_model: 'tiny',
         export_quality: exportQuality,
+        scan_full_video: !hasCustomRange,
+        start_time: rangeStartTime > 0 ? rangeStartTime : undefined,
+        end_time: (rangeEndTime > 0 && rangeEndTime < (activeVideo.duration || 999999)) ? rangeEndTime : undefined,
       });
 
       setPipelineJobId(res.job_id);
@@ -794,6 +815,114 @@ function CreateClipsContent() {
                 </div>
               </div>
 
+              {/* 1.5 Moments to Find & Video Range Slicer (WayinVideo Style) */}
+              <div className="space-y-4 pt-1 pb-2 border-y border-white/[0.06]">
+                {/* Moments Filter */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-300">
+                      What moments do you want to find? <span className="text-zinc-500 font-normal">(Optional)</span>
+                    </label>
+                    <span className="text-[10px] text-zinc-500">Click to filter</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      'Funny reactions',
+                      'Clutch wins',
+                      'Epic fails',
+                      'Emotional moments',
+                      'High-energy scenes',
+                    ].map((m) => {
+                      const isSel = selectedMoments.includes(m);
+                      return (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => {
+                            if (isSel) {
+                              setSelectedMoments(selectedMoments.filter((x) => x !== m));
+                            } else {
+                              setSelectedMoments([...selectedMoments, m]);
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                            isSel
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm'
+                              : 'bg-zinc-900 border border-white/[0.08] text-zinc-400 hover:border-white/20 hover:text-white'
+                          }`}
+                        >
+                          {m}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Choose where to find clips (Range selector) */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-xs font-semibold text-zinc-300 block">
+                        Choose where to find clips
+                      </label>
+                      <p className="text-[10px] text-zinc-500">
+                        {rangeStartTime === 0 && (!rangeEndTime || rangeEndTime >= (activeVideo?.duration || 0))
+                          ? 'Scanning full video length'
+                          : `Scanning from ${formatTimeStr(rangeStartTime)} to ${formatTimeStr(rangeEndTime || activeVideo?.duration || 0)}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 font-mono text-xs">
+                      <span className="px-2 py-0.5 rounded bg-zinc-900 border border-white/10 text-emerald-400 font-bold">
+                        {formatTimeStr(rangeStartTime)}
+                      </span>
+                      <span className="text-zinc-600">—</span>
+                      <span className="px-2 py-0.5 rounded bg-zinc-900 border border-white/10 text-emerald-400 font-bold">
+                        {formatTimeStr(rangeEndTime || activeVideo?.duration || 180)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Range Sliders */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-zinc-500 w-10">Start:</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={Math.max(10, Math.floor((activeVideo?.duration || 300) - 10))}
+                        value={rangeStartTime}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setRangeStartTime(Math.min(val, (rangeEndTime || 300) - 5));
+                        }}
+                        className="flex-1 accent-emerald-500 cursor-pointer"
+                      />
+                      <span className="text-[10px] font-mono text-zinc-400 w-14 text-right">
+                        {formatTimeStr(rangeStartTime)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-zinc-500 w-10">End:</span>
+                      <input
+                        type="range"
+                        min={10}
+                        max={Math.max(15, Math.floor(activeVideo?.duration || 300))}
+                        value={rangeEndTime || Math.floor(activeVideo?.duration || 300)}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setRangeEndTime(Math.max(val, rangeStartTime + 5));
+                        }}
+                        className="flex-1 accent-emerald-500 cursor-pointer"
+                      />
+                      <span className="text-[10px] font-mono text-zinc-400 w-14 text-right">
+                        {formatTimeStr(rangeEndTime || activeVideo?.duration || 300)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* 2. Visual Layout Template Presets (Wayin.ai inspired) */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -813,14 +942,23 @@ function CreateClipsContent() {
                   </div>
                 </div>
 
+                {templateLayout === 'full_screen' && (
+                  <div className="px-3 py-2 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex items-center gap-2 text-xs text-emerald-300">
+                    <Gamepad2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>
+                      <strong>Pure Gameplay Active:</strong> Creator facecam / webcam on top is removed. The video will focus 100% on continuous full gameplay action.
+                    </span>
+                  </div>
+                )}
+
                 {/* Wayin.ai Template Cards Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
                     {
                       id: 'full_screen',
                       title: 'GTA 6 Full',
-                      subtitle: 'Direct 9:16 Action',
-                      badge: 'Full Frame • No Split',
+                      subtitle: 'Pure Gameplay (No Creator Screen)',
+                      badge: 'Direct Action • Cam Removed',
                       previewType: 'full',
                     },
                     {
@@ -885,14 +1023,15 @@ function CreateClipsContent() {
 
                           {/* Layout Preview Graphic */}
                           {tmpl.previewType === 'full' && (
-                            /* GTA 6 Full: Full-screen action with centered neon text */
-                            <div className="w-full h-full relative bg-gradient-to-b from-blue-900/40 via-purple-900/30 to-amber-950/40 flex flex-col justify-center items-center p-2 text-center">
-                              <Gamepad2 className="w-6 h-6 text-purple-300/40 mb-1" />
-                              <div className="px-2 py-0.5 rounded-md bg-black/80 border border-pink-500/60 shadow-[0_0_12px_rgba(236,72,153,0.5)]">
-                                <span className="text-[8px] font-black uppercase text-pink-300 tracking-wider">
-                                  WHO IS THIS GUY
+                            /* GTA 6 Full: Full-screen pure gameplay action (creator cam removed) */
+                            <div className="w-full h-full relative bg-gradient-to-b from-blue-900/40 via-emerald-950/30 to-black flex flex-col justify-center items-center p-2 text-center">
+                              <Gamepad2 className="w-6 h-6 text-emerald-400 mb-1" />
+                              <div className="px-2 py-0.5 rounded-md bg-black/90 border border-emerald-500/60 shadow-[0_0_12px_rgba(16,185,129,0.4)]">
+                                <span className="text-[7.5px] font-black uppercase text-emerald-300 tracking-wider">
+                                  PURE GAMEPLAY
                                 </span>
                               </div>
+                              <span className="text-[6.5px] text-zinc-400 mt-1">Creator Cam Cut</span>
                             </div>
                           )}
 
@@ -1144,37 +1283,22 @@ function CreateClipsContent() {
                 </div>
               </div>
 
-              {/* Submit CTA Button */}
+              {/* Submit CTA Button (WayinVideo Style) */}
               <div className="pt-2 space-y-2">
                 <Button
                   onClick={handleStartGeneration}
                   disabled={!activeVideo || isGenerating}
                   isLoading={isGenerating}
-                  variant="primary"
                   size="lg"
-                  className="w-full rounded-xl py-3 text-sm font-bold shadow-xl shadow-purple-600/30 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500"
+                  className="w-full rounded-2xl py-3.5 text-sm font-black shadow-xl shadow-emerald-500/25 bg-emerald-500 hover:bg-emerald-400 text-black border-none transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <Sparkles className="w-4 h-4 mr-2 text-amber-300" />
+                  <Sparkles className="w-4 h-4 text-black stroke-[2.5]" />
                   {isGenerating
-                    ? 'Transcribing & Rendering Clips...'
-                    : activeVideo
-                    ? `Generate 9:16 Shorts with ${
-                        templateLayout === 'full_screen' || (templateLayout as string) === 'center_crop'
-                          ? 'GTA 6 Full'
-                          : templateLayout === 'streamer_split'
-                          ? 'GTA 6 Top'
-                          : templateLayout === 'streamer_bottom'
-                          ? 'GTA 6 Cam'
-                          : templateLayout === 'blur_fit'
-                          ? 'GTA 6 Fit'
-                          : templateLayout === 'streamer_pip'
-                          ? 'Adventure PiP'
-                          : 'Smart Face Follow'
-                      }`
-                    : 'Upload Video to Generate Clips'}
+                    ? 'AI Clipping & Rendering in Progress...'
+                    : 'Generate Clips'}
                 </Button>
                 <p className="text-[10px] text-zinc-500 text-center">
-                  Exports 1080x1920 MP4s with {templateLayout === 'full_screen' ? 'clean full-screen action' : 'chosen viral layout'} &amp; {captionPreset === 'none' ? 'zero captions' : 'speech-synced captions'}.
+                  By continuing, AI processes clips from the full footage with {templateLayout === 'full_screen' ? 'pure gameplay (creator screen cut)' : 'selected template layout'} &amp; 1-click direct MP4 downloads.
                 </p>
               </div>
             </Card>

@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException, BackgroundTasks, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from app.core.config import settings
 from app.core.logging import logger
 from app.core.database import get_database
@@ -271,6 +271,82 @@ async def get_clips_for_video(video_id: str):
         clips = [CandidateClip(**c) for c in _in_memory_clips_by_video[video_id]]
 
     return ClipResponse(clips=clips, total_clips=len(clips))
+
+@router.api_route("/{clip_id}/download", methods=["GET", "HEAD"])
+async def download_single_clip(clip_id: str):
+    """
+    Directly streams or downloads the rendered 9:16 clip MP4 with Content-Disposition: attachment.
+    Never opens in browser tab; immediately saves the file to the user's downloads folder.
+    """
+    db = get_database()
+    clip_doc = None
+    if db is not None:
+        try:
+            clip_doc = await db.clips.find_one({"id": clip_id})
+        except Exception as e:
+            logger.warning(f"MongoDB fetch clip for download: {e}")
+
+    if not clip_doc:
+        for vid_clips in _in_memory_clips_by_video.values():
+            for c in vid_clips:
+                if c.get("id") == clip_id:
+                    clip_doc = c
+                    break
+            if clip_doc:
+                break
+
+    # Locate the target MP4 file on disk
+    target_file: Optional[Path] = None
+
+    if clip_doc:
+        for url_field in ["video_url", "download_url"]:
+            val = clip_doc.get(url_field)
+            if val and isinstance(val, str):
+                fname = Path(val).name
+                cand = settings.GENERATED_CLIPS_DIR / fname
+                if cand.exists() and cand.stat().st_size > 0:
+                    target_file = cand
+                    break
+
+    if not target_file:
+        matches = list(settings.GENERATED_CLIPS_DIR.glob(f"{clip_id}*.mp4"))
+        subtitled = [m for m in matches if "_subtitled" in m.name and m.stat().st_size > 0]
+        if subtitled:
+            target_file = subtitled[0]
+        elif matches:
+            valid = [m for m in matches if m.stat().st_size > 0]
+            if valid:
+                target_file = valid[0]
+
+    if not target_file:
+        uploads_matches = list(settings.UPLOAD_DIR.glob(f"{clip_id}*.mp4"))
+        if uploads_matches and uploads_matches[0].stat().st_size > 0:
+            target_file = uploads_matches[0]
+
+    if not target_file or not target_file.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Clip file for '{clip_id}' has not been rendered yet or was deleted."
+        )
+
+    # Human-friendly sanitized filename for the user's computer
+    raw_title = (clip_doc.get("title") if clip_doc else None) or f"Clip_{clip_id}"
+    safe_name = re.sub(r'[^\w\s-]', '', raw_title).strip()
+    safe_name = re.sub(r'[-\s]+', '_', safe_name)[:80]
+    if not safe_name:
+        safe_name = f"clip_{clip_id}"
+    download_filename = f"{safe_name}_9x16.mp4"
+
+    return FileResponse(
+        path=str(target_file),
+        media_type="video/mp4",
+        filename=download_filename,
+        headers={
+            "Content-Disposition": f'attachment; filename="{download_filename}"',
+            "Accept-Ranges": "bytes",
+            "Cache-Control": "public, max-age=3600"
+        }
+    )
 
 @router.get("/{clip_id}", response_model=CandidateClip)
 async def get_single_clip(clip_id: str):
@@ -782,7 +858,10 @@ async def _run_full_end_to_end_pipeline(
     smart_reframing: bool,
     whisper_model: str,
     content_type: str = "gaming",
-    export_quality: str = "1080p_high"
+    export_quality: str = "1080p_high",
+    scan_full_video: bool = True,
+    start_time: Optional[float] = None,
+    end_time: Optional[float] = None
 ):
     """
     Executes the Complete 10-Step End-to-End Workflow:
@@ -829,10 +908,17 @@ async def _run_full_end_to_end_pipeline(
         total_duration = float(meta_dur) if meta_dur else 0.0
 
     try:
-        # STEP 1: Audio Extraction (For videos > 10m, extract first 10m for rapid viral clip detection)
+        # STEP 1: Audio Extraction (Scan full video or custom user range)
         job["progress"] = 15
-        max_audio_sec = 600.0 if total_duration > 600.0 else None
-        audio_dur_label = f" (first {int(max_audio_sec)}s for fast clipping)" if max_audio_sec else ""
+        if start_time is not None and end_time is not None and end_time > start_time:
+            max_audio_sec = float(end_time - start_time)
+            audio_dur_label = f" ({int(start_time)}s - {int(end_time)}s)"
+        elif scan_full_video:
+            max_audio_sec = None
+            audio_dur_label = " (full video footage)"
+        else:
+            max_audio_sec = 600.0 if total_duration > 600.0 else None
+            audio_dur_label = f" (first {int(max_audio_sec)}s for fast clipping)" if max_audio_sec else ""
         job["current_step"] = f"2. Extracting 16kHz mono audio stream via FFmpeg{audio_dur_label}..."
         job["updated_at"] = datetime.utcnow()
 
@@ -916,7 +1002,8 @@ async def _run_full_end_to_end_pipeline(
             video_path=source_path,
             duration_range=duration_enum,
             max_clips=max_clips,
-            virality_threshold=virality_threshold
+            virality_threshold=virality_threshold,
+            video_title=video_doc.get("title", "")
         )
 
         # If candidates are fewer than requested max_clips, backfill with diverse duration-based segments across the video
@@ -945,10 +1032,15 @@ async def _run_full_end_to_end_pipeline(
                 overlaps = any(abs(c_start - s) < 3.0 and abs(c_end - e) < 3.0 for s, e in covered)
                 if not overlaps:
                     c_id = f"clip_{uuid.uuid4().hex[:10]}"
+                    v_title_clean = intelligent_clip_detector.generate_viral_headline(
+                        video_title=video_doc.get("title", ""),
+                        index=idx,
+                        category="Action Highlight" if content_type == "gaming" else "Key Moment"
+                    )
                     fallback_clip = CandidateClip(
                         id=c_id,
                         video_id=video_id,
-                        title=f"Highlight Moment {idx + 1}",
+                        title=v_title_clean,
                         short_description=f"Curated segment from {c_start:.1f}s to {c_end:.1f}s",
                         hook="Key visual moment",
                         category="Visual Highlight",
@@ -986,10 +1078,15 @@ async def _run_full_end_to_end_pipeline(
                 c_start = round(min(total_duration - 5.0, max(0.0, idx * slot_w * 0.7)), 2)
                 c_end = round(min(total_duration, c_start + max(6.0, slot_w * 1.1)), 2)
                 c_id = f"clip_{uuid.uuid4().hex[:10]}"
+                v_title_clean = intelligent_clip_detector.generate_viral_headline(
+                    video_title=video_doc.get("title", ""),
+                    index=idx,
+                    category="Action Highlight" if content_type == "gaming" else "Key Moment"
+                )
                 fallback_clip = CandidateClip(
                     id=c_id,
                     video_id=video_id,
-                    title=f"Highlight Moment {idx + 1}",
+                    title=v_title_clean,
                     short_description=f"Curated segment from {c_start:.1f}s to {c_end:.1f}s",
                     hook="Key visual moment",
                     category="Visual Highlight",
@@ -1239,7 +1336,10 @@ async def trigger_full_pipeline(
         smart_reframing=request.smart_reframing,
         whisper_model=request.whisper_model,
         content_type=request.content_type,
-        export_quality=request.export_quality
+        export_quality=request.export_quality,
+        scan_full_video=request.scan_full_video,
+        start_time=request.start_time,
+        end_time=request.end_time
     )
 
     logger.info(f"Queued Full Pipeline job {job_id} for video {request.video_id}")

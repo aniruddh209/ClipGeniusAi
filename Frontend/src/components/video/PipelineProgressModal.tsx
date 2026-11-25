@@ -272,9 +272,9 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
 
                       {clip.video_url && (
                         <a
-                          href={api.getServerUrl(clip.video_url)}
-                          download
-                          className="py-1 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 shadow-md shadow-emerald-500/20 transition-all"
+                          href={api.getClipDownloadUrl(clip.id)}
+                          download={`${clip.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_9x16.mp4`}
+                          className="py-1 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
                         >
                           <Download className="w-3 h-3" />
                           Download

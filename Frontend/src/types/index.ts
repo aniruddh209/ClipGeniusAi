@@ -216,6 +216,9 @@ export interface FullPipelineRequest {
   smart_reframing?: boolean;
   whisper_model?: string;
   export_quality?: string;
+  scan_full_video?: boolean;
+  start_time?: number;
+  end_time?: number;
 }
 
 export interface FullPipelineJobResponse {

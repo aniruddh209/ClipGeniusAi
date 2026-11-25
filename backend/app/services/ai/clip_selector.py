@@ -82,7 +82,8 @@ class IntelligentClipDetector:
         video_path: Optional[str] = None,
         duration_range: ClipDurationRange = ClipDurationRange.RANGE_30_60,
         max_clips: int = 6,
-        virality_threshold: float = 55.0
+        virality_threshold: float = 55.0,
+        video_title: str = ""
     ) -> List[CandidateClip]:
         segments = transcript_data.get("segments", []) if transcript_data else []
         min_dur, max_dur = DURATION_BOUNDS.get(duration_range, (28.0, 62.0))
@@ -126,10 +127,11 @@ class IntelligentClipDetector:
                     audio_visual_quality=5.0,
                     overall_score=score_val
                 )
+                viral_title = self.generate_viral_headline(video_title=video_title, category="Action Highlight", index=k)
                 visual_clips.append(CandidateClip(
                     id=cid,
                     video_id=video_id,
-                    title=f"Highlight Moment {k + 1}",
+                    title=viral_title,
                     short_description=f"Curated visual moment from {c_start:.1f}s to {c_end:.1f}s",
                     hook="Key visual moment",
                     category="Visual Highlight",
@@ -223,7 +225,7 @@ class IntelligentClipDetector:
 
                     if scores.overall_score >= virality_threshold:
                         clip_id = f"clip_{uuid.uuid4().hex[:10]}"
-                        title = self._generate_title(hook, combined_text, category)
+                        title = self._generate_title(hook, combined_text, category, video_title=video_title, index=len(candidate_clips))
                         short_desc = self._generate_description(combined_text, category)
 
                         candidate = CandidateClip(
@@ -312,9 +314,13 @@ class IntelligentClipDetector:
                     ]
                     slice_text = " ".join(slice_words).strip()
                     clip_idx = len(selected_clips) + 1
-                    clip_title = f"Highlight Moment {clip_idx}"
-                    if slice_text and len(slice_text.split()) >= 3:
-                        clip_title = self._generate_title(slice_text[:40], slice_text, "Action Highlight")
+                    clip_title = self.generate_viral_headline(
+                        video_title=video_title,
+                        hook=slice_text[:60],
+                        text=slice_text,
+                        category="Action Highlight",
+                        index=clip_idx
+                    )
 
                     backfill_clip = CandidateClip(
                         id=f"clip_{uuid.uuid4().hex[:10]}",
@@ -828,19 +834,84 @@ class IntelligentClipDetector:
 
         return clips
 
-    def _generate_title(self, hook: str, text: str, category: str) -> str:
+    def generate_viral_headline(
+        self,
+        video_title: str = "",
+        hook: str = "",
+        text: str = "",
+        category: str = "Action Highlight",
+        index: int = 0
+    ) -> str:
+        """
+        Generates high-CTR, viral titles tailored to the video topic and dialogue hook.
+        Avoids generic 'Highlight Moment' or raw sentence chops.
+        """
+        # 1. Extract core topic/subject from video_title (e.g. GTA 6, Elden Ring, Discrete Maths, MrBeast)
+        topic = ""
+        if video_title:
+            clean_vt = re.sub(r'\(.*?\)|\[.*?\]', '', video_title)
+            clean_vt = re.sub(r'#\w+', '', clean_vt)
+            clean_vt = re.sub(r'\b(Part\s*\d+|Episode\s*\d+|Walkthrough|Gameplay|Full\s*Course|Hindi|English|No\s*Commentary|1080p|4K|60FPS)\b', '', clean_vt, flags=re.IGNORECASE)
+            parts = [p.strip() for p in re.split(r'[-–—|:]', clean_vt) if p.strip()]
+            if parts:
+                topic = parts[0][:32].strip()
+
+        # 2. Check dialogue / hook for engaging viral phrases
+        sample = (hook or text or "").strip()
+        sample = re.sub(r'^(so\b|and\b|but\b|like\b|basically\b|you\s*know\b|well\b)\s*', '', sample, flags=re.IGNORECASE)
+        sample = re.sub(r'["\']', '', sample).strip()
+
+        words = sample.split()
+        if len(words) >= 3:
+            first_w = words[0].lower()
+            if first_w in ["why", "how", "what", "who", "when", "where", "never", "always", "this", "the"]:
+                candidate = " ".join(words[:6])
+                candidate = re.sub(r'[.,;?!]+$', '', candidate).strip()
+                if len(candidate) > 10:
+                    return candidate.title()
+            if any(w.lower() in EMOTIONAL_WORDS for w in words[:8]):
+                candidate = " ".join(words[:6])
+                candidate = re.sub(r'[.,;?!]+$', '', candidate).strip()
+                return candidate.title()
+
+        # 3. Topic-based viral templates for gaming / action / visual / podcast
+        gaming_hooks = [
+            "Insane Action & Impossible Escape",
+            "This Mission Went Completely Wrong",
+            "Pure Skill: High Stakes Clutch",
+            "The Most Intense Gameplay Moment",
+            "Wait Until You See What Happens Here",
+            "Absolute Masterclass Gameplay",
+            "Unbelievable Physics & Combat Action",
+            "The Craziest Move of the Entire Game"
+        ]
+        topic_hooks = [
+            "The Harsh Reality Nobody Tells You",
+            "Crucial Turning Point You Missed",
+            "Watch What Happens Next",
+            "The Ultimate Secret Revealed",
+            "This Changes Everything",
+            "Key Insight You Need to Know",
+            "The Most Important Part Explained",
+            "Brilliant Breakdown in 60 Seconds"
+        ]
+
+        pool = gaming_hooks if (category in ["Action Highlight", "Visual Highlight"] or "game" in (video_title or "").lower()) else topic_hooks
+        chosen_template = pool[index % len(pool)]
+
+        if topic and len(topic) >= 3:
+            return f"{topic} - {chosen_template}"
+        return chosen_template
+
+    def _generate_title(self, hook: str, text: str, category: str, video_title: str = "", index: int = 0) -> str:
         """Generates a punchy, click-worthy short title."""
-        # Clean text
-        clean = re.sub(r'["\']', '', hook or text)
-        words = clean.split()
-        if len(words) <= 7:
-            title = " ".join(words)
-        else:
-            title = " ".join(words[:6])
-        
-        # Remove trailing punctuation from title
-        title = re.sub(r'[.,;?!]+$', '', title).title()
-        return title.strip()
+        return self.generate_viral_headline(
+            video_title=video_title,
+            hook=hook,
+            text=text,
+            category=category,
+            index=index
+        )
 
     def _generate_description(self, text: str, category: str) -> str:
         """Generates a clean 1-2 sentence overview."""

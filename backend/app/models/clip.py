@@ -172,6 +172,9 @@ class FullPipelineRequest(BaseModel):
     smart_reframing: bool = True
     whisper_model: str = "tiny"
     export_quality: str = "1080p_high" # 1080p_high, 1080p_standard, 720p_fast
+    scan_full_video: bool = True
+    start_time: Optional[float] = None
+    end_time: Optional[float] = None
 
 class FullPipelineJobResponse(BaseModel):
     job_id: str

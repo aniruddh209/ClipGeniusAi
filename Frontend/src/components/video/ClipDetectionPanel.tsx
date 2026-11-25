@@ -695,10 +695,8 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
 
                       {clip.video_url ? (
                         <a
-                          href={api.getServerUrl(clip.video_url)}
+                          href={api.getClipDownloadUrl(clip.id)}
                           download={`${clip.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_9x16.mp4`}
-                          target="_blank"
-                          rel="noopener noreferrer"
                           className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-900/40 transition-all cursor-pointer whitespace-nowrap text-center"
                         >
                           <Download className="w-3.5 h-3.5 mr-1.5" /> Download
@@ -863,10 +861,8 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
               </div>
               {previewingClip.video_url && (
                 <a
-                  href={api.getServerUrl(previewingClip.video_url)}
+                  href={api.getClipDownloadUrl(previewingClip.id)}
                   download={`${previewingClip.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_9x16.mp4`}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-900/40 transition-all cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5 mr-1" /> Download Short

@@ -612,12 +612,10 @@ export default function MyProjectsPage() {
 
                             {clip.video_url ? (
                               <a
-                                href={api.getServerUrl(clip.video_url)}
+                                href={api.getClipDownloadUrl(clip.id)}
                                 download={`${clip.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_9x16.mp4`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all"
-                                title="Download 9:16 Video"
+                                className="inline-flex items-center justify-center px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all cursor-pointer"
+                                title="Download 9:16 Video Directly"
                               >
                                 <Download className="w-3.5 h-3.5" />
                               </a>
@@ -760,11 +758,9 @@ export default function MyProjectsPage() {
                 </Button>
               {previewClip.video_url ? (
                 <a
-                  href={api.getServerUrl(previewClip.video_url)}
+                  href={api.getClipDownloadUrl(previewClip.id)}
                   download={`${previewClip.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_9x16.mp4`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition-all"
+                  className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition-all cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5 mr-1.5" /> Download MP4
                 </a>

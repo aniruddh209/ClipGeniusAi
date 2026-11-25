@@ -467,6 +467,10 @@ class ApiClient {
     return `${this.baseUrl}/clips/video/${videoId}/download-zip`;
   }
 
+  getClipDownloadUrl(clipId: string): string {
+    return `${this.baseUrl}/clips/${clipId}/download`;
+  }
+
   async updateClip(
     clipId: string,
     data: { title?: string; start_time?: number; end_time?: number }
