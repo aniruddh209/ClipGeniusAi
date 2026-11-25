@@ -25,7 +25,7 @@ from app.models.clip import (
     FullPipelineRequest,
     FullPipelineJobResponse
 )
-from app.models.video import VideoStatus
+from app.models.video import VideoStatus, VideoSourceType
 from app.models.subtitle import CaptionPreset, SubtitleStyleConfig
 from app.models.reframe import CropMode, ReframingAspectRatio
 from app.services.ai.clip_selector import intelligent_clip_detector
@@ -476,6 +476,8 @@ async def render_single_clip(
         and (not file_path or not Path(file_path).exists() or Path(file_path).suffix.lower() in [".mp3", ".wav", ".m4a"])
     )
 
+    start_time = float(clip_doc.get("start_time", 0.0))
+    end_time = float(clip_doc.get("end_time", 0.0))
     clean_input_path = file_path
     render_start = start_time
     render_end = end_time

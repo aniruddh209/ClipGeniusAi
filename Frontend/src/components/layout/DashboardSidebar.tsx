@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Scissors, 
@@ -17,18 +17,12 @@ import {
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
 
-export const DashboardSidebar: React.FC = () => {
+function DashboardSidebarContent() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams ? searchParams.get('tab') : null;
   const [projectCount, setProjectCount] = useState<number | null>(null);
-  const [currentTab, setCurrentTab] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const sp = new URLSearchParams(window.location.search);
-      setCurrentTab(sp.get('tab'));
-    }
-  }, [pathname]);
 
   const fetchProjectCount = async () => {
     try {
@@ -139,11 +133,13 @@ export const DashboardSidebar: React.FC = () => {
             const isHistoryItem = item.href.includes('tab=history');
             const isDownloaderItem = item.href === '/dashboard/downloader';
             
-            let isActive = pathname === item.href;
+            let isActive = false;
             if (isHistoryItem) {
               isActive = pathname === '/dashboard/downloader' && currentTab === 'history';
             } else if (isDownloaderItem) {
               isActive = pathname === '/dashboard/downloader' && currentTab !== 'history';
+            } else {
+              isActive = pathname === item.href;
             }
 
             const Icon = item.icon;
@@ -238,5 +234,13 @@ export const DashboardSidebar: React.FC = () => {
         {sidebarContent}
       </aside>
     </>
+  );
+}
+
+export const DashboardSidebar: React.FC = () => {
+  return (
+    <Suspense fallback={<aside className="hidden md:flex md:w-64 border-r border-[var(--card-border)] bg-[var(--surface)] flex-col shrink-0 min-h-screen" />}>
+      <DashboardSidebarContent />
+    </Suspense>
   );
 };

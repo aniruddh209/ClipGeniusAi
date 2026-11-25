@@ -8,7 +8,7 @@ export type VideoStatus =
   | 'completed'
   | 'failed';
 
-export type VideoSourceType = 'upload' | 'youtube_url';
+export type VideoSourceType = 'upload' | 'youtube_url' | 'youtube_direct_stream' | 'direct_stream';
 
 export interface VideoMetadata {
   duration: number;
@@ -29,6 +29,7 @@ export interface VideoItem {
   stored_filename?: string;
   source_type: VideoSourceType;
   source_url?: string;
+  is_direct_stream?: boolean;
   file_path?: string;
   file_size_mb: number;
   duration: number;

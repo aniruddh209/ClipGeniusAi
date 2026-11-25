@@ -1,3 +1,4 @@
+import os
 import re
 import uuid
 from typing import List, Dict, Any, Tuple, Optional
@@ -225,7 +226,7 @@ class IntelligentClipDetector:
 
                     if scores.overall_score >= virality_threshold:
                         clip_id = f"clip_{uuid.uuid4().hex[:10]}"
-                        title = self._generate_title(hook, combined_text, category, video_title=video_title, index=len(candidate_clips))
+                        title = self._generate_title(hook, combined_text, category, video_title=video_title, index=len(raw_candidates))
                         short_desc = self._generate_description(combined_text, category)
 
                         candidate = CandidateClip(

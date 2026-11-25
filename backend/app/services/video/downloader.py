@@ -380,13 +380,36 @@ class VideoDownloader:
         height = int(info.get("height") or 2160)
         fps = float(info.get("fps") or 30.0)
 
-        # Detect max available quality
+        # Detect max available quality and resolution
         max_height = 1080
         for f in (info.get("formats") or []):
             h = f.get("height")
             if h and h > max_height:
                 max_height = h
-        quality_label = "4K UHD (2160p)" if max_height >= 2160 else f"{max_height}p HD"
+
+        if max_height >= 2160:
+            width, height = 3840, 2160
+            quality_label = "4K UHD (2160p)"
+        elif max_height >= 1440:
+            width, height = 2560, 1440
+            quality_label = "2K QHD (1440p)"
+        elif max_height >= 1080:
+            width, height = 1920, 1080
+            quality_label = "1080p Full HD"
+        elif max_height >= 720:
+            width, height = 1280, 720
+            quality_label = "720p HD"
+        else:
+            height = max(360, max_height)
+            width = int(height * 16 / 9)
+            quality_label = f"{height}p"
+
+        # Estimate video stream size
+        size_bytes = info.get("filesize") or info.get("filesize_approx") or 0
+        if not size_bytes and duration > 0:
+            bitrate_bps = 25_000_000 if max_height >= 2160 else (8_000_000 if max_height >= 1080 else 4_000_000)
+            size_bytes = int(duration * (bitrate_bps / 8))
+        file_size_mb = round(size_bytes / (1024 * 1024), 1) if size_bytes else 0.0
 
         # Download ONLY lightweight audio track for Whisper transcription
         audio_opts = {
@@ -448,7 +471,7 @@ class VideoDownloader:
             "aspect_ratio": "16:9",
             "video_codec": "h264/vp9",
             "audio_codec": "mp3",
-            "size_mb": 0.0,
+            "size_mb": file_size_mb,
             "is_direct_stream": True,
         }
 
@@ -459,7 +482,7 @@ class VideoDownloader:
             "stored_filename": f"{video_id}_direct",
             "file_path": str(actual_audio) if actual_audio else clean_url,
             "audio_path": str(actual_audio) if actual_audio else None,
-            "file_size_mb": 0.0,
+            "file_size_mb": file_size_mb,
             "duration": duration,
             "video_url": clean_url,
             "thumbnail_url": thumbnail_url,

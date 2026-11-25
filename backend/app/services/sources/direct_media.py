@@ -21,6 +21,8 @@ def format_duration(seconds: float) -> str:
         return f"{h:02d}:{m:02d}:{s:02d}"
     return f"{m:02d}:{s:02d}"
 
+format_duration_sec = format_duration
+
 class DirectMediaSourceProvider(BaseSourceProvider):
     """
     Modular provider for direct cloud MP4/WebM HTTP(S) video URLs and CDN endpoints

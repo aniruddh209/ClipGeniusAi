@@ -35,6 +35,13 @@ interface VideoUploadZoneProps {
 const SUPPORTED_EXTENSIONS = ['.mp4', '.mov', '.webm'];
 const MAX_SIZE_MB = 500;
 
+function getYoutubeEmbedUrl(url?: string): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? `https://www.youtube-nocookie.com/embed/${match[2]}?autoplay=0&rel=0` : null;
+}
+
 export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
   onVideoUploaded,
   onVideoRemoved,
@@ -163,6 +170,18 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
     ? URL.createObjectURL(currentFile)
     : '';
 
+  const ytEmbedUrl = getYoutubeEmbedUrl(uploadedVideo?.source_url || uploadedVideo?.video_url);
+  const isDirectYt = Boolean(
+    ytEmbedUrl && (
+      uploadedVideo?.is_direct_stream ||
+      uploadedVideo?.source_type === 'youtube_direct_stream' ||
+      !videoStreamUrl ||
+      videoStreamUrl.includes('youtube') ||
+      videoStreamUrl.endsWith('.mp3') ||
+      videoStreamUrl.endsWith('.m4a')
+    )
+  );
+
   const thumbnailStreamUrl = uploadedVideo?.thumbnail_url
     ? api.getServerUrl(uploadedVideo.thumbnail_url)
     : null;
@@ -258,17 +277,27 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
             </Button>
           </div>
 
-          {/* HTML5 Video Player */}
-          <div className="relative rounded-2xl overflow-hidden aspect-video bg-black border border-white/[0.08] group shadow-inner">
-            <video
-              ref={videoPlayerRef}
-              src={videoStreamUrl}
-              controls
-              playsInline
-              preload="metadata"
-              poster={thumbnailStreamUrl || undefined}
-              className="w-full h-full object-contain"
-            />
+          {/* Video Player (Embedded YouTube Player for direct YouTube streams or HTML5 for local/cloud files) */}
+          <div className="relative rounded-2xl overflow-hidden aspect-video bg-black border border-[var(--card-border)] group shadow-inner">
+            {isDirectYt && ytEmbedUrl ? (
+              <iframe
+                src={ytEmbedUrl}
+                title={uploadedVideo.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full border-0"
+              />
+            ) : (
+              <video
+                ref={videoPlayerRef}
+                src={videoStreamUrl}
+                controls
+                playsInline
+                preload="metadata"
+                poster={thumbnailStreamUrl || undefined}
+                className="w-full h-full object-contain"
+              />
+            )}
           </div>
 
           {/* Metadata & Thumbnail Grid */}
