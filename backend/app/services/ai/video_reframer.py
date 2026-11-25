@@ -55,8 +55,13 @@ class IntelligentVideoReframer:
         Calculates (crop_w, crop_h, target_w, target_h) for source dimensions.
         """
         if aspect_ratio == ReframingAspectRatio.VERTICAL_9_16:
-            # 9:16 Vertical (Shorts, Reels, TikTok)
-            target_w, target_h = 1080, 1920
+            # 9:16 Vertical (Shorts, Reels, TikTok) - preserve source 4K/2K resolution
+            if source_h >= 2160 or source_w >= 3840:
+                target_w, target_h = 2160, 3840
+            elif source_h >= 1440 or source_w >= 2560:
+                target_w, target_h = 1440, 2560
+            else:
+                target_w, target_h = 1080, 1920
             crop_h = source_h
             crop_w = int(round(source_h * (9.0 / 16.0)))
             if crop_w > source_w:
@@ -667,13 +672,13 @@ class IntelligentVideoReframer:
 
         cmd.extend([
             "-c:v", "libx264",
-            "-preset", "veryfast",
-            "-crf", "19", # High fidelity export
+            "-preset", "fast",
+            "-crf", "17", # Near-lossless visual master fidelity
             "-tune", "fastdecode",
             "-pix_fmt", "yuv420p",
             "-avoid_negative_ts", "make_zero",
             "-c:a", "aac",
-            "-b:a", "192k",
+            "-b:a", "256k",
             "-ar", "48000",
             "-ac", "2",
             output_video_path

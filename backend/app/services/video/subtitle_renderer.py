@@ -177,8 +177,8 @@ class SubtitleRenderer:
             "-map", "0:v:0",
             "-map", "1:a:0?",                # Map audio if present
             "-c:v", "libx264",
-            "-preset", "ultrafast",
-            "-crf", "21",
+            "-preset", "fast",
+            "-crf", "17",
             "-tune", "fastdecode",
             "-pix_fmt", "yuv420p",
             "-c:a", "copy",

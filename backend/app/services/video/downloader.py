@@ -511,7 +511,14 @@ class VideoDownloader:
         chunk_id = f"slice_{uuid.uuid4().hex[:8]}"
         temp_slice_template = str(temp_dir / f"{chunk_id}.%(ext)s")
 
-        format_str = f"bestvideo[height<={max_height}]+bestaudio/best[height<={max_height}]/best"
+        format_str = (
+            f"bestvideo[height<={max_height}][ext=mp4]+bestaudio[ext=m4a]/"
+            f"bestvideo[height<={max_height}]+bestaudio/"
+            f"bestvideo+bestaudio/"
+            f"best[height<={max_height}][height>=1080]/"
+            f"best[height>=720]/"
+            f"bestvideo/best"
+        )
 
         slice_opts = {
             "format": format_str,
@@ -526,7 +533,7 @@ class VideoDownloader:
             "socket_timeout": 30,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["ios", "android", "mweb", "web"]
+                    "player_client": ["web", "mweb", "tv"]
                 }
             }
         }

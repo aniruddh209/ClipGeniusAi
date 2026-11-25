@@ -287,31 +287,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
             </div>
           )}
 
-          {/* Embedded Video Preview Modal */}
-          {previewClip && (
-            <div className="p-4 rounded-2xl bg-neutral-900 border border-white/15 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white truncate">
-                  Preview: &ldquo;{previewClip.title}&rdquo;
-                </span>
-                <button
-                  onClick={() => setPreviewClip(null)}
-                  className="text-white/50 hover:text-white text-xs"
-                >
-                  Close Preview
-                </button>
-              </div>
-
-              <div className="aspect-[9/16] max-h-[380px] mx-auto rounded-xl overflow-hidden bg-black border border-white/10 shadow-2xl">
-                <video
-                  src={api.getServerUrl(previewClip.video_url || '')}
-                  controls
-                  autoPlay
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            </div>
-          )}
+          {/* End of Clips Showcase */}
         </div>
 
         {/* Footer */}
@@ -326,6 +302,88 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
           )}
         </div>
       </div>
+
+      {/* Full-Screen Dedicated Vertical Short Preview Modal */}
+      {previewClip && (
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+          <div className="bg-[#111317] border border-[#32353a] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-[#32353a] flex items-center justify-between bg-[#0c0e12]">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
+                  <Play className="w-4 h-4 fill-current" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-white truncate">{previewClip.title}</h3>
+                  <div className="flex items-center gap-2 text-[11px] text-zinc-400">
+                    <span className="font-mono text-emerald-400 font-semibold">
+                      {Math.round(previewClip.virality_score || previewClip.scores?.overall_score || 85)}% Score
+                    </span>
+                    <span>•</span>
+                    <span>{Math.round(previewClip.duration)}s</span>
+                    <span>•</span>
+                    <span className="text-blue-400 font-mono">9:16 Vertical Short</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewClip(null)}
+                className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-[#32353a]/60 transition-colors cursor-pointer"
+                title="Close Preview"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Video Player Box */}
+            <div className="p-4 flex-1 overflow-hidden flex items-center justify-center bg-black/80">
+              <div className="relative aspect-[9/16] h-[55vh] max-h-[520px] rounded-2xl overflow-hidden bg-black shadow-2xl border border-[#32353a]/80">
+                <video
+                  src={api.getServerUrl(previewClip.video_url || `/generated-clips/${previewClip.id}_subtitled.mp4`)}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Hook text */}
+            {previewClip.hook && (
+              <div className="px-5 py-2.5 bg-[#0c0e12]/80 border-t border-[#32353a]/50 text-center">
+                <p className="text-xs text-zinc-300 italic line-clamp-2">
+                  &ldquo;{previewClip.hook}&rdquo;
+                </p>
+              </div>
+            )}
+
+            {/* Actions Bar */}
+            <div className="p-4 border-t border-[#32353a] bg-[#0c0e12] flex items-center gap-3">
+              <a
+                href={api.getClipDownloadUrl(previewClip.id)}
+                download={`${previewClip.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_9x16.mp4`}
+                className="flex-1"
+              >
+                <button
+                  type="button"
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/60 transition-all cursor-pointer"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download High-Quality 9:16 Short</span>
+                </button>
+              </a>
+              <button
+                type="button"
+                onClick={() => setPreviewClip(null)}
+                className="py-2.5 px-4 rounded-xl border border-[#32353a] hover:bg-[#32353a]/40 text-zinc-300 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
