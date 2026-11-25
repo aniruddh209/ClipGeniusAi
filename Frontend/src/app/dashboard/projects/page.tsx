@@ -253,14 +253,14 @@ export default function MyProjectsPage() {
           <div className="flex items-center gap-2">
             {storageInfo && (
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-900 border border-white/10 text-xs">
-                <HardDrive className="w-3.5 h-3.5 text-purple-400" />
+                <HardDrive className="w-3.5 h-3.5 text-blue-400" />
                 <span className="text-white/70">
                   Storage: <strong className="text-white font-mono">{storageInfo.total_storage_mb} MB</strong>
                 </span>
                 <button
                   onClick={handleCleanStorage}
                   disabled={isCleaningStorage}
-                  className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-purple-300 font-semibold transition-colors disabled:opacity-50"
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-blue-300 font-semibold transition-colors disabled:opacity-50"
                   title="Clean temporary audio & cache files"
                 >
                   {isCleaningStorage ? 'Cleaning...' : 'Clean Cache'}
@@ -289,7 +289,7 @@ export default function MyProjectsPage() {
         {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Tabs */}
-          <div className="flex p-1 rounded-xl bg-[#111116] border border-white/[0.06] w-fit">
+          <div className="flex p-1 rounded-xl bg-[#090e1a] border border-white/[0.06] w-fit">
             {[
               { id: 'all', label: 'All Projects', count: projects.length },
               { id: 'completed', label: 'Completed / Ready', count: projects.filter(v => v.status === 'completed' || v.status === 'ready').length },
@@ -300,7 +300,7 @@ export default function MyProjectsPage() {
                 onClick={() => setFilterTab(tab.id as any)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                   filterTab === tab.id
-                    ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+                    ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
@@ -320,15 +320,15 @@ export default function MyProjectsPage() {
               placeholder="Search by title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#111116] border border-white/[0.08] rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500"
+              className="w-full bg-[#090e1a] border border-white/[0.08] rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500"
             />
           </div>
         </div>
 
         {/* Master-Detail Projects View or Clean Empty State */}
         {projects.length === 0 ? (
-          <div className="py-20 px-6 text-center rounded-3xl bg-[#111116] border border-white/[0.08] space-y-4 max-w-2xl mx-auto shadow-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600/20 to-pink-600/20 border border-purple-500/30 flex items-center justify-center mx-auto text-purple-400">
+          <div className="py-20 px-6 text-center rounded-3xl bg-[#090e1a] border border-white/[0.08] space-y-4 max-w-2xl mx-auto shadow-2xl">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600/20 to-pink-600/20 border border-blue-500/30 flex items-center justify-center mx-auto text-blue-400">
               <Film className="w-8 h-8" />
             </div>
             <div className="space-y-2">
@@ -339,7 +339,7 @@ export default function MyProjectsPage() {
             </div>
             <div className="pt-2">
               <Link href="/dashboard/create">
-                <Button size="lg" variant="primary" className="rounded-2xl text-xs font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-xl shadow-purple-900/30">
+                <Button size="lg" variant="primary" className="rounded-2xl text-xs font-bold bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-500 hover:to-pink-500 shadow-xl shadow-blue-900/30">
                   <Sparkles className="w-4 h-4 mr-2 text-amber-300" />
                   + Create New Viral Clips
                 </Button>
@@ -355,7 +355,7 @@ export default function MyProjectsPage() {
               </span>
 
               {filteredProjects.length === 0 ? (
-                <div className="p-8 rounded-2xl bg-[#111116] border border-white/[0.06] text-center text-xs text-zinc-400">
+                <div className="p-8 rounded-2xl bg-[#090e1a] border border-white/[0.06] text-center text-xs text-zinc-400">
                   No projects match your search query.
                 </div>
               ) : (
@@ -371,8 +371,8 @@ export default function MyProjectsPage() {
                       onClick={() => setSelectedProject(proj)}
                       className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                         isSelected
-                          ? 'border-purple-500/60 bg-purple-950/20 shadow-lg shadow-purple-950/20'
-                          : 'border-white/[0.06] bg-[#111116] hover:border-zinc-700'
+                          ? 'border-blue-500/60 bg-blue-950/20 shadow-lg shadow-blue-950/20'
+                          : 'border-white/[0.06] bg-[#090e1a] hover:border-zinc-700'
                       }`}
                     >
                       <div className="flex gap-3 items-start">
@@ -390,7 +390,7 @@ export default function MyProjectsPage() {
                           <div className="flex items-center gap-2 mt-1 text-[11px] text-zinc-400">
                             <span className="font-mono">{formatDuration(proj.duration)}</span>
                             <span>•</span>
-                            <span className="text-purple-400 font-semibold">{proj.clips_count} clips</span>
+                            <span className="text-blue-400 font-semibold">{proj.clips_count} clips</span>
                           </div>
                         </div>
                         
@@ -400,7 +400,7 @@ export default function MyProjectsPage() {
                               proj.status === 'completed' || proj.status === 'ready'
                                 ? 'success'
                                 : proj.status === 'transcribing'
-                                ? 'purple'
+                                ? 'blue'
                                 : 'warning'
                             }
                             className="text-[10px]"
@@ -427,7 +427,7 @@ export default function MyProjectsPage() {
                           </div>
                           <div className="w-full bg-zinc-800 h-1 rounded-full overflow-hidden">
                             <div
-                              className="bg-purple-500 h-full rounded-full animate-pulse"
+                              className="bg-blue-500 h-full rounded-full animate-pulse"
                               style={{ width: `${proj.progress_percentage}%` }}
                             />
                           </div>
@@ -443,11 +443,11 @@ export default function MyProjectsPage() {
           <div className="lg:col-span-7 space-y-5">
             {/* Selected Project Card */}
             {selectedProject && (
-              <Card className="border-white/[0.08] bg-[#111116] p-5 space-y-4">
+              <Card className="border-white/[0.08] bg-[#090e1a] p-5 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="purple" className="text-[10px] uppercase">
+                      <Badge variant="blue" className="text-[10px] uppercase">
                         {selectedProject.source_type}
                       </Badge>
                       <span className="text-xs text-zinc-500 font-mono">
@@ -470,7 +470,7 @@ export default function MyProjectsPage() {
                       isLoading={isTriggeringPipeline}
                       size="sm"
                       variant="primary"
-                      className="rounded-xl text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-bold shadow-lg shadow-purple-900/30"
+                      className="rounded-xl text-xs bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-500 hover:to-pink-500 font-bold shadow-lg shadow-blue-900/30"
                     >
                       <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-300" />
                       ⚡ Generate 9:16 Shorts
@@ -506,16 +506,16 @@ export default function MyProjectsPage() {
                   <Flame className="w-4 h-4 text-amber-400" />
                   Generated 9:16 Shorts Gallery ({projectClips.length})
                 </span>
-                <span className="text-xs text-purple-400">Ready for YouTube & TikTok</span>
+                <span className="text-xs text-blue-400">Ready for YouTube & TikTok</span>
               </div>
 
               {isLoadingClips ? (
-                <div className="p-12 rounded-2xl bg-[#111116] border border-white/[0.06] text-center text-xs text-zinc-400">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-400 mb-2" />
+                <div className="p-12 rounded-2xl bg-[#090e1a] border border-white/[0.06] text-center text-xs text-zinc-400">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-400 mb-2" />
                   Loading candidate clips...
                 </div>
               ) : projectClips.length === 0 ? (
-                <div className="p-12 rounded-2xl bg-[#111116] border border-white/[0.06] text-center space-y-3">
+                <div className="p-12 rounded-2xl bg-[#090e1a] border border-white/[0.06] text-center space-y-3">
                   <Scissors className="w-8 h-8 text-zinc-600 mx-auto" />
                   <p className="text-sm font-semibold text-white">No clips generated for this video yet</p>
                   <p className="text-xs text-zinc-400 max-w-sm mx-auto">
@@ -528,7 +528,7 @@ export default function MyProjectsPage() {
                       isLoading={isTriggeringPipeline}
                       size="sm"
                       variant="primary"
-                      className="rounded-xl text-xs bg-gradient-to-r from-purple-600 to-pink-600 font-bold"
+                      className="rounded-xl text-xs bg-gradient-to-r from-blue-600 to-pink-600 font-bold"
                     >
                       <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-300" />
                       ⚡ Generate Shorts Now
@@ -553,7 +553,7 @@ export default function MyProjectsPage() {
                     return (
                       <div
                         key={clip.id}
-                        className="p-4 rounded-2xl bg-[#111116] border border-white/[0.06] hover:border-purple-500/40 transition-all flex flex-col justify-between group shadow-lg"
+                        className="p-4 rounded-2xl bg-[#090e1a] border border-white/[0.06] hover:border-blue-500/40 transition-all flex flex-col justify-between group shadow-lg"
                       >
                         <div className="relative rounded-xl overflow-hidden aspect-[9/16] max-h-56 w-full bg-zinc-950 mb-3">
                           {thumb ? (
@@ -573,7 +573,7 @@ export default function MyProjectsPage() {
                             <span className="text-[9px] bg-black/70 px-1.5 py-0.5 rounded font-mono text-zinc-300">
                               9:16 Vertical
                             </span>
-                            <span className="text-[10px] bg-purple-600 px-2 py-0.5 rounded font-extrabold text-white flex items-center gap-0.5 shadow">
+                            <span className="text-[10px] bg-blue-600 px-2 py-0.5 rounded font-extrabold text-white flex items-center gap-0.5 shadow">
                               <Flame className="w-2.5 h-2.5 fill-current text-amber-300" />
                               {Math.round(clip.virality_score)}%
                             </span>
@@ -625,7 +625,7 @@ export default function MyProjectsPage() {
                                 isLoading={renderingClipId === clip.id}
                                 size="sm"
                                 variant="outline"
-                                className="rounded-xl px-2.5 py-1.5 text-xs text-purple-300 border-purple-500/30 hover:bg-purple-950/40"
+                                className="rounded-xl px-2.5 py-1.5 text-xs text-blue-300 border-blue-500/30 hover:bg-blue-950/40"
                                 title="Cut 9:16 with FFmpeg"
                               >
                                 <Scissors className="w-3.5 h-3.5" />
@@ -660,13 +660,13 @@ export default function MyProjectsPage() {
       {/* Clip Preview Modal */}
       {previewClip && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg rounded-3xl bg-[#111116] border border-white/[0.1] p-6 space-y-4 shadow-2xl relative">
+          <div className="w-full max-w-lg rounded-3xl bg-[#090e1a] border border-white/[0.1] p-6 space-y-4 shadow-2xl relative">
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
               <div className="space-y-1 pr-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-white line-clamp-1">{previewClip.title}</span>
                   {previewClip.ranking_badge && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-950 text-purple-300 border border-purple-800/40">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-950 text-blue-300 border border-blue-800/40">
                       {previewClip.ranking_badge}
                     </span>
                   )}
@@ -715,7 +715,7 @@ export default function MyProjectsPage() {
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 flex flex-col justify-between p-4 text-center">
-                  <span className="text-[10px] bg-purple-600 text-white font-bold px-2 py-0.5 rounded self-end">
+                  <span className="text-[10px] bg-blue-600 text-white font-bold px-2 py-0.5 rounded self-end">
                     {Math.round(previewClip.overall_score ?? previewClip.virality_score)} Quality Score
                   </span>
                   <span className="inline-block bg-black/90 px-3 py-1.5 rounded-lg text-xs font-black uppercase text-[#FFDD00] shadow-xl border border-white/10 mx-auto">

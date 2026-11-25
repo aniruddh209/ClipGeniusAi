@@ -16,14 +16,14 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed select-none cursor-pointer';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed select-none cursor-pointer';
 
   const variants = {
-    primary: 'bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white shadow-lg shadow-purple-600/25 hover:shadow-purple-600/40 hover:brightness-110 active:scale-[0.98]',
-    secondary: 'bg-zinc-800 text-zinc-100 hover:bg-zinc-700 active:scale-[0.98] border border-zinc-700/60',
-    outline: 'border border-zinc-700 text-zinc-300 hover:bg-zinc-800/80 hover:text-white',
-    ghost: 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50',
-    danger: 'bg-rose-600 text-white hover:bg-rose-700',
+    primary: 'bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/25 border border-blue-400/25 active:scale-[0.98]',
+    secondary: 'bg-slate-900 text-slate-200 hover:bg-slate-800 hover:text-white active:scale-[0.98] border border-slate-800',
+    outline: 'border border-blue-900/50 text-blue-300 hover:bg-blue-950/50 hover:border-blue-500/60 hover:text-white',
+    ghost: 'text-slate-400 hover:text-white hover:bg-white/[0.06]',
+    danger: 'bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/20 active:scale-[0.98]',
   };
 
   const sizes = {

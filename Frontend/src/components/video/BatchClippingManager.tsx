@@ -146,11 +146,11 @@ export const BatchClippingManager: React.FC<BatchClippingManagerProps> = ({
   return (
     <div className="space-y-6">
       {/* 1. Format Selection & Batch Cut Action Bar */}
-      <Card className="p-5 rounded-2xl bg-gradient-to-r from-purple-950/20 via-zinc-950 to-zinc-950 border-white/[0.08] shadow-xl space-y-4">
+      <Card className="p-5 rounded-2xl bg-gradient-to-r from-blue-950/20 via-slate-950 to-slate-950 border-white/[0.08] shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-white/[0.06]">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
-              <Scissors className="w-4 h-4 text-purple-400" />
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+              <Scissors className="w-4 h-4 text-blue-400" />
               Automatic Video Clipping Engine
             </span>
             <p className="text-xs text-zinc-400 mt-0.5">
@@ -175,7 +175,7 @@ export const BatchClippingManager: React.FC<BatchClippingManagerProps> = ({
                   onClick={() => setExportFormat(fmt.id as any)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
                     isSelected
-                      ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40 shadow-sm'
+                      ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40 shadow-sm'
                       : 'text-zinc-400 hover:text-white'
                   }`}
                 >
@@ -200,7 +200,7 @@ export const BatchClippingManager: React.FC<BatchClippingManagerProps> = ({
               <div
                 className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
                   selectedClipIds.length === clips.length && clips.length > 0
-                    ? 'bg-purple-600 border-purple-500 text-white'
+                    ? 'bg-blue-600 border-blue-500 text-white'
                     : 'border-zinc-600'
                 }`}
               >
@@ -223,7 +223,7 @@ export const BatchClippingManager: React.FC<BatchClippingManagerProps> = ({
             isLoading={isStartingJob || isJobProcessing}
             variant="primary"
             size="md"
-            className="rounded-xl px-5 text-xs shadow-lg shadow-purple-600/30"
+            className="rounded-xl px-5 text-xs shadow-lg shadow-blue-600/30"
           >
             <Scissors className="w-3.5 h-3.5 mr-1.5" />
             {isJobProcessing
@@ -246,12 +246,12 @@ export const BatchClippingManager: React.FC<BatchClippingManagerProps> = ({
 
       {/* 2. REAL-TIME JOB PROCESSING STATUS PANEL */}
       {currentJob && (
-        <Card className="p-6 rounded-3xl bg-[#111116] border border-purple-500/30 shadow-2xl space-y-5">
+        <Card className="p-6 rounded-3xl bg-[#090e1a] border border-blue-500/30 shadow-2xl space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.06]">
             <div className="flex items-center gap-2.5">
               {isJobProcessing ? (
-                <div className="w-8 h-8 rounded-xl bg-purple-950/70 border border-purple-800/60 text-purple-400 flex items-center justify-center">
-                  <RefreshCw className="w-4 h-4 animate-spin text-purple-400" />
+                <div className="w-8 h-8 rounded-xl bg-blue-950/70 border border-blue-800/60 text-blue-400 flex items-center justify-center">
+                  <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
                 </div>
               ) : currentJob.status === 'completed' ? (
                 <div className="w-8 h-8 rounded-xl bg-emerald-950/70 border border-emerald-800/60 text-emerald-400 flex items-center justify-center">
@@ -277,7 +277,7 @@ export const BatchClippingManager: React.FC<BatchClippingManagerProps> = ({
                       currentJob.status === 'completed'
                         ? 'success'
                         : isJobProcessing
-                        ? 'purple'
+                        ? 'blue'
                         : 'warning'
                     }
                     className="text-[10px]"
@@ -293,8 +293,8 @@ export const BatchClippingManager: React.FC<BatchClippingManagerProps> = ({
 
             {/* Current Clip Indicator */}
             {currentJob.current_clip_title && (
-              <div className="px-3 py-1.5 rounded-xl bg-purple-950/30 border border-purple-500/30 text-xs text-purple-300 flex items-center gap-2">
-                <Film className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+              <div className="px-3 py-1.5 rounded-xl bg-blue-950/30 border border-blue-500/30 text-xs text-blue-300 flex items-center gap-2">
+                <Film className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                 <span className="font-semibold line-clamp-1">
                   Active: &quot;{currentJob.current_clip_title}&quot;
                 </span>
@@ -308,11 +308,11 @@ export const BatchClippingManager: React.FC<BatchClippingManagerProps> = ({
               <span className="text-zinc-400">
                 Processed {currentJob.completed_clips.length} of {currentJob.total_clips} clips ({currentJob.aspect_ratio})
               </span>
-              <span className="text-purple-400 font-bold">{currentJob.progress}%</span>
+              <span className="text-blue-400 font-bold">{currentJob.progress}%</span>
             </div>
             <div className="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-purple-600 via-indigo-600 to-emerald-400 h-full rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-400 h-full rounded-full transition-all duration-300"
                 style={{ width: `${currentJob.progress}%` }}
               />
             </div>
@@ -399,7 +399,7 @@ export const BatchClippingManager: React.FC<BatchClippingManagerProps> = ({
                               <button
                                 type="button"
                                 onClick={() => setPreviewingVideoUrl(videoStreamUrl)}
-                                className="p-2 rounded-full bg-purple-600 text-white hover:scale-110 transition-transform cursor-pointer shadow-lg"
+                                className="p-2 rounded-full bg-blue-600 text-white hover:scale-110 transition-transform cursor-pointer shadow-lg"
                                 title="Play Video in Player"
                               >
                                 <Play className="w-4 h-4 fill-white ml-0.5" />

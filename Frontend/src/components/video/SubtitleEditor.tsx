@@ -327,13 +327,13 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-neutral-900/50">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
+            <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 AI Subtitle & Animated Caption Studio
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-medium">
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-medium">
                   Word Sync
                 </span>
               </h2>
@@ -386,7 +386,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                     step={0.1}
                     value={currentTime}
                     onChange={(e) => handleScrub(parseFloat(e.target.value))}
-                    className="flex-1 h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                    className="flex-1 h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   />
 
                   <button
@@ -413,7 +413,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                 onClick={() => setShowSafeGuides(!showSafeGuides)}
                 className={`w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-medium border transition-colors ${
                   showSafeGuides
-                    ? 'bg-purple-500/15 border-purple-500/30 text-purple-300'
+                    ? 'bg-blue-500/15 border-blue-500/30 text-blue-300'
                     : 'bg-neutral-900/60 border-white/5 text-white/60 hover:text-white'
                 }`}
               >
@@ -431,7 +431,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                 onClick={() => setActiveTab('presets')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                   activeTab === 'presets'
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
                     : 'bg-neutral-900 text-white/60 hover:text-white hover:bg-neutral-800'
                 }`}
               >
@@ -443,7 +443,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                 onClick={() => setActiveTab('style')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                   activeTab === 'style'
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
                     : 'bg-neutral-900 text-white/60 hover:text-white hover:bg-neutral-800'
                 }`}
               >
@@ -455,7 +455,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                 onClick={() => setActiveTab('layout')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                   activeTab === 'layout'
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
                     : 'bg-neutral-900 text-white/60 hover:text-white hover:bg-neutral-800'
                 }`}
               >
@@ -475,12 +475,12 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                       onClick={() => handleSelectPreset(key as CaptionPreset)}
                       className={`relative flex flex-col text-left p-3.5 rounded-xl border transition-all ${
                         isSelected
-                          ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/10'
+                          ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/10'
                           : 'border-white/10 bg-neutral-900/60 hover:border-white/20 hover:bg-neutral-900'
                       }`}
                     >
                       {isSelected && (
-                        <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center text-white">
+                        <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white">
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
@@ -528,7 +528,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                         onClick={() => setStyle({ ...style, font_family: f.id })}
                         className={`px-3 py-2 rounded-xl text-xs font-medium border text-left transition-colors ${
                           style.font_family === f.id
-                            ? 'border-purple-500 bg-purple-500/15 text-white'
+                            ? 'border-blue-500 bg-blue-500/15 text-white'
                             : 'border-white/10 bg-neutral-900/60 text-white/60 hover:text-white'
                         }`}
                       >
@@ -542,7 +542,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                 <div>
                   <div className="flex justify-between items-center text-xs mb-1">
                     <span className="text-white/70">Font Size</span>
-                    <span className="text-purple-400 font-mono">{style.font_size}px</span>
+                    <span className="text-blue-400 font-mono">{style.font_size}px</span>
                   </div>
                   <input
                     type="range"
@@ -550,7 +550,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                     max={64}
                     value={style.font_size}
                     onChange={(e) => setStyle({ ...style, font_size: parseInt(e.target.value) })}
-                    className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                    className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   />
                 </div>
 
@@ -620,7 +620,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                       onChange={(e) =>
                         setStyle({ ...style, outline_width: parseInt(e.target.value) })
                       }
-                      className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                      className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                     />
                   </div>
 
@@ -637,7 +637,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                       onChange={(e) =>
                         setStyle({ ...style, shadow_offset: parseInt(e.target.value) })
                       }
-                      className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                      className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                     />
                   </div>
                 </div>
@@ -649,7 +649,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                       type="checkbox"
                       checked={style.uppercase}
                       onChange={(e) => setStyle({ ...style, uppercase: e.target.checked })}
-                      className="rounded bg-neutral-800 border-white/20 text-purple-600 focus:ring-0"
+                      className="rounded bg-neutral-800 border-white/20 text-blue-600 focus:ring-0"
                     />
                     ALL CAPS
                   </label>
@@ -661,7 +661,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                       onChange={(e) =>
                         setStyle({ ...style, karaoke_animation: e.target.checked })
                       }
-                      className="rounded bg-neutral-800 border-white/20 text-purple-600 focus:ring-0"
+                      className="rounded bg-neutral-800 border-white/20 text-blue-600 focus:ring-0"
                     />
                     Karaoke Highlighting
                   </label>
@@ -673,7 +673,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                       onChange={(e) =>
                         setStyle({ ...style, scale_active_word: e.target.checked })
                       }
-                      className="rounded bg-neutral-800 border-white/20 text-purple-600 focus:ring-0"
+                      className="rounded bg-neutral-800 border-white/20 text-blue-600 focus:ring-0"
                     />
                     Active Word Kinetic Pop
                   </label>
@@ -696,7 +696,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                         onClick={() => setStyle({ ...style, position: pos })}
                         className={`py-2 px-3 rounded-xl text-xs font-semibold capitalize border transition-colors ${
                           style.position === pos
-                            ? 'border-purple-500 bg-purple-500/15 text-white'
+                            ? 'border-blue-500 bg-blue-500/15 text-white'
                             : 'border-white/10 bg-neutral-900/60 text-white/60 hover:text-white'
                         }`}
                       >
@@ -710,7 +710,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                 <div>
                   <div className="flex justify-between items-center text-xs mb-1">
                     <span className="text-white/70">Mobile Safe Margin (Y)</span>
-                    <span className="text-purple-400 font-mono">{style.safe_margin_y}px</span>
+                    <span className="text-blue-400 font-mono">{style.safe_margin_y}px</span>
                   </div>
                   <input
                     type="range"
@@ -721,7 +721,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                     onChange={(e) =>
                       setStyle({ ...style, safe_margin_y: parseInt(e.target.value) })
                     }
-                    className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                    className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   />
                   <p className="text-[11px] text-white/40 mt-1">
                     Ensures captions sit above TikTok & Reels comment / description overlays.
@@ -732,7 +732,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                 <div>
                   <div className="flex justify-between items-center text-xs mb-1">
                     <span className="text-white/70">Words Per Line</span>
-                    <span className="text-purple-400 font-mono">{style.max_words_per_line} words</span>
+                    <span className="text-blue-400 font-mono">{style.max_words_per_line} words</span>
                   </div>
                   <div className="grid grid-cols-4 gap-2">
                     {[3, 4, 5, 6].map((count) => (
@@ -741,7 +741,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                         onClick={() => setStyle({ ...style, max_words_per_line: count })}
                         className={`py-2 rounded-xl text-xs font-semibold border transition-colors ${
                           style.max_words_per_line === count
-                            ? 'border-purple-500 bg-purple-500/15 text-white'
+                            ? 'border-blue-500 bg-blue-500/15 text-white'
                             : 'border-white/10 bg-neutral-900/60 text-white/60 hover:text-white'
                         }`}
                       >
@@ -764,7 +764,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                       type="checkbox"
                       checked={style.background_box}
                       onChange={(e) => setStyle({ ...style, background_box: e.target.checked })}
-                      className="w-4 h-4 rounded bg-neutral-800 border-white/20 text-purple-600 focus:ring-0"
+                      className="w-4 h-4 rounded bg-neutral-800 border-white/20 text-blue-600 focus:ring-0"
                     />
                   </div>
                 </div>
@@ -796,7 +796,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                   download
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-white/10 text-xs font-medium text-white/70 hover:text-white transition-colors"
                 >
-                  <FileText className="w-3.5 h-3.5 text-purple-400" />
+                  <FileText className="w-3.5 h-3.5 text-blue-400" />
                   Download .ASS
                 </a>
               </div>
@@ -816,7 +816,7 @@ export const SubtitleEditor: React.FC<SubtitleEditorProps> = ({
                   <button
                     onClick={handleBurnSubtitles}
                     disabled={isBurning}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-purple-500/25 transition-all disabled:opacity-50"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50"
                   >
                     {isBurning ? (
                       <>

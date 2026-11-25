@@ -81,7 +81,7 @@ export default function SettingsPage() {
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex p-1 rounded-xl bg-[#111116] border border-white/[0.06] w-fit">
+        <div className="flex p-1 rounded-xl bg-[#090e1a] border border-white/[0.06] w-fit">
           {[
             { id: 'profile', label: 'User Profile', icon: User },
             { id: 'preferences', label: 'AI Engine & Pipeline', icon: Cpu },
@@ -94,7 +94,7 @@ export default function SettingsPage() {
                 onClick={() => setTab(item.id as any)}
                 className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 cursor-pointer ${
                   tab === item.id
-                    ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+                    ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
@@ -107,9 +107,9 @@ export default function SettingsPage() {
 
         {/* 1. USER PROFILE TAB */}
         {tab === 'profile' && (
-          <Card className="border-white/[0.08] bg-[#111116] p-6 space-y-6">
+          <Card className="border-white/[0.08] bg-[#090e1a] p-6 space-y-6">
             <div className="flex items-center gap-4 pb-6 border-b border-white/[0.06]">
-              <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-tr from-purple-500 to-blue-500 p-[2px]">
+              <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-tr from-blue-500 to-blue-500 p-[2px]">
                 <img
                   src={DEFAULT_USER_PREFERENCES.avatarUrl}
                   alt="Avatar"
@@ -120,7 +120,7 @@ export default function SettingsPage() {
                 <h3 className="text-base font-bold text-white">{name}</h3>
                 <p className="text-xs text-zinc-400">{email}</p>
                 <div className="mt-2 flex items-center gap-2">
-                  <Badge variant="purple">Community OSS Free</Badge>
+                  <Badge variant="blue">Community OSS Free</Badge>
                   <span className="text-[11px] text-zinc-500">Self-Hosted Engine</span>
                 </div>
               </div>
@@ -135,7 +135,7 @@ export default function SettingsPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -147,7 +147,7 @@ export default function SettingsPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
             </div>
@@ -156,7 +156,7 @@ export default function SettingsPage() {
             <div className="p-4 rounded-2xl bg-zinc-950/60 border border-white/[0.06] space-y-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                 <span className="text-zinc-400 font-medium flex items-center gap-1.5">
-                  <HardDrive className="w-4 h-4 text-purple-400" />
+                  <HardDrive className="w-4 h-4 text-blue-400" />
                   Local Scratch Storage
                 </span>
                 <div className="flex items-center gap-2">
@@ -167,7 +167,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={handleCleanStorage}
                     disabled={isCleaning}
-                    className="text-[10px] px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30 transition-colors disabled:opacity-50"
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 transition-colors disabled:opacity-50"
                   >
                     {isCleaning ? 'Cleaning...' : 'Clean Cache'}
                   </button>
@@ -175,7 +175,7 @@ export default function SettingsPage() {
               </div>
               <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-full rounded-full transition-all duration-300"
+                  className="bg-gradient-to-r from-blue-500 to-blue-500 h-full rounded-full transition-all duration-300"
                   style={{ width: `${Math.min(100, Math.max(1, ((storage?.total_storage_mb || 10) / (50 * 1024)) * 100))}%` }}
                 />
               </div>
@@ -188,10 +188,10 @@ export default function SettingsPage() {
 
         {/* 2. PREFERENCES (AI ENGINE & PIPELINE) TAB */}
         {tab === 'preferences' && (
-          <Card className="border-white/[0.08] bg-[#111116] p-6 space-y-6">
+          <Card className="border-white/[0.08] bg-[#090e1a] p-6 space-y-6">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-purple-400" />
+                <Cpu className="w-4 h-4 text-blue-400" />
                 AI Transcription Engine (Faster-Whisper)
               </h3>
               <p className="text-xs text-zinc-400 mt-1">
@@ -212,12 +212,12 @@ export default function SettingsPage() {
                   onClick={() => setWhisperModel(model.id as any)}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                     whisperModel === model.id
-                      ? 'border-purple-500 bg-purple-950/30'
+                      ? 'border-blue-500 bg-blue-950/30'
                       : 'border-white/[0.06] bg-zinc-950/60 hover:border-zinc-700'
                   }`}
                 >
                   <span className="text-xs font-bold text-white block">{model.name}</span>
-                  <span className="text-[10px] text-purple-400 block mt-1 font-semibold">{model.speed}</span>
+                  <span className="text-[10px] text-blue-400 block mt-1 font-semibold">{model.speed}</span>
                   <span className="text-[10px] text-zinc-500 block">{model.vram}</span>
                 </button>
               ))}
@@ -235,7 +235,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setAutoFaceTracking(!autoFaceTracking)}
                 className={`w-11 h-6 rounded-full transition-colors p-1 cursor-pointer ${
-                  autoFaceTracking ? 'bg-purple-600' : 'bg-zinc-800'
+                  autoFaceTracking ? 'bg-blue-600' : 'bg-zinc-800'
                 }`}
               >
                 <div
@@ -250,7 +250,7 @@ export default function SettingsPage() {
 
         {/* 3. EXPORT SETTINGS TAB */}
         {tab === 'export' && (
-          <Card className="border-white/[0.08] bg-[#111116] p-6 space-y-6">
+          <Card className="border-white/[0.08] bg-[#090e1a] p-6 space-y-6">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Download className="w-4 h-4 text-blue-400" />
@@ -269,7 +269,7 @@ export default function SettingsPage() {
                 <select
                   value={defaultAspectRatio}
                   onChange={(e) => setDefaultAspectRatio(e.target.value as any)}
-                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
                 >
                   <option value="9:16">9:16 Vertical (Shorts/Reels/TikTok)</option>
                   <option value="1:1">1:1 Square (Feed)</option>
@@ -284,7 +284,7 @@ export default function SettingsPage() {
                 <select
                   value={defaultResolution}
                   onChange={(e) => setDefaultResolution(e.target.value as any)}
-                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
                 >
                   <option value="1080p">1080x1920 (Full HD)</option>
                   <option value="4K">2160x3840 (4K Ultra HD)</option>
@@ -299,7 +299,7 @@ export default function SettingsPage() {
                 <select
                   value={fps}
                   onChange={(e) => setFps(e.target.value)}
-                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
                 >
                   <option value="30">30 FPS (Standard)</option>
                   <option value="60">60 FPS (High Smoothness)</option>
@@ -345,7 +345,7 @@ export default function SettingsPage() {
                 type="text"
                 value={fileNamePattern}
                 onChange={(e) => setFileNamePattern(e.target.value)}
-                className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-purple-500"
+                className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-blue-500"
               />
               <p className="text-[10px] text-zinc-500">
                 Variables: &#123;title&#125;, &#123;index&#125;, &#123;virality&#125;, &#123;date&#125;
@@ -360,7 +360,7 @@ export default function SettingsPage() {
             onClick={handleSave}
             variant="primary"
             size="md"
-            className="rounded-xl px-6 text-xs shadow-lg shadow-purple-600/20"
+            className="rounded-xl px-6 text-xs shadow-lg shadow-blue-600/20"
           >
             <Save className="w-3.5 h-3.5 mr-1.5" /> Save Changes
           </Button>

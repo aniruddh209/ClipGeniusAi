@@ -107,8 +107,8 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-neutral-900/50">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
-              <Zap className="w-5 h-5 text-purple-400" />
+            <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+              <Zap className="w-5 h-5 text-blue-400" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -119,7 +119,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                       : isFailed
                       ? 'bg-red-500/20 text-red-300 border border-red-500/30'
-                      : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                      : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                   }`}
                 >
                   {isCompleted ? 'Completed' : isFailed ? 'Failed' : 'Processing'}
@@ -144,10 +144,10 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
           <div className="space-y-2">
             <div className="flex justify-between items-center text-xs">
               <span className="font-semibold text-white/80 flex items-center gap-2">
-                {!isCompleted && !isFailed && <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />}
+                {!isCompleted && !isFailed && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />}
                 {job?.current_step || 'Initializing AI clipping pipeline...'}
               </span>
-              <span className="font-mono font-bold text-purple-400 text-sm">{progress}%</span>
+              <span className="font-mono font-bold text-blue-400 text-sm">{progress}%</span>
             </div>
 
             <div className="w-full bg-neutral-900 rounded-full h-2.5 overflow-hidden border border-white/5">
@@ -157,7 +157,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
                     ? 'bg-red-500'
                     : isCompleted
                     ? 'bg-emerald-500'
-                    : 'bg-gradient-to-r from-purple-600 to-indigo-500'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-500'
                 }`}
                 style={{ width: `${progress}%` }}
               />
@@ -183,7 +183,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
                     isPast
                       ? 'border-emerald-500/20 bg-emerald-500/5 text-white/90'
                       : isCurrent
-                      ? 'border-purple-500/40 bg-purple-500/10 text-white shadow-lg shadow-purple-500/5'
+                      ? 'border-blue-500/40 bg-blue-500/10 text-white shadow-lg shadow-blue-500/5'
                       : 'border-white/5 bg-neutral-900/40 text-white/40'
                   }`}
                 >
@@ -192,7 +192,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
                       isPast
                         ? 'bg-emerald-500 text-black'
                         : isCurrent
-                        ? 'bg-purple-600 text-white animate-pulse'
+                        ? 'bg-blue-600 text-white animate-pulse'
                         : 'bg-white/10 text-white/40'
                     }`}
                   >
@@ -235,7 +235,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <Film className="w-3.5 h-3.5 text-purple-400" />
+                  <Film className="w-3.5 h-3.5 text-blue-400" />
                   Generated Viral Shorts ({job.completed_clips.length})
                 </h3>
                 <span className="text-[11px] text-emerald-400 font-semibold">Ready for Download</span>
@@ -252,7 +252,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
                         <span className="text-xs font-bold text-white block truncate">{clip.title}</span>
                         <span className="text-[10px] text-white/50">{clip.duration.toFixed(1)}s • 9:16 Vertical</span>
                       </div>
-                      <Badge variant="purple" className="text-[10px] shrink-0 font-mono font-bold">
+                      <Badge variant="blue" className="text-[10px] shrink-0 font-mono font-bold">
                         {clip.virality_score} pts
                       </Badge>
                     </div>

@@ -222,18 +222,18 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-[#111116] border border-white/[0.12] rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl space-y-6 p-6 sm:p-7 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[#090e1a] border border-white/[0.12] rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl space-y-6 p-6 sm:p-7 animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-purple-600/30">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-600/30">
               <Apple className="w-5 h-5 text-white" />
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
                 <span>macOS Video Export & File Manager</span>
-                <Badge variant="purple" className="text-[10px] uppercase font-bold tracking-wider">
+                <Badge variant="blue" className="text-[10px] uppercase font-bold tracking-wider">
                   MacBook Optimized
                 </Badge>
               </h3>
@@ -253,7 +253,7 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
 
         {isLoading ? (
           <div className="py-16 text-center space-y-3">
-            <Loader2 className="w-8 h-8 text-purple-400 animate-spin mx-auto" />
+            <Loader2 className="w-8 h-8 text-blue-400 animate-spin mx-auto" />
             <p className="text-xs text-zinc-400 font-mono">
               Inspecting video bitstream & macOS compatibility...
             </p>
@@ -291,7 +291,7 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
               <Button
                 variant="primary"
                 onClick={handleRevealInFinder}
-                className="rounded-xl text-xs py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md shadow-purple-900/40"
+                className="rounded-xl text-xs py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-900/40"
               >
                 <Folder className="w-4 h-4 mr-2" /> Reveal in Finder
               </Button>
@@ -300,7 +300,7 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
                 onClick={handleOpenInPlayer}
                 className="rounded-xl text-xs py-2.5 bg-white/[0.08] hover:bg-white/[0.14] text-white"
               >
-                <Play className="w-4 h-4 mr-2 text-purple-400" /> Open in macOS Player
+                <Play className="w-4 h-4 mr-2 text-blue-400" /> Open in macOS Player
               </Button>
             </div>
 
@@ -310,7 +310,7 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
                 download={exportResult.filename}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1.5 font-medium underline"
+                className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1.5 font-medium underline"
               >
                 <Download className="w-3.5 h-3.5" /> Download copy via browser
               </a>
@@ -341,7 +341,7 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
                     onClick={() => setSelectedFormat(fmt.id)}
                     className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-1 ${
                       selectedFormat === fmt.id
-                        ? 'border-purple-500 bg-purple-950/30 text-white shadow-md shadow-purple-950/50'
+                        ? 'border-blue-500 bg-blue-950/30 text-white shadow-md shadow-blue-950/50'
                         : 'border-white/[0.06] bg-zinc-950/60 hover:bg-white/[0.04] text-zinc-300'
                     }`}
                   >
@@ -365,7 +365,7 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center justify-between">
                 <span>2. Export Resolution Quality</span>
-                <span className="text-[10px] text-purple-400 font-semibold flex items-center gap-1">
+                <span className="text-[10px] text-blue-400 font-semibold flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3" /> No Fake 4K Upscaling
                 </span>
               </label>
@@ -378,7 +378,7 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
                     onClick={() => setSelectedQuality(q.id)}
                     className={`p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center ${
                       selectedQuality === q.id
-                        ? 'border-purple-500 bg-purple-950/40 text-white font-bold ring-1 ring-purple-500'
+                        ? 'border-blue-500 bg-blue-950/40 text-white font-bold ring-1 ring-blue-500'
                         : q.available
                         ? 'border-white/[0.06] bg-zinc-950/60 hover:bg-white/[0.04] text-zinc-300 cursor-pointer'
                         : 'border-white/[0.02] bg-zinc-950/20 text-zinc-600 opacity-50 cursor-not-allowed'
@@ -411,12 +411,12 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
                     }}
                     className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                       selectedDirectory === dir.id
-                        ? 'border-purple-500 bg-purple-950/40 text-white font-semibold'
+                        ? 'border-blue-500 bg-blue-950/40 text-white font-semibold'
                         : 'border-white/[0.06] bg-zinc-950/60 hover:bg-white/[0.04] text-zinc-400'
                     }`}
                   >
                     <div className="flex items-center gap-1.5 text-xs font-bold">
-                      <Folder className="w-3.5 h-3.5 text-purple-400" />
+                      <Folder className="w-3.5 h-3.5 text-blue-400" />
                       <span>{dir.name}</span>
                     </div>
                     <span className="text-[10px] text-zinc-500 block mt-1">
@@ -434,7 +434,7 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
                     onClick={handlePickBrowserFolder}
                     className={`px-3 py-1.5 rounded-xl border text-xs flex items-center gap-2 transition-all cursor-pointer ${
                       selectedDirectory === 'browser_picked'
-                        ? 'border-purple-500 bg-purple-950/40 text-purple-300 font-semibold'
+                        ? 'border-blue-500 bg-blue-950/40 text-blue-300 font-semibold'
                         : 'border-white/[0.08] bg-zinc-900 text-zinc-400 hover:text-white'
                     }`}
                   >
@@ -463,7 +463,7 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
                   placeholder="video_export_title"
                   className="bg-transparent text-white focus:outline-none flex-1 font-mono text-xs"
                 />
-                <span className="text-purple-400 font-mono font-bold">
+                <span className="text-blue-400 font-mono font-bold">
                   {formats.find((f) => f.id === selectedFormat)?.extension || '.mp4'}
                 </span>
               </div>
@@ -479,8 +479,8 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
 
             {/* Progress status */}
             {isExporting && (
-              <div className="p-3.5 rounded-2xl bg-purple-950/30 border border-purple-500/20 text-xs text-purple-300 flex items-center gap-3">
-                <Loader2 className="w-4 h-4 text-purple-400 animate-spin shrink-0" />
+              <div className="p-3.5 rounded-2xl bg-blue-950/30 border border-blue-500/20 text-xs text-blue-300 flex items-center gap-3">
+                <Loader2 className="w-4 h-4 text-blue-400 animate-spin shrink-0" />
                 <span className="font-mono">{exportProgressText}</span>
               </div>
             )}
@@ -501,7 +501,7 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
                 size="sm"
                 onClick={handleStartExport}
                 isLoading={isExporting}
-                className="rounded-xl text-xs px-5 bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 shadow-lg shadow-purple-900/30"
+                className="rounded-xl text-xs px-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 shadow-lg shadow-blue-900/30"
               >
                 <Apple className="w-3.5 h-3.5 mr-1.5" />
                 Start Export & Convert

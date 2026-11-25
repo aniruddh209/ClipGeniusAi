@@ -123,16 +123,16 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
   });
 
   return (
-    <Card className="border-white/[0.08] bg-[#111116] p-6 space-y-6 shadow-2xl">
+    <Card className="border-white/[0.08] bg-[#090e1a] p-6 space-y-6 shadow-2xl">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
               <Cpu className="w-3.5 h-3.5" />
               Faster-Whisper AI Speech Engine
             </span>
-            <Badge variant="purple" className="text-[10px]">Open-Source</Badge>
+            <Badge variant="blue" className="text-[10px]">Open-Source</Badge>
           </div>
           <h3 className="text-base font-bold text-white">
             Transcription & Word Timestamps
@@ -158,7 +158,7 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
                 onClick={() => setModelSize(m.id as any)}
                 className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                   modelSize === m.id
-                    ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40 shadow-sm'
+                    ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40 shadow-sm'
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
@@ -179,8 +179,8 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
 
       {/* STATE 1: LOADING / PROCESSING PROGRESS BAR */}
       {isLoading && (
-        <div className="p-6 rounded-2xl bg-purple-950/20 border border-purple-500/30 text-center space-y-4">
-          <div className="flex items-center justify-center gap-2 text-purple-400">
+        <div className="p-6 rounded-2xl bg-blue-950/20 border border-blue-500/30 text-center space-y-4">
+          <div className="flex items-center justify-center gap-2 text-blue-400">
             <RefreshCw className="w-5 h-5 animate-spin" />
             <span className="text-sm font-bold text-white">{statusMessage}</span>
           </div>
@@ -188,11 +188,11 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
           <div className="max-w-md mx-auto space-y-1.5">
             <div className="flex justify-between text-xs font-mono text-zinc-400">
               <span>Pipeline Stage</span>
-              <span className="text-purple-400 font-bold">{progressPercent}%</span>
+              <span className="text-blue-400 font-bold">{progressPercent}%</span>
             </div>
             <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 h-full rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-400 h-full rounded-full transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -206,7 +206,7 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
       {/* STATE 2: NO TRANSCRIPT YET (TRIGGER ACTION) */}
       {!transcript && !isLoading && (
         <div className="p-8 rounded-2xl bg-zinc-950/50 border border-dashed border-white/[0.08] text-center space-y-4">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-purple-950/60 border border-purple-800/60 text-purple-400 flex items-center justify-center">
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-blue-950/60 border border-blue-800/60 text-blue-400 flex items-center justify-center">
             <FileText className="w-6 h-6" />
           </div>
           <div>
@@ -219,7 +219,7 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
             onClick={handleStartTranscription}
             variant="primary"
             size="md"
-            className="rounded-xl px-6 text-xs shadow-lg shadow-purple-600/25"
+            className="rounded-xl px-6 text-xs shadow-lg shadow-blue-600/25"
           >
             <Sparkles className="w-3.5 h-3.5 mr-1.5" />
             Transcribe with Whisper ({modelSize.toUpperCase()})
@@ -233,8 +233,8 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
           {/* Summary Metric Badges */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-zinc-950/80 border border-white/[0.06]">
             <div className="flex flex-wrap items-center gap-3 text-xs">
-              <Badge variant="purple" className="flex items-center gap-1.5 py-1">
-                <Languages className="w-3.5 h-3.5 text-purple-400" />
+              <Badge variant="blue" className="flex items-center gap-1.5 py-1">
+                <Languages className="w-3.5 h-3.5 text-blue-400" />
                 Language: {transcript.language?.toUpperCase()} ({Math.round((transcript.language_probability || 1) * 100)}%)
               </Badge>
 
@@ -303,7 +303,7 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
                     onClick={() => setActiveTab('segments')}
                     className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                       activeTab === 'segments'
-                        ? 'bg-purple-600/25 text-purple-300 border border-purple-500/30'
+                        ? 'bg-blue-600/25 text-blue-300 border border-blue-500/30'
                         : 'text-zinc-400 hover:text-white'
                     }`}
                   >
@@ -314,7 +314,7 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
                     onClick={() => setActiveTab('fulltext')}
                     className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                       activeTab === 'fulltext'
-                        ? 'bg-purple-600/25 text-purple-300 border border-purple-500/30'
+                        ? 'bg-blue-600/25 text-blue-300 border border-blue-500/30'
                         : 'text-zinc-400 hover:text-white'
                     }`}
                   >
@@ -330,7 +330,7 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
                       placeholder="Search speech..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl pl-9 pr-4 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500"
+                      className="w-full bg-zinc-950 border border-white/[0.08] rounded-xl pl-9 pr-4 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500"
                     />
                   </div>
                 )}
@@ -349,13 +349,13 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
                       return (
                         <div
                           key={seg.id}
-                          className="p-3.5 rounded-xl bg-zinc-950/70 border border-white/[0.06] hover:border-purple-500/40 transition-all space-y-2 group"
+                          className="p-3.5 rounded-xl bg-zinc-950/70 border border-white/[0.06] hover:border-blue-500/40 transition-all space-y-2 group"
                         >
                           <div className="flex items-center justify-between text-xs">
                             <div className="flex items-center gap-2">
                               {/* Speaker Badge */}
-                              <span className="px-2 py-0.5 rounded-md bg-purple-950/60 border border-purple-800/50 text-[10px] text-purple-300 font-semibold flex items-center gap-1">
-                                <User className="w-3 h-3 text-purple-400" />
+                              <span className="px-2 py-0.5 rounded-md bg-blue-950/60 border border-blue-800/50 text-[10px] text-blue-300 font-semibold flex items-center gap-1">
+                                <User className="w-3 h-3 text-blue-400" />
                                 {seg.speaker}
                               </span>
 
@@ -363,7 +363,7 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
                               <button
                                 type="button"
                                 onClick={() => onSeekToTimestamp && onSeekToTimestamp(seg.start)}
-                                className="font-mono text-[11px] text-zinc-400 hover:text-purple-300 flex items-center gap-1 bg-zinc-900 px-2 py-0.5 rounded cursor-pointer transition-colors"
+                                className="font-mono text-[11px] text-zinc-400 hover:text-blue-300 flex items-center gap-1 bg-zinc-900 px-2 py-0.5 rounded cursor-pointer transition-colors"
                                 title="Click to seek in video"
                               >
                                 <Clock className="w-3 h-3 text-zinc-500" />
@@ -397,7 +397,7 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
                                   key={idx}
                                   type="button"
                                   onClick={() => onSeekToTimestamp && onSeekToTimestamp(w.start)}
-                                  className="px-2 py-0.5 rounded bg-zinc-900 border border-white/[0.06] text-[10px] text-zinc-300 hover:border-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1 font-mono cursor-pointer"
+                                  className="px-2 py-0.5 rounded bg-zinc-900 border border-white/[0.06] text-[10px] text-zinc-300 hover:border-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 font-mono cursor-pointer"
                                   title={`Seek to ${w.start}s (confidence: ${Math.round(w.probability * 100)}%)`}
                                 >
                                   <span>{w.word}</span>

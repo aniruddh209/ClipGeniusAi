@@ -62,7 +62,7 @@ export const SystemStatusIndicator: React.FC = () => {
         <div className="flex flex-wrap items-center gap-3">
           {health && (
             <>
-              <Badge variant="purple" className="flex items-center gap-1.5 py-1">
+              <Badge variant="blue" className="flex items-center gap-1.5 py-1">
                 <Database className="w-3.5 h-3.5" />
                 MongoDB: {health.database}
               </Badge>

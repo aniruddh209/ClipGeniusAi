@@ -209,13 +209,13 @@ export const ReframingStudio: React.FC<ReframingStudioProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-neutral-900/50">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
+            <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
               <Crop className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 Intelligent Video Reframing Studio
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-medium">
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-medium">
                   OpenCV YuNet
                 </span>
               </h2>
@@ -259,7 +259,7 @@ export const ReframingStudio: React.FC<ReframingStudioProps> = ({
                   onClick={() => setViewMode('canvas')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
                     viewMode === 'canvas'
-                      ? 'bg-purple-600 text-white'
+                      ? 'bg-blue-600 text-white'
                       : 'bg-neutral-900 text-white/60 hover:text-white'
                   }`}
                 >
@@ -271,7 +271,7 @@ export const ReframingStudio: React.FC<ReframingStudioProps> = ({
                   onClick={() => setViewMode('cropped')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
                     viewMode === 'cropped'
-                      ? 'bg-purple-600 text-white'
+                      ? 'bg-blue-600 text-white'
                       : 'bg-neutral-900 text-white/60 hover:text-white'
                   }`}
                 >
@@ -321,10 +321,10 @@ export const ReframingStudio: React.FC<ReframingStudioProps> = ({
 
                   {/* Dynamic Crop Overlay Rectangle */}
                   <div
-                    className="absolute border-2 border-purple-400 bg-purple-500/10 shadow-[0_0_20px_rgba(168,85,247,0.35)] transition-all duration-150 pointer-events-none rounded-lg flex flex-col justify-between p-2"
+                    className="absolute border-2 border-blue-400 bg-blue-500/10 shadow-[0_0_20px_rgba(168,85,247,0.35)] transition-all duration-150 pointer-events-none rounded-lg flex flex-col justify-between p-2"
                     style={cropBoxStyles}
                   >
-                    <div className="flex items-center justify-between text-[10px] font-mono font-bold text-purple-300 bg-neutral-900/80 px-2 py-0.5 rounded backdrop-blur-sm self-start">
+                    <div className="flex items-center justify-between text-[10px] font-mono font-bold text-blue-300 bg-neutral-900/80 px-2 py-0.5 rounded backdrop-blur-sm self-start">
                       <span>{aspectRatio} CROP</span>
                     </div>
 
@@ -418,7 +418,7 @@ export const ReframingStudio: React.FC<ReframingStudioProps> = ({
                   step={0.1}
                   value={currentTime}
                   onChange={(e) => handleScrub(parseFloat(e.target.value))}
-                  className="flex-1 h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                  className="flex-1 h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                 />
 
                 <button
@@ -494,13 +494,13 @@ export const ReframingStudio: React.FC<ReframingStudioProps> = ({
                         onClick={() => setCropMode(modeItem.id as CropMode)}
                         className={`flex items-start text-left p-3 rounded-xl border transition-all ${
                           isSelected
-                            ? 'border-purple-500 bg-purple-500/15 shadow-lg shadow-purple-500/10'
+                            ? 'border-blue-500 bg-blue-500/15 shadow-lg shadow-blue-500/10'
                             : 'border-white/10 bg-neutral-900/60 hover:border-white/20 hover:bg-neutral-900'
                         }`}
                       >
                         <div
                           className={`p-2 rounded-lg mr-3 ${
-                            isSelected ? 'bg-purple-600 text-white' : 'bg-white/5 text-white/50'
+                            isSelected ? 'bg-blue-600 text-white' : 'bg-white/5 text-white/50'
                           }`}
                         >
                           <Icon className="w-4 h-4" />
@@ -527,7 +527,7 @@ export const ReframingStudio: React.FC<ReframingStudioProps> = ({
                 <div className="p-4 rounded-xl bg-neutral-900/70 border border-white/10 space-y-2">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-semibold text-white/80">Crop Horizontal Offset</span>
-                    <span className="text-purple-400 font-mono font-bold">
+                    <span className="text-blue-400 font-mono font-bold">
                       {Math.round(manualOffset * 100)}%
                     </span>
                   </div>
@@ -538,7 +538,7 @@ export const ReframingStudio: React.FC<ReframingStudioProps> = ({
                     step={0.02}
                     value={manualOffset}
                     onChange={(e) => setManualOffset(parseFloat(e.target.value))}
-                    className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                    className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   />
                   <div className="flex justify-between text-[10px] text-white/40">
                     <span>Left Edge (0%)</span>
@@ -567,11 +567,11 @@ export const ReframingStudio: React.FC<ReframingStudioProps> = ({
                         onClick={() => setAspectRatio(ratioItem.id as ReframingAspectRatio)}
                         className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
                           isSelected
-                            ? 'border-purple-500 bg-purple-500/15 text-white'
+                            ? 'border-blue-500 bg-blue-500/15 text-white'
                             : 'border-white/10 bg-neutral-900/60 text-white/60 hover:text-white hover:bg-neutral-900'
                         }`}
                       >
-                        <Icon className="w-4 h-4 mb-1 text-purple-400" />
+                        <Icon className="w-4 h-4 mb-1 text-blue-400" />
                         <span className="text-xs font-bold">{ratioItem.label}</span>
                         <span className="text-[10px] text-white/40 mt-0.5">{ratioItem.sub}</span>
                       </button>
@@ -625,7 +625,7 @@ export const ReframingStudio: React.FC<ReframingStudioProps> = ({
                 <button
                   onClick={handleRenderReframedVideo}
                   disabled={isRendering || isLoadingAnalysis}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-purple-500/25 transition-all disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50"
                 >
                   {isRendering ? (
                     <>

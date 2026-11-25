@@ -236,7 +236,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
     switch (badge) {
       case 'Best Overall':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-pink-500/20 border border-amber-500/50 text-amber-300 shadow-md shadow-amber-950/40">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-500/20 via-blue-500/20 to-pink-500/20 border border-amber-500/50 text-amber-300 shadow-md shadow-amber-950/40">
             <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
             Best Overall
           </span>
@@ -264,8 +264,8 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-purple-950/40 border border-purple-500/30 text-purple-300">
-            <Award className="w-3 h-3 text-purple-400 shrink-0" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-blue-950/40 border border-blue-500/30 text-blue-300">
+            <Award className="w-3 h-3 text-blue-400 shrink-0" />
             {badge}
           </span>
         );
@@ -273,7 +273,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
   };
 
   return (
-    <Card className="border-white/[0.08] bg-[#111116] p-6 space-y-6 shadow-2xl">
+    <Card className="border-white/[0.08] bg-[#090e1a] p-6 space-y-6 shadow-2xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
         <div>
@@ -282,7 +282,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
               <Flame className="w-3.5 h-3.5 fill-amber-400" />
               Intelligent Clip Ranking & Scoring
             </span>
-            <Badge variant="purple" className="text-[10px]">7-Point Quality Framework</Badge>
+            <Badge variant="blue" className="text-[10px]">7-Point Quality Framework</Badge>
           </div>
           <h3 className="text-base font-bold text-white">
             AI Moments & Content Quality Assessment
@@ -318,7 +318,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
           {/* 1. Target Duration Range */}
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
-              <Clock className="w-3 h-3 text-purple-400" /> Duration Target
+              <Clock className="w-3 h-3 text-blue-400" /> Duration Target
             </label>
             <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-zinc-900 border border-white/[0.06]">
               {[
@@ -335,7 +335,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                   onClick={() => setDurationRange(d.id)}
                   className={`py-1 text-[10px] font-bold rounded-lg transition-all cursor-pointer text-center ${
                     durationRange === d.id
-                      ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40 shadow-sm'
+                      ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40 shadow-sm'
                       : 'text-zinc-400 hover:text-white'
                   }`}
                 >
@@ -354,7 +354,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
               value={maxClips}
               disabled={isProcessing}
               onChange={(e) => setMaxClips(Number(e.target.value))}
-              className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500"
+              className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
             >
               <option value={3}>Top 3 Clips</option>
               <option value={5}>Top 5 Clips (Recommended)</option>
@@ -367,7 +367,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
           <div className="space-y-1.5">
             <div className="flex justify-between text-[11px]">
               <span className="font-semibold uppercase tracking-wider text-zinc-400">Score Threshold</span>
-              <span className="font-mono text-purple-400 font-bold">{viralityThreshold}%+</span>
+              <span className="font-mono text-blue-400 font-bold">{viralityThreshold}%+</span>
             </div>
             <input
               type="range"
@@ -377,7 +377,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
               disabled={isProcessing}
               value={viralityThreshold}
               onChange={(e) => setViralityThreshold(Number(e.target.value))}
-              className="w-full accent-purple-600 bg-zinc-800 h-1.5 rounded-lg appearance-none cursor-pointer"
+              className="w-full accent-blue-600 bg-zinc-800 h-1.5 rounded-lg appearance-none cursor-pointer"
             />
           </div>
         </div>
@@ -389,7 +389,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
               onClick={handleStartDetection}
               variant="primary"
               size="md"
-              className="rounded-xl px-6 text-xs shadow-lg shadow-purple-600/25"
+              className="rounded-xl px-6 text-xs shadow-lg shadow-blue-600/25"
             >
               <Sparkles className="w-3.5 h-3.5 mr-1.5" />
               Score & Rank Engaging Moments
@@ -400,20 +400,20 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
 
       {/* STATE 1: ASYNCHRONOUS PROCESSING PROGRESS */}
       {isProcessing && (
-        <div className="p-6 rounded-2xl bg-gradient-to-r from-purple-950/30 via-indigo-950/20 to-zinc-900 border border-purple-500/30 text-center space-y-4">
-          <div className="flex items-center justify-center gap-2.5 text-purple-300">
-            <RefreshCw className="w-5 h-5 animate-spin text-purple-400" />
+        <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-950/30 via-indigo-950/20 to-zinc-900 border border-blue-500/30 text-center space-y-4">
+          <div className="flex items-center justify-center gap-2.5 text-blue-300">
+            <RefreshCw className="w-5 h-5 animate-spin text-blue-400" />
             <span className="text-sm font-bold text-white">{taskStep || 'Evaluating dialogue structure & audio...'}</span>
           </div>
 
           <div className="max-w-md mx-auto space-y-1.5">
             <div className="flex justify-between text-xs font-mono text-zinc-400">
               <span>Analysis Pipeline</span>
-              <span className="text-purple-400 font-bold">{taskProgress}%</span>
+              <span className="text-blue-400 font-bold">{taskProgress}%</span>
             </div>
             <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-purple-500 via-indigo-500 to-amber-400 h-full rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-blue-500 via-indigo-500 to-amber-400 h-full rounded-full transition-all duration-300"
                 style={{ width: `${taskProgress}%` }}
               />
             </div>
@@ -443,7 +443,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
             {/* Category Filter Pills */}
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-[11px] uppercase font-bold text-zinc-500 mr-1 flex items-center gap-1">
-                <Filter className="w-3 h-3 text-purple-400" /> Filter:
+                <Filter className="w-3 h-3 text-blue-400" /> Filter:
               </span>
               {[
                 { id: 'all', label: 'All Ranked' },
@@ -457,7 +457,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                   onClick={() => setCategoryFilter(btn.id)}
                   className={`px-2.5 py-1 rounded-xl text-xs font-medium transition-all cursor-pointer ${
                     categoryFilter === btn.id
-                      ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40 shadow-sm'
+                      ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40 shadow-sm'
                       : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/[0.04]'
                   }`}
                 >
@@ -471,7 +471,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
               <a
                 href={api.getClipsZipDownloadUrl(videoId)}
                 download={`${(videoTitle || 'clips').replace(/[^a-zA-Z0-9_-]/g, '_')}_all_shorts.zip`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-semibold transition-all shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-semibold transition-all shadow-sm"
                 title="Download all rendered shorts as a single ZIP archive"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -484,7 +484,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+                  className="bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
                 >
                   <option value="score_desc">Quality Score (High to Low)</option>
                   <option value="score_asc">Quality Score (Low to High)</option>
@@ -517,7 +517,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
               return (
                 <div
                   key={clip.id}
-                  className="p-4 sm:p-5 rounded-2xl bg-zinc-950/85 border border-white/[0.08] hover:border-purple-500/40 transition-all flex flex-col justify-between space-y-4 shadow-xl group overflow-hidden"
+                  className="p-4 sm:p-5 rounded-2xl bg-zinc-950/85 border border-white/[0.08] hover:border-blue-500/40 transition-all flex flex-col justify-between space-y-4 shadow-xl group overflow-hidden"
                 >
                   {/* Top Bar: Ranking Pill, Circular Score & Badges */}
                   <div className="flex items-start justify-between gap-3">
@@ -531,13 +531,13 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                           {clip.category}
                         </Badge>
                       </div>
-                      <h5 className="text-sm font-bold text-white line-clamp-1 group-hover:text-purple-300 transition-colors">
+                      <h5 className="text-sm font-bold text-white line-clamp-1 group-hover:text-blue-300 transition-colors">
                         {clip.title}
                       </h5>
                     </div>
 
                     {/* Circular Score Indicator */}
-                    <div className="shrink-0 flex items-center justify-center p-1 rounded-2xl bg-[#111116] border border-white/[0.06]">
+                    <div className="shrink-0 flex items-center justify-center p-1 rounded-2xl bg-[#090e1a] border border-white/[0.06]">
                       <CircularScore score={overallScore} size="sm" showLabel={false} />
                     </div>
                   </div>
@@ -562,7 +562,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                       <span className="bg-black/75 px-2 py-0.5 rounded backdrop-blur">
                         {formatDuration(clip.start_time)} - {formatDuration(clip.end_time)}
                       </span>
-                      <span className="bg-purple-950/80 text-purple-300 px-1.5 py-0.5 rounded border border-purple-800/40 font-bold">
+                      <span className="bg-blue-950/80 text-blue-300 px-1.5 py-0.5 rounded border border-blue-800/40 font-bold">
                         {Math.round(clip.duration)}s
                       </span>
                     </div>
@@ -583,9 +583,9 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
 
                   {/* Opening Hook Quote Callout */}
                   {clip.hook && (
-                    <div className="p-2.5 rounded-xl bg-purple-950/20 border border-purple-500/20 text-xs space-y-0.5">
-                      <span className="text-[10px] uppercase font-bold text-purple-400 block tracking-wider flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-purple-400" /> Opening Hook (First 5s)
+                    <div className="p-2.5 rounded-xl bg-blue-950/20 border border-blue-500/20 text-xs space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold text-blue-400 block tracking-wider flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-blue-400" /> Opening Hook (First 5s)
                       </span>
                       <p className="text-xs text-zinc-200 italic line-clamp-2">
                         &quot;{clip.hook}&quot;
@@ -598,10 +598,10 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                     <button
                       type="button"
                       onClick={() => setExpandedClipId(isExpanded ? null : clip.id)}
-                      className="text-[11px] text-zinc-400 hover:text-purple-300 flex items-center justify-between w-full py-1.5 px-2 rounded-xl bg-zinc-900/60 border border-white/[0.04] cursor-pointer transition-colors"
+                      className="text-[11px] text-zinc-400 hover:text-blue-300 flex items-center justify-between w-full py-1.5 px-2 rounded-xl bg-zinc-900/60 border border-white/[0.04] cursor-pointer transition-colors"
                     >
                       <span className="font-semibold flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5 text-purple-400" />
+                        <Layers className="w-3.5 h-3.5 text-blue-400" />
                         7-Criteria Quality Breakdown
                       </span>
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -610,7 +610,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                     {isExpanded && (
                       <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-white/[0.06] space-y-2.5 text-xs">
                         {[
-                          { name: 'Hook Strength', score: scores.hook_strength ?? 16, max: 20, color: 'bg-purple-500' },
+                          { name: 'Hook Strength', score: scores.hook_strength ?? 16, max: 20, color: 'bg-blue-500' },
                           { name: 'Interesting Content', score: scores.interesting_content ?? 16, max: 20, color: 'bg-indigo-500' },
                           { name: 'Emotional Engagement', score: scores.emotional_engagement ?? 12, max: 15, color: 'bg-pink-500' },
                           { name: 'Information Value', score: scores.information_value ?? 12, max: 15, color: 'bg-emerald-500' },
@@ -641,7 +641,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                   {clip.score_reasons && clip.score_reasons.length > 0 ? (
                     <div className="p-3 rounded-xl bg-zinc-900/50 border border-white/[0.04] space-y-1.5 text-[11px]">
                       <span className="font-semibold text-zinc-300 block flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3 text-purple-400" /> Evidence-Based Score Reasons:
+                        <CheckCircle className="w-3 h-3 text-blue-400" /> Evidence-Based Score Reasons:
                       </span>
                       <ul className="space-y-1 text-zinc-400">
                         {clip.score_reasons.slice(0, 3).map((r, i) => (
@@ -690,7 +690,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                         variant="secondary"
                         className="flex-1 rounded-xl text-xs py-2 bg-white/[0.06] hover:bg-white/[0.12] text-white font-semibold transition-all"
                       >
-                        <Play className="w-3.5 h-3.5 mr-1.5 text-purple-400" /> Preview
+                        <Play className="w-3.5 h-3.5 mr-1.5 text-blue-400" /> Preview
                       </Button>
 
                       {clip.video_url ? (
@@ -721,10 +721,10 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                         onClick={() => setSubtitleModalClip(clip)}
                         size="sm"
                         variant="secondary"
-                        className="rounded-xl text-[11px] py-1.5 px-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/25 truncate justify-center"
+                        className="rounded-xl text-[11px] py-1.5 px-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/25 truncate justify-center"
                         title="AI Subtitles & Animated Captions"
                       >
-                        <Sparkles className="w-3 h-3 mr-1 text-purple-400 shrink-0" /> Captions
+                        <Sparkles className="w-3 h-3 mr-1 text-blue-400 shrink-0" /> Captions
                       </Button>
 
                       <Button
@@ -747,7 +747,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                         className="rounded-xl px-2 py-1 text-[11px] hover:bg-white/[0.08] text-zinc-400 hover:text-white"
                         title="Edit Clip Timestamps & Title"
                       >
-                        <Edit3 className="w-3 h-3 mr-1 text-purple-400" /> Edit Times
+                        <Edit3 className="w-3 h-3 mr-1 text-blue-400" /> Edit Times
                       </Button>
 
                       <Button
@@ -875,10 +875,10 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
       {/* Edit Clip Timestamps & Title Modal */}
       {editingClip && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#111116] border border-white/[0.1] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl p-6 space-y-5 animate-in fade-in duration-200">
+          <div className="bg-[#090e1a] border border-white/[0.1] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl p-6 space-y-5 animate-in fade-in duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
               <div className="flex items-center gap-2">
-                <Edit3 className="w-4 h-4 text-purple-400" />
+                <Edit3 className="w-4 h-4 text-blue-400" />
                 <h3 className="text-sm font-bold text-white">Edit Clip Timestamps</h3>
               </div>
               <button
@@ -896,7 +896,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full bg-zinc-950 border border-white/[0.1] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                  className="w-full bg-zinc-950 border border-white/[0.1] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -909,7 +909,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                     min="0"
                     value={editStartTime}
                     onChange={(e) => setEditStartTime(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-zinc-950 border border-white/[0.1] rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-purple-500"
+                    className="w-full bg-zinc-950 border border-white/[0.1] rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-blue-500"
                   />
                   <span className="text-[10px] text-zinc-500 mt-1 block font-mono">
                     {formatDuration(editStartTime)}
@@ -923,7 +923,7 @@ export const ClipDetectionPanel: React.FC<ClipDetectionPanelProps> = ({
                     min="0"
                     value={editEndTime}
                     onChange={(e) => setEditEndTime(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-zinc-950 border border-white/[0.1] rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-purple-500"
+                    className="w-full bg-zinc-950 border border-white/[0.1] rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-blue-500"
                   />
                   <span className="text-[10px] text-zinc-500 mt-1 block font-mono">
                     {formatDuration(editEndTime)} ({Math.max(0, Math.round(editEndTime - editStartTime))}s duration)

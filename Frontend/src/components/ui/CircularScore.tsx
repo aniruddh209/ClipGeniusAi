@@ -36,7 +36,7 @@ export const CircularScore: React.FC<CircularScoreProps> = ({
   // Dynamic gradient definition and color accents
   const getGradientColors = (pct: number) => {
     if (pct >= 85) return { start: '#10b981', end: '#06b6d4', glow: 'rgba(16, 185, 129, 0.3)', textColor: 'text-emerald-400' };
-    if (pct >= 70) return { start: '#a855f7', end: '#6366f1', glow: 'rgba(168, 85, 247, 0.3)', textColor: 'text-purple-400' };
+    if (pct >= 70) return { start: '#3b82f6', end: '#2563eb', glow: 'rgba(59, 130, 246, 0.3)', textColor: 'text-blue-400' };
     if (pct >= 55) return { start: '#f59e0b', end: '#f97316', glow: 'rgba(245, 158, 11, 0.3)', textColor: 'text-amber-400' };
     return { start: '#f43f5e', end: '#ec4899', glow: 'rgba(244, 63, 94, 0.3)', textColor: 'text-rose-400' };
   };

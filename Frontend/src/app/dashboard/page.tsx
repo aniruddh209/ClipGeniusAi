@@ -132,10 +132,10 @@ export default function DashboardPage() {
       <div className="px-6 sm:px-8 pt-8 space-y-8 max-w-7xl mx-auto">
         {/* 1. OVERVIEW STATISTICS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-5 border-white/[0.06] bg-[#111116] hover:border-purple-500/30 transition-all">
+          <Card className="p-5 border-white/[0.06] bg-[#090e1a] hover:border-blue-500/30 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-zinc-400">Total Videos Processed</span>
-              <div className="w-8 h-8 rounded-lg bg-purple-950/50 border border-purple-800/40 text-purple-400 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-blue-950/50 border border-blue-800/40 text-blue-400 flex items-center justify-center">
                 <Video className="w-4 h-4" />
               </div>
             </div>
@@ -148,7 +148,7 @@ export default function DashboardPage() {
             <p className="text-[11px] text-zinc-500 mt-1">{hoursFootage} hrs total source footage</p>
           </Card>
 
-          <Card className="p-5 border-white/[0.06] bg-[#111116] hover:border-pink-500/30 transition-all">
+          <Card className="p-5 border-white/[0.06] bg-[#090e1a] hover:border-pink-500/30 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-zinc-400">Viral Shorts Generated</span>
               <div className="w-8 h-8 rounded-lg bg-pink-950/50 border border-pink-800/40 text-pink-400 flex items-center justify-center">
@@ -157,12 +157,12 @@ export default function DashboardPage() {
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-2xl font-extrabold text-white">{totalClips}</span>
-              <span className="text-xs text-purple-400 font-medium">9:16 Vertical</span>
+              <span className="text-xs text-blue-400 font-medium">9:16 Vertical</span>
             </div>
             <p className="text-[11px] text-zinc-500 mt-1">Ready for Reels, Shorts, TikTok</p>
           </Card>
 
-          <Card className="p-5 border-white/[0.06] bg-[#111116] hover:border-amber-500/30 transition-all">
+          <Card className="p-5 border-white/[0.06] bg-[#090e1a] hover:border-amber-500/30 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-zinc-400">Avg. Virality Score</span>
               <div className="w-8 h-8 rounded-lg bg-amber-950/50 border border-amber-800/40 text-amber-400 flex items-center justify-center">
@@ -178,7 +178,7 @@ export default function DashboardPage() {
             <p className="text-[11px] text-zinc-500 mt-1">Faster-Whisper & PySceneDetect scored</p>
           </Card>
 
-          <Card className="p-5 border-white/[0.06] bg-[#111116] hover:border-blue-500/30 transition-all">
+          <Card className="p-5 border-white/[0.06] bg-[#090e1a] hover:border-blue-500/30 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-zinc-400">Editing Hours Saved</span>
               <div className="w-8 h-8 rounded-lg bg-blue-950/50 border border-blue-800/40 text-blue-400 flex items-center justify-center">
@@ -206,18 +206,18 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <Link href="/dashboard/projects" className="text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1">
+            <Link href="/dashboard/projects" className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
               View All Projects <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           {isLoading ? (
-            <div className="p-12 rounded-2xl bg-[#111116] border border-white/[0.06] text-center text-xs text-zinc-400">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-400 mb-2" />
+            <div className="p-12 rounded-2xl bg-[#090e1a] border border-white/[0.06] text-center text-xs text-zinc-400">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-400 mb-2" />
               Loading real clips from database...
             </div>
           ) : displayedClips.length === 0 ? (
-            <div className="p-10 rounded-2xl bg-[#111116] border border-white/[0.06] text-center space-y-3">
+            <div className="p-10 rounded-2xl bg-[#090e1a] border border-white/[0.06] text-center space-y-3">
               <Scissors className="w-8 h-8 text-zinc-600 mx-auto" />
               <p className="text-sm font-semibold text-white">No generated clips yet</p>
               <p className="text-xs text-zinc-400 max-w-sm mx-auto">
@@ -242,7 +242,7 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={clip.id}
-                    className="group rounded-2xl bg-[#111116] border border-white/[0.06] hover:border-purple-500/40 p-4 transition-all flex flex-col justify-between shadow-xl"
+                    className="group rounded-2xl bg-[#090e1a] border border-white/[0.06] hover:border-blue-500/40 p-4 transition-all flex flex-col justify-between shadow-xl"
                   >
                     {/* Clip Video Thumbnail & Overlay */}
                     <div className="relative rounded-xl overflow-hidden aspect-[9/16] max-h-72 w-full bg-zinc-900 border border-white/[0.06] mb-4">
@@ -264,7 +264,7 @@ export default function DashboardPage() {
                         <span className="px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-md text-[10px] font-mono text-zinc-300">
                           9:16 Vertical
                         </span>
-                        <span className="px-2 py-0.5 rounded-md bg-purple-600 text-white text-[11px] font-extrabold flex items-center gap-1 shadow-lg shadow-purple-950/60">
+                        <span className="px-2 py-0.5 rounded-md bg-blue-600 text-white text-[11px] font-extrabold flex items-center gap-1 shadow-lg shadow-blue-950/60">
                           <Flame className="w-3 h-3 fill-current text-amber-300" />
                           {score}%
                         </span>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
                         onClick={() => setActiveClipModal(clip)}
                         className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 cursor-pointer"
                       >
-                        <div className="w-12 h-12 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                        <div className="w-12 h-12 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
                           <Play className="w-5 h-5 fill-current ml-0.5" />
                         </div>
                       </button>
@@ -289,7 +289,7 @@ export default function DashboardPage() {
                     {/* Clip Meta */}
                     <div className="space-y-2 flex-1 flex flex-col justify-between">
                       <div>
-                        <h3 className="text-sm font-bold text-white line-clamp-1 group-hover:text-purple-300 transition-colors">
+                        <h3 className="text-sm font-bold text-white line-clamp-1 group-hover:text-blue-300 transition-colors">
                           {clip.title}
                         </h3>
                         <p className="text-xs text-zinc-400 mt-1 line-clamp-2 italic">
@@ -341,7 +341,7 @@ export default function DashboardPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Video className="w-4 h-4 text-purple-400" />
+              <Video className="w-4 h-4 text-blue-400" />
               Source Video Projects ({videos.length})
             </h2>
 
@@ -350,7 +350,7 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.06] bg-[#111116] overflow-hidden">
+          <div className="rounded-2xl border border-white/[0.06] bg-[#090e1a] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-white/[0.02] border-b border-white/[0.06] text-zinc-400 uppercase tracking-wider text-[10px]">
@@ -402,7 +402,7 @@ export default function DashboardPage() {
                           </td>
                           <td className="px-5 py-4">
                             <Badge
-                              variant={vid.status === 'ready' || vid.status === 'completed' ? 'success' : 'purple'}
+                              variant={vid.status === 'ready' || vid.status === 'completed' ? 'success' : 'blue'}
                               className="capitalize text-[10px]"
                             >
                               {vid.status}
@@ -411,7 +411,7 @@ export default function DashboardPage() {
                           <td className="px-5 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <Link href="/dashboard/create">
-                                <Button size="sm" variant="ghost" className="text-xs hover:text-purple-300">
+                                <Button size="sm" variant="ghost" className="text-xs hover:text-blue-300">
                                   Clip Video →
                                 </Button>
                               </Link>
@@ -443,11 +443,11 @@ export default function DashboardPage() {
       {/* Video Clip Modal Preview */}
       {activeClipModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#111116] border border-white/[0.1] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl space-y-4 p-5">
+          <div className="bg-[#090e1a] border border-white/[0.1] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl space-y-4 p-5">
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
               <div>
                 <h3 className="text-sm font-bold text-white line-clamp-1">{activeClipModal.title}</h3>
-                <span className="text-[11px] text-purple-400 font-mono">
+                <span className="text-[11px] text-blue-400 font-mono">
                   Virality: {Math.round(activeClipModal.virality_score || activeClipModal.overall_score || 0)}%
                 </span>
               </div>

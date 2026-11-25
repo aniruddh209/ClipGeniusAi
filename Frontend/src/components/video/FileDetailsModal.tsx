@@ -128,12 +128,12 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-[#111116] border border-white/[0.12] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl space-y-5 p-6 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[#090e1a] border border-white/[0.12] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl space-y-5 p-6 animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-purple-950/60 border border-purple-500/30 text-purple-400 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-blue-950/60 border border-blue-500/30 text-blue-400 flex items-center justify-center">
               <FileVideo className="w-4 h-4" />
             </div>
             <div>
@@ -155,7 +155,7 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
 
         {isLoading ? (
           <div className="py-12 text-center space-y-2">
-            <Loader2 className="w-6 h-6 text-purple-400 animate-spin mx-auto" />
+            <Loader2 className="w-6 h-6 text-blue-400 animate-spin mx-auto" />
             <p className="text-xs text-zinc-400">Inspecting file headers on disk...</p>
           </div>
         ) : info ? (
@@ -181,7 +181,7 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
               </div>
               <div className="p-3 rounded-xl bg-zinc-950/70 border border-white/[0.04] space-y-0.5">
                 <span className="text-[10px] text-zinc-500 uppercase font-semibold">Video Codec</span>
-                <p className="font-bold text-purple-400 font-mono uppercase">{info.video_codec || 'N/A'}</p>
+                <p className="font-bold text-blue-400 font-mono uppercase">{info.video_codec || 'N/A'}</p>
                 <span className="text-[9px] text-zinc-500 block">Audio: {info.audio_codec || 'aac'}</span>
               </div>
             </div>
@@ -234,7 +234,7 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
                     onClick={handleRevealFinder}
                     className="rounded-xl text-xs py-2 bg-white/[0.06] hover:bg-white/[0.12] text-white"
                   >
-                    <Folder className="w-3.5 h-3.5 mr-1.5 text-purple-400" /> Reveal in Finder
+                    <Folder className="w-3.5 h-3.5 mr-1.5 text-blue-400" /> Reveal in Finder
                   </Button>
                   <Button
                     variant="secondary"

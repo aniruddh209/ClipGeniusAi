@@ -7,12 +7,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-[#09090b] text-zinc-100 selection:bg-purple-500 selection:text-white">
-      {/* Fixed/Sticky Professional Studio Sidebar */}
+    <div className="flex min-h-screen bg-[#030712] text-slate-100 selection:bg-blue-600 selection:text-white">
+      {/* Fixed/Sticky Professional Studio Sidebar with Mobile Drawer */}
       <DashboardSidebar />
 
       {/* Main Workspace Scrollable Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-[#030712] pt-14 md:pt-0">
         {children}
       </div>
     </div>

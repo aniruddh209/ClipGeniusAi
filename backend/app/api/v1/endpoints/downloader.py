@@ -349,13 +349,22 @@ async def download_file(task_id: str):
     elif ext == ".m4a":
         media_type = "audio/mp4"
 
+    import urllib.parse
+    import re
+    # Clean and sanitize filename for HTTP headers
+    safe_ascii = re.sub(r'[^\w\s\.-]', '', final_filename).strip()
+    safe_ascii = re.sub(r'[-\s]+', '_', safe_ascii)
+    if not safe_ascii or safe_ascii == ext:
+        safe_ascii = f"video_{task_id}{ext}"
+    encoded_filename = urllib.parse.quote(final_filename, encoding='utf-8')
+
     return FileResponse(
         path=str(resolved),
-        filename=final_filename,
+        filename=safe_ascii,
         media_type=media_type,
         headers={
             "Accept-Ranges": "bytes",
-            "Content-Disposition": f'attachment; filename="{final_filename}"',
+            "Content-Disposition": f'attachment; filename="{safe_ascii}"; filename*=UTF-8\'\'{encoded_filename}',
             "Access-Control-Expose-Headers": "Content-Disposition"
         }
     )

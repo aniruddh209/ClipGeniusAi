@@ -405,7 +405,7 @@ function VideoDownloaderContent() {
   const availableQualities = analysisResult?.confirmed_qualities || analysisResult?.formats || [];
 
   return (
-    <div className="flex-1 min-h-screen bg-[#07070a] text-zinc-100 flex flex-col">
+    <div className="flex-1 min-h-screen bg-[#030712] text-zinc-100 flex flex-col">
       {/* Toast Notification */}
       {notification && (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -414,12 +414,12 @@ function VideoDownloaderContent() {
               'px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md flex items-center gap-3 text-xs font-medium max-w-md',
               notification.type === 'success' && 'bg-emerald-950/80 border-emerald-500/40 text-emerald-200 shadow-emerald-950/40',
               notification.type === 'error' && 'bg-rose-950/80 border-rose-500/40 text-rose-200 shadow-rose-950/40',
-              notification.type === 'info' && 'bg-purple-950/80 border-purple-500/40 text-purple-200 shadow-purple-950/40'
+              notification.type === 'info' && 'bg-blue-950/80 border-blue-500/40 text-blue-200 shadow-blue-950/40'
             )}
           >
             {notification.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
             {notification.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
-            {notification.type === 'info' && <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />}
+            {notification.type === 'info' && <Sparkles className="w-4 h-4 text-blue-400 shrink-0" />}
             <span>{notification.message}</span>
           </div>
         </div>
@@ -429,13 +429,13 @@ function VideoDownloaderContent() {
       <div className="border-b border-white/[0.08] bg-[#0c0c12]/80 backdrop-blur-md sticky top-0 z-30 px-6 py-4">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-600/30">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-400 flex items-center justify-center shadow-lg shadow-blue-600/30">
               <DownloadCloud className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold text-white tracking-tight">Video Downloader</h1>
-                <Badge variant="purple" className="text-[10px] uppercase font-semibold tracking-wider">
+                <Badge variant="blue" className="text-[10px] uppercase font-semibold tracking-wider">
                   4K / HD
                 </Badge>
               </div>
@@ -455,7 +455,7 @@ function VideoDownloaderContent() {
               className={cn(
                 'px-4 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer',
                 activeTab === 'downloader'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 font-semibold'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-semibold'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
               )}
             >
@@ -476,7 +476,7 @@ function VideoDownloaderContent() {
               className={cn(
                 'px-4 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer',
                 activeTab === 'history'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 font-semibold'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-semibold'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
               )}
             >
@@ -498,10 +498,10 @@ function VideoDownloaderContent() {
           <>
             {/* FIRST PHASE: YOUTUBE VIDEO ANALYSIS INPUT */}
             <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-transparent p-6 shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
               <div className="max-w-3xl space-y-4">
-                <div className="flex items-center gap-2 text-xs font-semibold text-purple-400 tracking-wider uppercase">
+                <div className="flex items-center gap-2 text-xs font-semibold text-blue-400 tracking-wider uppercase">
                   <Zap className="w-3.5 h-3.5" />
                   <span>Fast Video Downloader</span>
                 </div>
@@ -524,7 +524,7 @@ function VideoDownloaderContent() {
                         value={urlInput}
                         onChange={(e) => setUrlInput(e.target.value)}
                         placeholder="https://www.youtube.com/watch?v=... or direct MP4 link"
-                        className="w-full h-11 pl-10 pr-24 rounded-xl bg-[#0e0e16] border border-white/[0.1] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/80 focus:ring-2 focus:ring-purple-500/20 transition-all font-mono"
+                        className="w-full h-11 pl-10 pr-24 rounded-xl bg-[#090e1a] border border-white/[0.1] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/80 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono"
                       />
                       <button
                         type="button"
@@ -540,7 +540,7 @@ function VideoDownloaderContent() {
                     <button
                       type="submit"
                       disabled={isAnalyzing || !urlInput.trim()}
-                      className="h-11 px-6 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-medium text-xs tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-purple-600/25 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                      className="h-11 px-6 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 hover:from-blue-500 hover:to-sky-500 text-white font-medium text-xs tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                     >
                       {isAnalyzing ? (
                         <>
@@ -596,10 +596,10 @@ function VideoDownloaderContent() {
             {analysisResult && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-300">
                 {/* Permitted Public Metadata Card */}
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0c0c14] p-6 shadow-2xl space-y-6">
+                <div className="rounded-2xl border border-white/[0.08] bg-[#060a14] p-6 shadow-2xl space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
                     <div className="flex items-center gap-2">
-                      <Badge variant="purple" className="text-[10px] uppercase font-semibold">
+                      <Badge variant="blue" className="text-[10px] uppercase font-semibold">
                         {analysisResult.provider === 'youtube' ? 'YouTube Stream' : 'Direct Media'}
                       </Badge>
                       <span className="text-xs text-zinc-400 flex items-center gap-1.5">
@@ -616,7 +616,7 @@ function VideoDownloaderContent() {
                         className={cn(
                           'px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5',
                           !isCreatorOwned
-                            ? 'bg-purple-600 text-white font-semibold shadow-sm'
+                            ? 'bg-blue-600 text-white font-semibold shadow-sm'
                             : 'text-zinc-400 hover:text-zinc-200'
                         )}
                       >
@@ -662,7 +662,7 @@ function VideoDownloaderContent() {
 
                         {/* Duration Pill */}
                         <div className="absolute bottom-3 right-3 px-2 py-1 rounded-md bg-black/85 backdrop-blur-md text-white text-[11px] font-mono font-medium border border-white/10 flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-purple-400" />
+                          <Clock className="w-3 h-3 text-blue-400" />
                           <span>{analysisResult.duration_formatted}</span>
                         </div>
 
@@ -680,7 +680,7 @@ function VideoDownloaderContent() {
                           href={analysisResult.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-purple-400 hover:text-purple-300 flex items-center gap-1 font-medium transition-colors"
+                          className="text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium transition-colors"
                         >
                           <span>Open on YouTube</span>
                           <ExternalLink className="w-3 h-3" />
@@ -704,13 +704,13 @@ function VideoDownloaderContent() {
                                 href={analysisResult.channel_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="font-semibold text-purple-300 hover:text-purple-200 hover:underline flex items-center gap-1"
+                                className="font-semibold text-blue-300 hover:text-blue-200 hover:underline flex items-center gap-1"
                               >
                                 <span>{analysisResult.channel_name || analysisResult.uploader}</span>
-                                <ExternalLink className="w-3 h-3 text-purple-400/80" />
+                                <ExternalLink className="w-3 h-3 text-blue-400/80" />
                               </a>
                             ) : (
-                              <span className="font-semibold text-purple-300">
+                              <span className="font-semibold text-blue-300">
                                 {analysisResult.channel_name || analysisResult.uploader}
                               </span>
                             )}
@@ -748,7 +748,7 @@ function VideoDownloaderContent() {
                             <button
                               type="button"
                               onClick={() => setShowFullDescription(!showFullDescription)}
-                              className="text-[11px] text-purple-400 hover:text-purple-300 font-medium cursor-pointer"
+                              className="text-[11px] text-blue-400 hover:text-blue-300 font-medium cursor-pointer"
                             >
                               {showFullDescription ? 'Show less' : 'Read more description'}
                             </button>
@@ -851,7 +851,7 @@ function VideoDownloaderContent() {
                           <Link href="/dashboard/create">
                             <button
                               type="button"
-                              className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-purple-300 hover:text-purple-200 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                              className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-blue-300 hover:text-blue-200 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
                               <Scissors className="w-3.5 h-3.5" />
                               <span>Go to AI Clipper</span>
@@ -864,10 +864,10 @@ function VideoDownloaderContent() {
                 )}
 
                 {/* VIDEO QUALITY & FORMAT SELECTOR */}
-                <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-b from-[#110f1e] to-[#0a0912] p-6 shadow-2xl space-y-6">
+                <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-b from-[#090e1a] to-[#040814] p-6 shadow-2xl space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                      <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
                         <FileVideo className="w-4 h-4" />
                       </div>
                       <div>
@@ -881,7 +881,7 @@ function VideoDownloaderContent() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Badge variant="purple" className="text-[10px]">
+                      <Badge variant="blue" className="text-[10px]">
                         {availableQualities.length} Streams Available
                       </Badge>
                     </div>
@@ -913,7 +913,7 @@ function VideoDownloaderContent() {
                             className={cn(
                               'p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer group',
                               isSelected
-                                ? 'bg-purple-600/20 border-purple-500 shadow-lg shadow-purple-600/25 ring-1 ring-purple-500/60'
+                                ? 'bg-blue-600/20 border-blue-500 shadow-lg shadow-blue-600/25 ring-1 ring-blue-500/60'
                                 : 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.15]'
                             )}
                           >
@@ -923,13 +923,13 @@ function VideoDownloaderContent() {
                                   {fmt.type === 'audio' ? (
                                     <Music className="w-3.5 h-3.5 text-indigo-400" />
                                   ) : (
-                                    <FileVideo className="w-3.5 h-3.5 text-purple-400" />
+                                    <FileVideo className="w-3.5 h-3.5 text-blue-400" />
                                   )}
                                   <span className="font-bold text-xs text-white">
                                     {fmt.resolution}
                                   </span>
                                   {fmt.recommended && (
-                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/30 text-purple-300 border border-purple-500/40">
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/30 text-blue-300 border border-blue-500/40">
                                       RECOMMENDED
                                     </span>
                                   )}
@@ -941,7 +941,7 @@ function VideoDownloaderContent() {
 
                               <div className={cn(
                                 'w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors',
-                                isSelected ? 'border-purple-400 bg-purple-500 text-white' : 'border-zinc-600 bg-black/40'
+                                isSelected ? 'border-blue-400 bg-blue-500 text-white' : 'border-zinc-600 bg-black/40'
                               )}>
                                 {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                               </div>
@@ -952,7 +952,7 @@ function VideoDownloaderContent() {
                                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
                                 <span>{fmt.badge}</span>
                               </span>
-                              <span className="font-mono text-purple-300 font-semibold">{fmt.filesize_formatted}</span>
+                              <span className="font-mono text-blue-300 font-semibold">{fmt.filesize_formatted}</span>
                             </div>
                           </button>
                         );
@@ -977,7 +977,7 @@ function VideoDownloaderContent() {
                                   className={cn(
                                     'flex-1 py-2 rounded-lg border text-xs font-semibold uppercase transition-all cursor-pointer',
                                     selectedExt === ext
-                                      ? 'bg-purple-600/20 border-purple-500 text-purple-300'
+                                      ? 'bg-blue-600/20 border-blue-500 text-blue-300'
                                       : 'bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-zinc-200'
                                   )}
                                 >
@@ -995,7 +995,7 @@ function VideoDownloaderContent() {
                                   className={cn(
                                     'flex-1 py-2 rounded-lg border text-xs font-semibold uppercase transition-all cursor-pointer',
                                     selectedExt === ext
-                                      ? 'bg-purple-600/20 border-purple-500 text-purple-300'
+                                      ? 'bg-blue-600/20 border-blue-500 text-blue-300'
                                       : 'bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-zinc-200'
                                   )}
                                 >
@@ -1015,7 +1015,7 @@ function VideoDownloaderContent() {
                         <select
                           value={saveDestination}
                           onChange={(e: any) => setSaveDestination(e.target.value)}
-                          className="w-full h-9 px-3 rounded-lg bg-[#0e0e16] border border-white/[0.1] text-xs text-zinc-200 focus:outline-none focus:border-purple-500/80 cursor-pointer"
+                          className="w-full h-9 px-3 rounded-lg bg-[#090e1a] border border-white/[0.1] text-xs text-zinc-200 focus:outline-none focus:border-blue-500/80 cursor-pointer"
                         >
                           <option value="downloads">💻 Save to My Mac (Downloads)</option>
                           <option value="projects">✂️ Save to AI Studio (Auto-Clip Ready)</option>
@@ -1033,7 +1033,7 @@ function VideoDownloaderContent() {
                           value={customPath}
                           onChange={(e) => setCustomPath(e.target.value)}
                           placeholder="/Users/username/Downloads/MyVideos"
-                          className="w-full h-9 px-3 rounded-lg bg-[#0e0e16] border border-white/[0.1] text-xs text-white font-mono placeholder-zinc-600 focus:outline-none focus:border-purple-500"
+                          className="w-full h-9 px-3 rounded-lg bg-[#090e1a] border border-white/[0.1] text-xs text-white font-mono placeholder-zinc-600 focus:outline-none focus:border-blue-500"
                         />
                       </div>
                     )}
@@ -1073,7 +1073,7 @@ function VideoDownloaderContent() {
                   <div className="flex items-center gap-3">
                     <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
                       <span>Download Manager</span>
-                      <Badge variant="purple" className="text-[11px]">
+                      <Badge variant="blue" className="text-[11px]">
                         {activeDownloads.length} Active / {tasks.length} Total
                       </Badge>
                     </h2>
@@ -1093,7 +1093,7 @@ function VideoDownloaderContent() {
                       placeholder="Filter downloads..."
                       value={searchFilter}
                       onChange={(e) => setSearchFilter(e.target.value)}
-                      className="w-40 sm:w-48 h-8 pl-8 pr-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/50"
+                      className="w-40 sm:w-48 h-8 pl-8 pr-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50"
                     />
                   </div>
 
@@ -1102,7 +1102,7 @@ function VideoDownloaderContent() {
                     className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Select or deselect all items"
                   >
-                    <CheckSquare className="w-3.5 h-3.5 text-purple-400" />
+                    <CheckSquare className="w-3.5 h-3.5 text-blue-400" />
                     <span>{selectedTaskIds.size === filteredTasks.length && filteredTasks.length > 0 ? 'Deselect' : 'Select All'}</span>
                   </button>
 
@@ -1147,14 +1147,14 @@ function VideoDownloaderContent() {
                     className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-zinc-200 border border-white/[0.08] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Clear completed tasks from view"
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-purple-400" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
                     <span className="hidden sm:inline">Clear Done</span>
                   </button>
                 </div>
               </div>
 
               {/* Download Engine Status Strip */}
-              <div className="p-3 px-4 rounded-xl bg-purple-950/20 border border-purple-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div className="p-3 px-4 rounded-xl bg-blue-950/20 border border-blue-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span className="font-semibold text-white">Resumable Download Engine</span>
@@ -1165,7 +1165,7 @@ function VideoDownloaderContent() {
                   <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono shrink-0">
                     Range Resumption
                   </span>
-                  <span className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20 text-[10px] font-mono shrink-0">
+                  <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-300 border border-blue-500/20 text-[10px] font-mono shrink-0">
                     macOS Native
                   </span>
                 </div>
@@ -1173,9 +1173,9 @@ function VideoDownloaderContent() {
 
               {/* Multi-Selection Batch Actions Banner */}
               {selectedTaskIds.size > 0 && (
-                <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/30 flex items-center justify-between text-xs animate-in fade-in">
+                <div className="p-3.5 rounded-2xl bg-blue-950/40 border border-blue-500/30 flex items-center justify-between text-xs animate-in fade-in">
                   <div className="flex items-center gap-2">
-                    <CheckSquare className="w-4 h-4 text-purple-400" />
+                    <CheckSquare className="w-4 h-4 text-blue-400" />
                     <span className="font-bold text-white">
                       {selectedTaskIds.size} item(s) selected
                     </span>
@@ -1229,7 +1229,7 @@ function VideoDownloaderContent() {
                         key={task.task_id}
                         className={cn(
                           'p-4 rounded-xl border transition-all space-y-3',
-                          isDownloading && 'bg-purple-950/20 border-purple-500/40 shadow-lg shadow-purple-950/20',
+                          isDownloading && 'bg-blue-950/20 border-blue-500/40 shadow-lg shadow-blue-950/20',
                           isConnecting && 'bg-blue-950/15 border-blue-500/30',
                           isVerifying && 'bg-indigo-950/20 border-indigo-500/40',
                           isPaused && 'bg-amber-950/15 border-amber-500/30',
@@ -1245,11 +1245,11 @@ function VideoDownloaderContent() {
                             <button
                               type="button"
                               onClick={() => handleToggleSelectTask(task.task_id)}
-                              className="shrink-0 p-1 text-zinc-500 hover:text-purple-400 cursor-pointer"
+                              className="shrink-0 p-1 text-zinc-500 hover:text-blue-400 cursor-pointer"
                               title={selectedTaskIds.has(task.task_id) ? "Deselect" : "Select"}
                             >
                               {selectedTaskIds.has(task.task_id) ? (
-                                <CheckSquare className="w-4 h-4 text-purple-400" />
+                                <CheckSquare className="w-4 h-4 text-blue-400" />
                               ) : (
                                 <Square className="w-4 h-4 text-zinc-600" />
                               )}
@@ -1279,7 +1279,7 @@ function VideoDownloaderContent() {
                                 {task.title}
                               </h4>
                               <div className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-400 mt-0.5">
-                                <span className="uppercase font-mono font-medium text-purple-400">
+                                <span className="uppercase font-mono font-medium text-blue-400">
                                   {task.ext}
                                 </span>
                                 <span>•</span>
@@ -1330,8 +1330,8 @@ function VideoDownloaderContent() {
                               )}
 
                               {isVerifying && (
-                                <span className="px-2 py-0.5 rounded bg-purple-500/25 text-purple-200 border border-purple-500/40 text-[10px] font-semibold flex items-center gap-1">
-                                  <ShieldCheck className="w-3 h-3 text-purple-400 animate-pulse" /> Verifying Media
+                                <span className="px-2 py-0.5 rounded bg-blue-500/25 text-blue-200 border border-blue-500/40 text-[10px] font-semibold flex items-center gap-1">
+                                  <ShieldCheck className="w-3 h-3 text-blue-400 animate-pulse" /> Verifying Media
                                 </span>
                               )}
 
@@ -1439,7 +1439,7 @@ function VideoDownloaderContent() {
 
                                   <button
                                     onClick={() => setExportModalTask(task)}
-                                    className="w-8 h-8 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                                    className="w-8 h-8 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center justify-center transition-colors cursor-pointer"
                                     title="Export & Convert (Apple ProRes/HEVC/H.264/MOV)"
                                   >
                                     <Apple className="w-4 h-4" />
@@ -1455,7 +1455,7 @@ function VideoDownloaderContent() {
 
                                   <button
                                     onClick={() => handleClipInStudio(task.task_id)}
-                                    className="px-2.5 h-8 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-md shadow-purple-600/20 transition-all cursor-pointer"
+                                    className="px-2.5 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition-all cursor-pointer"
                                     title="Open directly in AI Clipper to generate viral shorts"
                                   >
                                     <Scissors className="w-3.5 h-3.5" />
@@ -1490,9 +1490,9 @@ function VideoDownloaderContent() {
                             <div
                               className={cn(
                                 'h-full rounded-full transition-all duration-300 ease-out',
-                                isDownloading && 'bg-gradient-to-r from-purple-500 via-indigo-500 to-cyan-400',
+                                isDownloading && 'bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-400',
                                 isConnecting && 'bg-blue-400 animate-pulse',
-                                isVerifying && 'bg-gradient-to-r from-indigo-500 to-purple-400 animate-pulse',
+                                isVerifying && 'bg-gradient-to-r from-indigo-500 to-blue-400 animate-pulse',
                                 isPaused && 'bg-amber-400',
                                 isInterrupted && 'bg-orange-500',
                                 isCompleted && 'bg-emerald-500',
@@ -1553,7 +1553,7 @@ function VideoDownloaderContent() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
               <div>
                 <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-purple-400" />
+                  <Clock className="w-5 h-5 text-blue-400" />
                   <span>Download History</span>
                 </h2>
                 <p className="text-xs text-zinc-400">
@@ -1569,7 +1569,7 @@ function VideoDownloaderContent() {
                     placeholder="Search history..."
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
-                    className="w-48 h-8 pl-8 pr-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/50"
+                    className="w-48 h-8 pl-8 pr-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50"
                   />
                 </div>
 
@@ -1595,7 +1595,7 @@ function VideoDownloaderContent() {
                 <div className="pt-2">
                   <button
                     onClick={() => setActiveTab('downloader')}
-                    className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold cursor-pointer shadow-lg shadow-purple-600/30"
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold cursor-pointer shadow-lg shadow-blue-600/30"
                   >
                     Go to Video Downloader
                   </button>
@@ -1618,7 +1618,7 @@ function VideoDownloaderContent() {
                           title={selectedTaskIds.has(item.task_id) ? "Deselect" : "Select"}
                         >
                           {selectedTaskIds.has(item.task_id) ? (
-                            <CheckSquare className="w-3.5 h-3.5 text-purple-400" />
+                            <CheckSquare className="w-3.5 h-3.5 text-blue-400" />
                           ) : (
                             <Square className="w-3.5 h-3.5 text-zinc-400" />
                           )}
@@ -1647,7 +1647,7 @@ function VideoDownloaderContent() {
                           {item.title}
                         </h4>
                         <div className="flex items-center gap-2 text-[11px] text-zinc-400 mt-1">
-                          <span className="uppercase font-mono text-purple-400">{item.ext}</span>
+                          <span className="uppercase font-mono text-blue-400">{item.ext}</span>
                           <span>•</span>
                           <span>{(item.total_bytes / (1024 * 1024)).toFixed(1)} MB</span>
                           <span>•</span>
@@ -1677,7 +1677,7 @@ function VideoDownloaderContent() {
 
                         <button
                           onClick={() => setExportModalTask(item as any)}
-                          className="h-7 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                          className="h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center justify-center transition-colors cursor-pointer"
                           title="macOS Export & Convert"
                         >
                           <Apple className="w-3.5 h-3.5" />
@@ -1696,7 +1696,7 @@ function VideoDownloaderContent() {
                       <div className="flex items-center justify-between gap-2">
                         <button
                           onClick={() => handleClipInStudio(item.task_id)}
-                          className="flex-1 h-8 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          className="flex-1 h-8 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                         >
                           <Scissors className="w-3.5 h-3.5" />
                           <span>Clip with AI</span>
@@ -1812,9 +1812,9 @@ export default function VideoDownloaderPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex-1 min-h-[60vh] bg-[#07070a] text-zinc-100 flex items-center justify-center">
+        <div className="flex-1 min-h-[60vh] bg-[#030712] text-zinc-100 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
-            <RefreshCw className="w-7 h-7 text-purple-500 animate-spin" />
+            <RefreshCw className="w-7 h-7 text-blue-500 animate-spin" />
             <p className="text-xs font-medium text-zinc-400">Loading Video Downloader...</p>
           </div>
         </div>
