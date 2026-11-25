@@ -936,8 +936,8 @@ async def _run_full_end_to_end_pipeline(
             max_audio_sec = float(end_time - start_time)
             audio_dur_label = f" ({int(start_time)}s - {int(end_time)}s)"
         elif scan_full_video:
-            max_audio_sec = None
-            audio_dur_label = " (full video footage)"
+            max_audio_sec = 900.0 if total_duration > 900.0 else None
+            audio_dur_label = f" (first {int(max_audio_sec)}s speech scan)" if max_audio_sec else " (full video footage)"
         else:
             max_audio_sec = 600.0 if total_duration > 600.0 else None
             audio_dur_label = f" (first {int(max_audio_sec)}s for fast clipping)" if max_audio_sec else ""
@@ -1025,7 +1025,8 @@ async def _run_full_end_to_end_pipeline(
             duration_range=duration_enum,
             max_clips=max_clips,
             virality_threshold=virality_threshold,
-            video_title=video_doc.get("title", "")
+            video_title=video_doc.get("title", ""),
+            known_duration=total_duration
         )
 
         # If candidates are fewer than requested max_clips, backfill with diverse duration-based segments across the video
@@ -1163,144 +1164,152 @@ async def _run_full_end_to_end_pipeline(
 
         completed_list: List[CandidateClip] = []
         failed_list: List[FailedClipItem] = []
-
         total_to_process = len(candidate_clips)
-        for i, clip in enumerate(candidate_clips):
-            clip_idx_str = f"({i+1}/{total_to_process})"
-            job["current_clip_title"] = clip.title
-            job["current_step"] = f"5. Processing clip {clip_idx_str}: '{clip.title}' with {reframing_mode} reframing..."
-            job["progress"] = 55 + int((i / total_to_process) * 35)
-            job["updated_at"] = datetime.utcnow()
+        lock = asyncio.Lock()
+        sem = asyncio.Semaphore(2)
 
-            cut_filename = f"{clip.id}_{aspect_slug}.mp4"
-            cut_path = str(settings.GENERATED_CLIPS_DIR / cut_filename)
-            thumb_filename = f"{clip.id}_{aspect_slug}.jpg"
-            thumb_path = str(settings.THUMBNAIL_DIR / thumb_filename)
+        async def _process_single_clip(i: int, clip: CandidateClip):
+            async with sem:
+                clip_idx_str = f"({i+1}/{total_to_process})"
+                job["current_clip_title"] = clip.title
+                job["current_step"] = f"5. Rendering clip {clip_idx_str}: '{clip.title}' with {reframing_mode} reframing..."
+                job["updated_at"] = datetime.utcnow()
 
-            try:
-                # 8. Intelligent Video Reframing (Direct 4K YouTube Slice, Direct Remote HTTP Range or Local File)
-                is_direct_yt = (
-                    (video_doc.get("source_type") in ["youtube_direct_stream", VideoSourceType.YOUTUBE_URL] or video_doc.get("is_direct_stream"))
-                    and video_doc.get("source_url")
-                    and (not source_path or not Path(source_path).exists() or Path(source_path).suffix.lower() in [".mp3", ".wav", ".m4a"])
-                )
+                cut_filename = f"{clip.id}_{aspect_slug}.mp4"
+                cut_path = str(settings.GENERATED_CLIPS_DIR / cut_filename)
+                thumb_filename = f"{clip.id}_{aspect_slug}.jpg"
+                thumb_path = str(settings.THUMBNAIL_DIR / thumb_filename)
 
-                if is_direct_yt:
-                    from app.services.video.downloader import video_downloader
-                    job["current_step"] = f"5. Fetching 4K stream slice {clip_idx_str}: '{clip.title}'..."
-                    job["updated_at"] = datetime.utcnow()
-                    slice_path = await video_downloader.cut_direct_youtube_slice(
-                        url=video_doc["source_url"],
-                        start_time=clip.start_time,
-                        end_time=clip.end_time,
-                        max_height=2160
-                    )
-                    await video_reframer.render_reframed_video(
-                        input_video_path=slice_path,
-                        output_video_path=cut_path,
-                        start_time=0.0,
-                        end_time=clip.duration,
-                        aspect_ratio=aspect_enum,
-                        mode=crop_mode_enum,
-                        manual_offset=0.5
-                    )
-                    try:
-                        os.remove(slice_path)
-                    except Exception:
-                        pass
-                elif is_remote_cloud:
-                    from app.services.video.remote_stream_processor import remote_stream_processor
-                    v_meta = video_doc.get("metadata", {}) if isinstance(video_doc.get("metadata"), dict) else {}
-                    await remote_stream_processor.cut_and_reframe_remote_segment(
-                        url=source_path,
-                        start_time=clip.start_time,
-                        end_time=clip.end_time,
-                        output_video_path=cut_path,
-                        template_layout=reframing_mode,
-                        aspect_ratio=target_aspect_ratio,
-                        source_w=v_meta.get("width", 1280),
-                        source_h=v_meta.get("height", 720)
-                    )
-                elif smart_reframing:
-                    await video_reframer.render_reframed_video(
-                        input_video_path=source_path,
-                        output_video_path=cut_path,
-                        start_time=clip.start_time,
-                        end_time=clip.end_time,
-                        aspect_ratio=aspect_enum,
-                        mode=crop_mode_enum,
-                        manual_offset=0.5
-                    )
-                else:
-                    await video_reframer.render_reframed_video(
-                        input_video_path=source_path,
-                        output_video_path=cut_path,
-                        start_time=clip.start_time,
-                        end_time=clip.end_time,
-                        aspect_ratio=aspect_enum,
-                        mode=CropMode.FULL_SCREEN,
-                        manual_offset=0.5
+                try:
+                    # 8. Intelligent Video Reframing (Direct 4K YouTube Slice, Direct Remote HTTP Range or Local File)
+                    is_direct_yt = (
+                        (video_doc.get("source_type") in ["youtube_direct_stream", VideoSourceType.YOUTUBE_URL] or video_doc.get("is_direct_stream"))
+                        and video_doc.get("source_url")
+                        and (not source_path or not Path(source_path).exists() or Path(source_path).suffix.lower() in [".mp3", ".wav", ".m4a"])
                     )
 
-                # Generate thumbnail
-                await ffmpeg_editor.generate_thumbnail(
-                    video_path=cut_path,
-                    output_image_path=thumb_path,
-                    timestamp_sec=0.5
-                )
-
-                final_video_url = f"/generated-clips/{cut_filename}"
-
-                # 9. Animated Subtitles Burn-In (Skip completely if No Captions selected)
-                if burn_subtitles and subtitle_preset != "none" and has_speech and transcript_words:
-                    job["current_step"] = f"5. Burning kinetic captions {clip_idx_str}: '{clip.title}'..."
-                    job["updated_at"] = datetime.utcnow()
-
-                    chunks = slice_and_chunk_words(
-                        words=transcript_words,
-                        clip_start=clip.start_time,
-                        clip_end=clip.end_time,
-                        max_words_per_line=style_config.max_words_per_line
-                    )
-
-                    if chunks:
-                        subtitled_filename = f"{clip.id}_subtitled.mp4"
-                        subtitled_path = str(settings.GENERATED_CLIPS_DIR / subtitled_filename)
-                        await subtitle_renderer.render_subtitles_to_video(
-                            input_video_path=cut_path,
-                            output_video_path=subtitled_path,
-                            chunks=chunks,
-                            style=style_config
+                    if is_direct_yt:
+                        from app.services.video.downloader import video_downloader
+                        slice_path = await video_downloader.cut_direct_youtube_slice(
+                            url=video_doc["source_url"],
+                            start_time=clip.start_time,
+                            end_time=clip.end_time,
+                            max_height=2160
                         )
-                        final_video_url = f"/generated-clips/{subtitled_filename}"
+                        await video_reframer.render_reframed_video(
+                            input_video_path=slice_path,
+                            output_video_path=cut_path,
+                            start_time=0.0,
+                            end_time=clip.duration,
+                            aspect_ratio=aspect_enum,
+                            mode=crop_mode_enum,
+                            manual_offset=0.5
+                        )
+                        try:
+                            os.remove(slice_path)
+                        except Exception:
+                            pass
+                    elif is_remote_cloud:
+                        from app.services.video.remote_stream_processor import remote_stream_processor
+                        v_meta = video_doc.get("metadata", {}) if isinstance(video_doc.get("metadata"), dict) else {}
+                        await remote_stream_processor.cut_and_reframe_remote_segment(
+                            url=source_path,
+                            start_time=clip.start_time,
+                            end_time=clip.end_time,
+                            output_video_path=cut_path,
+                            template_layout=reframing_mode,
+                            aspect_ratio=target_aspect_ratio,
+                            source_w=v_meta.get("width", 1280),
+                            source_h=v_meta.get("height", 720)
+                        )
+                    elif smart_reframing:
+                        await video_reframer.render_reframed_video(
+                            input_video_path=source_path,
+                            output_video_path=cut_path,
+                            start_time=clip.start_time,
+                            end_time=clip.end_time,
+                            aspect_ratio=aspect_enum,
+                            mode=crop_mode_enum,
+                            manual_offset=0.5
+                        )
+                    else:
+                        await video_reframer.render_reframed_video(
+                            input_video_path=source_path,
+                            output_video_path=cut_path,
+                            start_time=clip.start_time,
+                            end_time=clip.end_time,
+                            aspect_ratio=aspect_enum,
+                            mode=CropMode.FULL_SCREEN,
+                            manual_offset=0.5
+                        )
 
-                # 10. Update Clip Object with Playback & Download URLs
-                clip.video_url = final_video_url
-                clip.preview_url = final_video_url
-                clip.download_url = final_video_url
-                clip.thumbnail_url = f"/uploads/thumbnails/{thumb_filename}"
-                clip.aspect_ratio = target_aspect_ratio
-                clip.status = "completed"
-                clip.has_subtitles = burn_subtitles and subtitle_preset != "none" and has_speech
-
-                # Persist to MongoDB
-                if db is not None:
-                    try:
-                        await db.clips.replace_one({"id": clip.id}, clip.dict(), upsert=True)
-                    except Exception as e:
-                        logger.warning(f"MongoDB clip persist warning: {e}")
-
-                completed_list.append(clip)
-
-            except Exception as clip_err:
-                logger.error(f"Error processing clip {clip.id}: {clip_err}")
-                failed_list.append(
-                    FailedClipItem(
-                        clip_id=clip.id,
-                        title=clip.title,
-                        error=str(clip_err)[:160]
+                    # Generate thumbnail
+                    await ffmpeg_editor.generate_thumbnail(
+                        video_path=cut_path,
+                        output_image_path=thumb_path,
+                        timestamp_sec=0.5
                     )
-                )
+
+                    final_video_url = f"/generated-clips/{cut_filename}"
+
+                    # 9. Animated Subtitles Burn-In (Skip completely if No Captions selected)
+                    if burn_subtitles and subtitle_preset != "none" and has_speech and transcript_words:
+                        chunks = slice_and_chunk_words(
+                            words=transcript_words,
+                            clip_start=clip.start_time,
+                            clip_end=clip.end_time,
+                            max_words_per_line=style_config.max_words_per_line
+                        )
+
+                        if chunks:
+                            subtitled_filename = f"{clip.id}_subtitled.mp4"
+                            subtitled_path = str(settings.GENERATED_CLIPS_DIR / subtitled_filename)
+                            await subtitle_renderer.render_subtitles_to_video(
+                                input_video_path=cut_path,
+                                output_video_path=subtitled_path,
+                                chunks=chunks,
+                                style=style_config
+                            )
+                            final_video_url = f"/generated-clips/{subtitled_filename}"
+
+                    # 10. Update Clip Object with Playback & Download URLs
+                    clip.video_url = final_video_url
+                    clip.preview_url = final_video_url
+                    clip.download_url = final_video_url
+                    clip.thumbnail_url = f"/uploads/thumbnails/{thumb_filename}"
+                    clip.aspect_ratio = target_aspect_ratio
+                    clip.status = "completed"
+                    clip.has_subtitles = burn_subtitles and subtitle_preset != "none" and has_speech
+
+                    # Persist to MongoDB
+                    if db is not None:
+                        try:
+                            await db.clips.replace_one({"id": clip.id}, clip.dict(), upsert=True)
+                        except Exception as e:
+                            logger.warning(f"MongoDB clip persist warning: {e}")
+
+                    async with lock:
+                        completed_list.append(clip)
+                        job["completed_clips"] = list(completed_list)
+                        job["progress"] = min(96, 55 + int((len(completed_list) / total_to_process) * 40))
+                        job["updated_at"] = datetime.utcnow()
+
+                except Exception as clip_err:
+                    logger.error(f"Error processing clip {clip.id}: {clip_err}")
+                    async with lock:
+                        failed_list.append(
+                            FailedClipItem(
+                                clip_id=clip.id,
+                                title=clip.title,
+                                error=str(clip_err)[:160]
+                            )
+                        )
+                        job["failed_clips"] = list(failed_list)
+                        job["progress"] = min(96, 55 + int(((len(completed_list) + len(failed_list)) / total_to_process) * 40))
+                        job["updated_at"] = datetime.utcnow()
+
+        tasks = [_process_single_clip(i, clip) for i, clip in enumerate(candidate_clips)]
+        await asyncio.gather(*tasks)
 
         # STEP 7: Finalization & Project History Update
         job["progress"] = 100

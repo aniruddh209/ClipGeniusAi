@@ -482,7 +482,7 @@ class IntelligentVideoReframer:
             crop_h = sh
             crop_x = (sw - crop_w) // 2
             crop_x -= crop_x % 2
-            vf = f"crop={crop_w}:{crop_h}:{crop_x}:0,scale={target_w}:{target_h}:flags=bicubic,setsar=1"
+            vf = f"crop={crop_w}:{crop_h}:{crop_x}:0,scale={target_w}:{target_h}:flags=fast_bilinear,setsar=1"
             return vf, False
 
         # 2. GTA 6 FIT / BLUR BACKGROUND (Original 16:9 centered with blurred duplicate background)
@@ -493,7 +493,7 @@ class IntelligentVideoReframer:
             filter_str = (
                 f"[0:v]split=2[bg][fg]; "
                 f"[bg]scale={target_w}:{target_h}:force_original_aspect_ratio=increase,crop={target_w}:{target_h},boxblur=25:5,setsar=1[bg_blur]; "
-                f"[fg]scale={target_w}:{scaled_h}:flags=bicubic,setsar=1[fg_scaled]; "
+                f"[fg]scale={target_w}:{scaled_h}:flags=fast_bilinear,setsar=1[fg_scaled]; "
                 f"[bg_blur][fg_scaled]overlay=0:{y_offset}[v]"
             )
             return filter_str, True
@@ -535,8 +535,8 @@ class IntelligentVideoReframer:
 
             filter_str = (
                 f"[0:v]split=2[in_cam][in_game]; "
-                f"[in_cam]crop={cam_w}:{cam_h}:{cam_x}:{cam_y},scale={target_w}:{top_h}:flags=bicubic,setsar=1[top]; "
-                f"[in_game]crop={game_w}:{game_h}:{game_x}:{game_y},scale={target_w}:{bot_h}:flags=bicubic,setsar=1[bottom]; "
+                f"[in_cam]crop={cam_w}:{cam_h}:{cam_x}:{cam_y},scale={target_w}:{top_h}:flags=fast_bilinear,setsar=1[top]; "
+                f"[in_game]crop={game_w}:{game_h}:{game_x}:{game_y},scale={target_w}:{bot_h}:flags=fast_bilinear,setsar=1[bottom]; "
                 f"[top][bottom]vstack=inputs=2[v]"
             )
             return filter_str, True
@@ -568,8 +568,8 @@ class IntelligentVideoReframer:
 
             filter_str = (
                 f"[0:v]split=2[in_game][in_cam]; "
-                f"[in_game]crop={game_w}:{game_h}:{game_x}:{game_y},scale={target_w}:{top_h}:flags=bicubic,setsar=1[top]; "
-                f"[in_cam]crop={cam_w}:{cam_h}:{cam_x}:{cam_y},scale={target_w}:{bot_h}:flags=bicubic,setsar=1[bottom]; "
+                f"[in_game]crop={game_w}:{game_h}:{game_x}:{game_y},scale={target_w}:{top_h}:flags=fast_bilinear,setsar=1[top]; "
+                f"[in_cam]crop={cam_w}:{cam_h}:{cam_x}:{cam_y},scale={target_w}:{bot_h}:flags=fast_bilinear,setsar=1[bottom]; "
                 f"[top][bottom]vstack=inputs=2[v]"
             )
             return filter_str, True
@@ -588,8 +588,8 @@ class IntelligentVideoReframer:
 
             filter_str = (
                 f"[0:v]split=2[in_game][in_cam]; "
-                f"[in_game]crop={crop_w}:{sh}:{crop_x}:0,scale={target_w}:{target_h}:flags=bicubic,setsar=1[bg]; "
-                f"[in_cam]crop={cam_w}:{cam_h}:{cam_x}:{cam_y},scale=380:285:flags=bicubic,setsar=1[cam_box]; "
+                f"[in_game]crop={crop_w}:{sh}:{crop_x}:0,scale={target_w}:{target_h}:flags=fast_bilinear,setsar=1[bg]; "
+                f"[in_cam]crop={cam_w}:{cam_h}:{cam_x}:{cam_y},scale=380:285:flags=fast_bilinear,setsar=1[cam_box]; "
                 f"[bg][cam_box]overlay=x=40:y=60[v]"
             )
             return filter_str, True
@@ -610,7 +610,7 @@ class IntelligentVideoReframer:
         stable_x = max(0, min(sw - crop_w, stable_x))
         stable_x -= stable_x % 2
         crop_y -= crop_y % 2
-        vf = f"crop={crop_w}:{crop_h}:{stable_x}:{crop_y},scale={target_w}:{target_h}:flags=bicubic,setsar=1"
+        vf = f"crop={crop_w}:{crop_h}:{stable_x}:{crop_y},scale={target_w}:{target_h}:flags=fast_bilinear,setsar=1"
         return vf, False
 
     async def render_reframed_video(
@@ -672,13 +672,14 @@ class IntelligentVideoReframer:
 
         cmd.extend([
             "-c:v", "libx264",
-            "-preset", "fast",
-            "-crf", "17", # Near-lossless visual master fidelity
+            "-preset", "veryfast",
+            "-crf", "18",
             "-tune", "fastdecode",
+            "-threads", "0",
             "-pix_fmt", "yuv420p",
             "-avoid_negative_ts", "make_zero",
             "-c:a", "aac",
-            "-b:a", "256k",
+            "-b:a", "192k",
             "-ar", "48000",
             "-ac", "2",
             output_video_path

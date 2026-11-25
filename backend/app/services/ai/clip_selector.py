@@ -84,7 +84,8 @@ class IntelligentClipDetector:
         duration_range: ClipDurationRange = ClipDurationRange.RANGE_30_60,
         max_clips: int = 6,
         virality_threshold: float = 55.0,
-        video_title: str = ""
+        video_title: str = "",
+        known_duration: Optional[float] = None
     ) -> List[CandidateClip]:
         segments = transcript_data.get("segments", []) if transcript_data else []
         min_dur, max_dur = DURATION_BOUNDS.get(duration_range, (28.0, 62.0))
@@ -92,8 +93,8 @@ class IntelligentClipDetector:
 
         if not segments:
             logger.info("No speech segments in transcript. Generating visual highlight moments from video pacing and scene continuity...")
-            total_duration = 0.0
-            if video_path and Path(video_path).exists():
+            total_duration = float(known_duration) if known_duration and known_duration > 0.0 else 0.0
+            if total_duration <= 0.0 and video_path and Path(video_path).exists():
                 try:
                     import cv2
                     cap = cv2.VideoCapture(str(video_path))
@@ -275,8 +276,8 @@ class IntelligentClipDetector:
 
         # If STILL below max_clips, backfill with diverse timeline highlight windows across the video
         if len(selected_clips) < max_clips:
-            total_duration = 0.0
-            if video_path and os.path.exists(video_path):
+            total_duration = float(known_duration) if known_duration and known_duration > 0.0 else 0.0
+            if total_duration <= 0.0 and video_path and os.path.exists(video_path):
                 try:
                     import cv2
                     cap = cv2.VideoCapture(video_path)
