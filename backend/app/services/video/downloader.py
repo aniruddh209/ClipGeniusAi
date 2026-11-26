@@ -188,14 +188,9 @@ class VideoDownloader:
             "quiet": True,
             "no_warnings": True,
             "prefer_ffmpeg": True,
-            "remote_components": ["ejs:github"],
+            "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
             "socket_timeout": 45,
             "http_chunk_size": 10485760,
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["ios", "android", "mweb", "web"]
-                }
-            }
         }
 
         def _sync_download():
@@ -214,12 +209,8 @@ class VideoDownloader:
                     "noplaylist": True,
                     "quiet": True,
                     "prefer_ffmpeg": True,
+                    "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
                     "http_chunk_size": 10485760,
-                    "extractor_args": {
-                        "youtube": {
-                            "player_client": ["ios", "android", "mweb", "web"]
-                        }
-                    }
                 }
                 def _fallback_download():
                     with yt_dlp.YoutubeDL(fallback_opts) as ydl:
@@ -346,11 +337,7 @@ class VideoDownloader:
             "noplaylist": True,
             "skip_download": True,
             "socket_timeout": 30,
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["ios", "android", "mweb", "web"]
-                }
-            }
+            "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
         }
 
         # Check for cookies file
@@ -419,16 +406,12 @@ class VideoDownloader:
             "quiet": True,
             "no_warnings": True,
             "socket_timeout": 30,
+            "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
             "postprocessors": [{
                 "key": "FFmpegExtractAudio",
                 "preferredcodec": "mp3",
                 "preferredquality": "128",
             }],
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["ios", "android", "mweb", "web"]
-                }
-            }
         }
         if "cookiefile" in meta_opts:
             audio_opts["cookiefile"] = meta_opts["cookiefile"]
@@ -530,12 +513,8 @@ class VideoDownloader:
             "quiet": True,
             "no_warnings": True,
             "prefer_ffmpeg": True,
+            "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
             "socket_timeout": 35,
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["android", "ios", "mweb", "web"]
-                }
-            }
         }
 
         cookie_candidates = [
@@ -558,11 +537,6 @@ class VideoDownloader:
             logger.warning(f"cut_direct_youtube_slice initial download failed ({e}); retrying with resilient fallback...")
             fallback_opts = dict(slice_opts)
             fallback_opts["format"] = "18/bestvideo+bestaudio/best"
-            fallback_opts["extractor_args"] = {
-                "youtube": {
-                    "player_client": ["android", "ios", "mweb", "web"]
-                }
-            }
             try:
                 await asyncio.to_thread(_download_slice, fallback_opts)
             except Exception as e2:

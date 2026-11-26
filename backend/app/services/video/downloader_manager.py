@@ -173,11 +173,7 @@ class DownloaderManager:
             "no_warnings": True,
             "skip_download": True,
             "socket_timeout": 30,
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["android", "ios", "mweb", "web"]
-                }
-            }
+            "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
         }
         if cookie_path:
             ydl_opts["cookiefile"] = cookie_path
@@ -196,11 +192,7 @@ class DownloaderManager:
                 "no_warnings": True,
                 "skip_download": True,
                 "socket_timeout": 30,
-                "extractor_args": {
-                    "youtube": {
-                        "player_client": ["android", "ios", "mweb", "web"]
-                    }
-                }
+                "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
             }
             if cookie_path:
                 fallback_opts["cookiefile"] = cookie_path
@@ -220,80 +212,96 @@ class DownloaderManager:
         raw_formats = info.get("formats", [])
         available_formats: List[Dict[str, Any]] = []
 
-        # Locate audio streams to compute accurate combined file size
+        # Locate audio streams (preferring HTTPS) to compute accurate combined file size
         audio_streams = [f for f in raw_formats if f.get("vcodec") == "none" and f.get("acodec") != "none"]
-        best_audio = sorted(audio_streams, key=lambda x: x.get("abr") or 0, reverse=True)[0] if audio_streams else None
+        audio_https = [f for f in audio_streams if f.get("protocol") == "https"]
+        pool_audio = audio_https or audio_streams
+        best_audio = sorted(pool_audio, key=lambda x: (x.get("abr") or x.get("tbr") or 0), reverse=True)[0] if pool_audio else None
+        best_audio_id = best_audio["format_id"] if best_audio else "bestaudio"
         audio_bytes = (best_audio.get("filesize") or best_audio.get("filesize_approx")) if best_audio else None
         if not audio_bytes and duration > 0:
             audio_bytes = int((128 * 1000 / 8) * duration)
         elif not audio_bytes:
             audio_bytes = 0
 
+        # Video streams pool
+        video_streams = [f for f in raw_formats if f.get("vcodec") != "none"]
+
         # Resolution targets with exact height and width ranges for accurate stream isolation
         target_res = [
-            {"name": "4K Ultra HD", "height": 2160, "res_label": "2160p (4K)", "min_h": 1800, "min_w": 3200, "typical_kbps": 14000},
-            {"name": "2K Quad HD", "height": 1440, "res_label": "1440p (2K)", "min_h": 1200, "min_w": 2200, "typical_kbps": 7000},
-            {"name": "Full HD", "height": 1080, "res_label": "1080p FHD", "min_h": 850, "min_w": 1500, "typical_kbps": 2200},
-            {"name": "HD Standard", "height": 720, "res_label": "720p HD", "min_h": 600, "min_w": 1000, "typical_kbps": 1100},
-            {"name": "SD Medium", "height": 480, "res_label": "480p SD", "min_h": 400, "min_w": 650, "typical_kbps": 550},
-            {"name": "Compact", "height": 360, "res_label": "360p", "min_h": 300, "min_w": 450, "typical_kbps": 320}
+            {"name": "4K Ultra HD", "height": 2160, "res_label": "2160p (4K)", "min_h": 1800, "min_w": 3200, "typical_kbps": 16000},
+            {"name": "2K Quad HD", "height": 1440, "res_label": "1440p (2K)", "min_h": 1200, "min_w": 2200, "typical_kbps": 8000},
+            {"name": "Full HD", "height": 1080, "res_label": "1080p FHD", "min_h": 850, "min_w": 1500, "typical_kbps": 3000},
+            {"name": "HD Standard", "height": 720, "res_label": "720p HD", "min_h": 600, "min_w": 1000, "typical_kbps": 1500},
+            {"name": "SD Medium", "height": 480, "res_label": "480p SD", "min_h": 400, "min_w": 650, "typical_kbps": 700},
+            {"name": "Compact", "height": 360, "res_label": "360p", "min_h": 300, "min_w": 450, "typical_kbps": 400}
         ]
 
         found_heights = set()
-        ydl_selector = yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True, "skip_download": True})
 
         for target in target_res:
-            fmt_id = f"bestvideo[height<={target['height']}]+bestaudio/best[height<={target['height']}]/best"
-            try:
-                selector_fn = ydl_selector.build_format_selector(fmt_id)
-                chosen = list(selector_fn({"formats": raw_formats}))
-                if chosen:
-                    sel = chosen[0]
-                    rf = sel.get("requested_formats")
-                    v = rf[0] if rf else sel
-                    a = rf[1] if (rf and len(rf) > 1) else None
+            th = target["height"]
+            min_h = target["min_h"]
+            min_w = target["min_w"]
 
-                    v_h = v.get("height") or 0
-                    v_w = v.get("width") or 0
-                    if v_h < target["min_h"] and v_w < target["min_w"]:
-                        continue
+            candidates = []
+            for f in video_streams:
+                fh = f.get("height") or 0
+                fw = f.get("width") or 0
+                max_dim = max(fh, fw)
+                min_dim = min(fh, fw)
+                if fh == th or (min_dim >= int(min_h * 0.85) and min_dim <= th and max_dim <= max(th * 2, min_w * 1.2)):
+                    candidates.append(f)
 
-                    if target["height"] in found_heights:
-                        continue
-                    found_heights.add(target["height"])
+            if not candidates:
+                continue
 
-                    fps = int(v.get("fps") or 30)
-                    v_sz = v.get("filesize") or v.get("filesize_approx")
-                    a_sz = (a.get("filesize") or a.get("filesize_approx")) if a else audio_bytes
+            # Prefer direct HTTPS streams over HLS fragments, then highest quality/bitrate
+            cand_https = [c for c in candidates if c.get("protocol") == "https"]
+            pool = cand_https if cand_https else candidates
+            best_v = sorted(pool, key=lambda x: (x.get("height") or 0, x.get("tbr") or x.get("vbr") or 0), reverse=True)[0]
 
-                    if v_sz and v_sz > 0:
-                        total_size = v_sz + (a_sz or 0)
-                        size_str = format_bytes(total_size)
-                    elif duration > 0:
-                        kbps = v.get("vbr") or v.get("tbr") or target["typical_kbps"]
-                        total_size = int((kbps * 1000 / 8) * duration) + (a_sz or 0)
-                        size_str = f"~{format_bytes(total_size)}"
-                    else:
-                        total_size = None
-                        size_str = "Adaptive Size"
+            v_id = best_v["format_id"]
+            if target["height"] in found_heights:
+                continue
+            found_heights.add(target["height"])
 
-                    is_recommended = target["height"] == 1080 or (target["height"] == 720 and 1080 not in found_heights)
+            fps = int(best_v.get("fps") or 30)
+            v_sz = best_v.get("filesize") or best_v.get("filesize_approx")
+            a_sz = audio_bytes
 
-                    available_formats.append({
-                        "format_id": fmt_id,
-                        "label": f"{target['name']} ({target['res_label']})",
-                        "resolution": target["res_label"],
-                        "height": target["height"],
-                        "fps": fps,
-                        "ext": "mp4",
-                        "filesize_bytes": total_size,
-                        "filesize_formatted": size_str,
-                        "type": "video",
-                        "recommended": is_recommended,
-                        "badge": f"{fps}fps • MP4"
-                    })
-            except Exception as e:
-                logger.warning(f"Error evaluating format for {target['res_label']}: {e}")
+            if v_sz and v_sz > 0:
+                total_size = v_sz + (a_sz or 0)
+                size_str = format_bytes(total_size)
+            elif duration > 0:
+                kbps = best_v.get("vbr") or best_v.get("tbr") or target["typical_kbps"]
+                total_size = int((kbps * 1000 / 8) * duration) + (a_sz or 0)
+                size_str = f"~{format_bytes(total_size)}"
+            else:
+                total_size = None
+                size_str = "Adaptive Size"
+
+            # Strict format specification guarantees requested resolution
+            if best_v.get("acodec") != "none":
+                fmt_id = f"{v_id}/best[height<={th}]"
+            else:
+                fmt_id = f"{v_id}+{best_audio_id}/bestvideo[height={th}]+bestaudio/bestvideo[height<={th}][height>{int(min_h*0.8)}]+bestaudio"
+
+            is_recommended = target["height"] == 1080 or (target["height"] == 720 and 1080 not in found_heights)
+
+            available_formats.append({
+                "format_id": fmt_id,
+                "label": f"{target['name']} ({target['res_label']})",
+                "resolution": target["res_label"],
+                "height": target["height"],
+                "fps": fps,
+                "ext": "mp4",
+                "filesize_bytes": total_size,
+                "filesize_formatted": size_str,
+                "type": "video",
+                "recommended": is_recommended,
+                "badge": f"{fps}fps • MP4"
+            })
 
         # Fallback if no specific video heights parsed
         if not available_formats:
@@ -557,11 +565,6 @@ class DownloaderManager:
             "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
             "http_chunk_size": 10485760,  # 10MB chunks
             "socket_timeout": 35,
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["android", "ios", "mweb", "web"]
-                }
-            },
             "http_headers": {
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
                 "Accept-Language": "en-US,en;q=0.9",
