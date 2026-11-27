@@ -257,24 +257,91 @@ class IntelligentClipDetector:
                         )
                         raw_candidates.append(candidate)
 
-        # 4. Rank candidates by overall score
+        # 4. Stratified Temporal Selection across the full video duration
+        # Determine total duration of video
+        total_duration = float(known_duration) if known_duration and known_duration > 0.0 else 0.0
+        if total_duration <= 0.0 and video_path and os.path.exists(video_path):
+            try:
+                import cv2
+                cap = cv2.VideoCapture(video_path)
+                total_duration = cap.get(cv2.CAP_PROP_FRAME_COUNT) / max(1.0, cap.get(cv2.CAP_PROP_FPS))
+                cap.release()
+            except Exception:
+                pass
+        if total_duration <= 0.0 and segments:
+            total_duration = float(segments[-1].get("end", 0.0))
+        if total_duration <= 0.0 and raw_candidates:
+            total_duration = max(c.end_time for c in raw_candidates)
+        if total_duration <= 0.0:
+            total_duration = 300.0
+
         raw_candidates.sort(key=lambda c: c.overall_score, reverse=True)
+        selected_clips: List[CandidateClip] = []
 
-        # 5. Non-Maximum Suppression (Overlap filtering)
-        selected_clips = self._apply_nms(raw_candidates, max_clips=max_clips, max_overlap_sec=6.0, max_shared_pct=0.35)
+        # If video is long enough (> 90s) and max_clips > 1, apply Stratified Temporal Window Selection
+        # This guarantees uniform distribution of the best moments across the ENTIRE video duration
+        # (e.g. beginning, early-middle, middle, late-middle, and climax/ending)
+        if total_duration >= 90.0 and max_clips > 1 and raw_candidates:
+            num_bins = max_clips
+            bin_size = total_duration / float(num_bins)
+            logger.info(f"Applying Stratified Temporal Selection across {num_bins} timeline zones (bin size: {bin_size:.1f}s, total duration: {total_duration:.1f}s)...")
 
-        # If strict NMS returned fewer than requested max_clips, relax overlap threshold to include more top candidates
-        if len(selected_clips) < max_clips and raw_candidates:
-            selected_ids = {c.id for c in selected_clips}
-            relaxed_nms = self._apply_nms(raw_candidates, max_clips=max_clips, max_overlap_sec=12.0, max_shared_pct=0.60)
-            for c in relaxed_nms:
-                if len(selected_clips) >= max_clips:
-                    break
-                if c.id not in selected_ids:
-                    selected_clips.append(c)
-                    selected_ids.add(c.id)
+            selected_ids = set()
 
-        # If STILL below max_clips, backfill with diverse timeline highlight windows across the video
+            # Pass 1: Select the top candidate in each evenly spaced temporal bin
+            for bin_idx in range(num_bins):
+                bin_start = bin_idx * bin_size
+                bin_end = (bin_idx + 1) * bin_size
+
+                bin_candidates = [
+                    c for c in raw_candidates
+                    if c.id not in selected_ids and (
+                        (bin_start <= c.start_time < bin_end) or
+                        (bin_start <= (c.start_time + c.end_time) / 2.0 < bin_end)
+                    )
+                ]
+                bin_candidates.sort(key=lambda c: c.overall_score, reverse=True)
+
+                for cand in bin_candidates:
+                    has_overlap = False
+                    for existing in selected_clips:
+                        ov_start = max(cand.start_time, existing.start_time)
+                        ov_end = min(cand.end_time, existing.end_time)
+                        if ov_end > ov_start:
+                            ov_dur = ov_end - ov_start
+                            shared_pct = ov_dur / min(cand.duration, existing.duration)
+                            if ov_dur > 8.0 and shared_pct > 0.35:
+                                has_overlap = True
+                                break
+                    if not has_overlap:
+                        selected_clips.append(cand)
+                        selected_ids.add(cand.id)
+                        break
+
+            # Pass 2: If any zones lacked speech candidates, backfill from remaining high-scoring candidates
+            if len(selected_clips) < max_clips:
+                remaining_candidates = [c for c in raw_candidates if c.id not in selected_ids]
+                for cand in remaining_candidates:
+                    if len(selected_clips) >= max_clips:
+                        break
+                    has_overlap = False
+                    for existing in selected_clips:
+                        ov_start = max(cand.start_time, existing.start_time)
+                        ov_end = min(cand.end_time, existing.end_time)
+                        if ov_end > ov_start:
+                            ov_dur = ov_end - ov_start
+                            shared_pct = ov_dur / min(cand.duration, existing.duration)
+                            if ov_dur > 8.0 and shared_pct > 0.35:
+                                has_overlap = True
+                                break
+                    if not has_overlap:
+                        selected_clips.append(cand)
+                        selected_ids.add(cand.id)
+        else:
+            # Fallback to standard NMS if video is short
+            selected_clips = self._apply_nms(raw_candidates, max_clips=max_clips, max_overlap_sec=6.0, max_shared_pct=0.35)
+
+        # 5. If STILL below max_clips, backfill with diverse timeline highlight windows across the video
         if len(selected_clips) < max_clips:
             total_duration = float(known_duration) if known_duration and known_duration > 0.0 else 0.0
             if total_duration <= 0.0 and video_path and os.path.exists(video_path):

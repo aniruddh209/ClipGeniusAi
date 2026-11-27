@@ -482,7 +482,7 @@ class IntelligentVideoReframer:
             crop_h = sh
             crop_x = (sw - crop_w) // 2
             crop_x -= crop_x % 2
-            vf = f"crop={crop_w}:{crop_h}:{crop_x}:0,scale={target_w}:{target_h}:flags=fast_bilinear,setsar=1"
+            vf = f"crop={crop_w}:{crop_h}:{crop_x}:0,scale={target_w}:{target_h}:flags=bicubic,setsar=1"
             return vf, False
 
         # 2. GTA 6 FIT / BLUR BACKGROUND (Original 16:9 centered with blurred duplicate background)
@@ -493,13 +493,26 @@ class IntelligentVideoReframer:
             filter_str = (
                 f"[0:v]split=2[bg][fg]; "
                 f"[bg]scale={target_w}:{target_h}:force_original_aspect_ratio=increase,crop={target_w}:{target_h},boxblur=25:5,setsar=1[bg_blur]; "
-                f"[fg]scale={target_w}:{scaled_h}:flags=fast_bilinear,setsar=1[fg_scaled]; "
+                f"[fg]scale={target_w}:{scaled_h}:flags=bicubic,setsar=1[fg_scaled]; "
                 f"[bg_blur][fg_scaled]overlay=0:{y_offset}[v]"
             )
             return filter_str, True
 
+        # Check if creator webcam / face actually exists in the video
+        has_facecam = analysis_result.get("faces_detected", False) and analysis_result.get("total_faces_found", 0) > 0
+
         # 3. GTA 6 TOP / STREAMER SPLIT (Streamer Cam Top 40% + Gameplay Bottom 60%)
         if mode in [CropMode.STREAMER_SPLIT, "streamer_split"]:
+            if not has_facecam:
+                logger.info("No creator facecam detected in video. Adapting Streamer Split template to full-screen 9:16 pure gameplay action.")
+                crop_w = int(sh * target_w / target_h)
+                crop_w -= crop_w % 2
+                crop_h = sh
+                crop_x = (sw - crop_w) // 2
+                crop_x -= crop_x % 2
+                vf = f"crop={crop_w}:{crop_h}:{crop_x}:0,scale={target_w}:{target_h}:flags=bicubic,setsar=1"
+                return vf, False
+
             top_h = int(round(target_h * 0.40))
             top_h -= top_h % 2
             bot_h = target_h - top_h
@@ -511,16 +524,23 @@ class IntelligentVideoReframer:
             cam_h = int(round(cam_w / cam_aspect))
             cam_h -= cam_h % 2
 
-            # Use detected face if available, otherwise default to top right or center top
+            # Use detected face coordinates to center the creator
             keyframes = analysis_result.get("keyframes", [])
-            valid_x = [kf.crop_x for kf in keyframes if kf.crop_x is not None and kf.crop_x >= 0]
-            if valid_x:
-                face_center_x = int(np.median(valid_x))
+            face_coords = []
+            for kf in keyframes:
+                for f in getattr(kf, "faces", []) or []:
+                    if isinstance(f, dict) and "x" in f and "w" in f:
+                        face_coords.append((f["x"] + f["w"] / 2.0, f.get("y", 0) + f.get("h", 0) / 2.0))
+            if face_coords:
+                face_center_x = int(np.median([c[0] for c in face_coords]))
+                face_center_y = int(np.median([c[1] for c in face_coords]))
                 cam_x = max(0, min(sw - cam_w, face_center_x - (cam_w // 2)))
+                cam_y = max(0, min(sh - cam_h, face_center_y - (cam_h // 2)))
             else:
-                cam_x = max(0, sw - cam_w - int(sw * 0.05)) # Top-right standard streamer placement
+                cam_x = max(0, sw - cam_w - int(sw * 0.05))
+                cam_y = 0
             cam_x -= cam_x % 2
-            cam_y = 0
+            cam_y -= cam_y % 2
 
             # Calculate gameplay crop with aspect ratio matching target_w:bot_h (1080:1152)
             game_aspect = target_w / bot_h
@@ -535,14 +555,24 @@ class IntelligentVideoReframer:
 
             filter_str = (
                 f"[0:v]split=2[in_cam][in_game]; "
-                f"[in_cam]crop={cam_w}:{cam_h}:{cam_x}:{cam_y},scale={target_w}:{top_h}:flags=fast_bilinear,setsar=1[top]; "
-                f"[in_game]crop={game_w}:{game_h}:{game_x}:{game_y},scale={target_w}:{bot_h}:flags=fast_bilinear,setsar=1[bottom]; "
+                f"[in_cam]crop={cam_w}:{cam_h}:{cam_x}:{cam_y},scale={target_w}:{top_h}:flags=bicubic,setsar=1[top]; "
+                f"[in_game]crop={game_w}:{game_h}:{game_x}:{game_y},scale={target_w}:{bot_h}:flags=bicubic,setsar=1[bottom]; "
                 f"[top][bottom]vstack=inputs=2[v]"
             )
             return filter_str, True
 
         # 4. GTA 6 CAM / STREAMER BOTTOM (Gameplay Top 60% + Streamer Cam Bottom 40%)
         if mode in [CropMode.STREAMER_BOTTOM, "streamer_bottom"]:
+            if not has_facecam:
+                logger.info("No creator facecam detected in video. Adapting Streamer Bottom template to full-screen 9:16 pure gameplay action.")
+                crop_w = int(sh * target_w / target_h)
+                crop_w -= crop_w % 2
+                crop_h = sh
+                crop_x = (sw - crop_w) // 2
+                crop_x -= crop_x % 2
+                vf = f"crop={crop_w}:{crop_h}:{crop_x}:0,scale={target_w}:{target_h}:flags=bicubic,setsar=1"
+                return vf, False
+
             top_h = int(round(target_h * 0.60))
             top_h -= top_h % 2
             bot_h = target_h - top_h
@@ -562,14 +592,28 @@ class IntelligentVideoReframer:
             cam_w -= cam_w % 2
             cam_h = int(round(cam_w / cam_aspect))
             cam_h -= cam_h % 2
-            cam_x = max(0, sw - cam_w - int(sw * 0.05))
+
+            keyframes = analysis_result.get("keyframes", [])
+            face_coords = []
+            for kf in keyframes:
+                for f in getattr(kf, "faces", []) or []:
+                    if isinstance(f, dict) and "x" in f and "w" in f:
+                        face_coords.append((f["x"] + f["w"] / 2.0, f.get("y", 0) + f.get("h", 0) / 2.0))
+            if face_coords:
+                face_center_x = int(np.median([c[0] for c in face_coords]))
+                face_center_y = int(np.median([c[1] for c in face_coords]))
+                cam_x = max(0, min(sw - cam_w, face_center_x - (cam_w // 2)))
+                cam_y = max(0, min(sh - cam_h, face_center_y - (cam_h // 2)))
+            else:
+                cam_x = max(0, sw - cam_w - int(sw * 0.05))
+                cam_y = 0
             cam_x -= cam_x % 2
-            cam_y = 0
+            cam_y -= cam_y % 2
 
             filter_str = (
                 f"[0:v]split=2[in_game][in_cam]; "
-                f"[in_game]crop={game_w}:{game_h}:{game_x}:{game_y},scale={target_w}:{top_h}:flags=fast_bilinear,setsar=1[top]; "
-                f"[in_cam]crop={cam_w}:{cam_h}:{cam_x}:{cam_y},scale={target_w}:{bot_h}:flags=fast_bilinear,setsar=1[bottom]; "
+                f"[in_game]crop={game_w}:{game_h}:{game_x}:{game_y},scale={target_w}:{top_h}:flags=bicubic,setsar=1[top]; "
+                f"[in_cam]crop={cam_w}:{cam_h}:{cam_x}:{cam_y},scale={target_w}:{bot_h}:flags=bicubic,setsar=1[bottom]; "
                 f"[top][bottom]vstack=inputs=2[v]"
             )
             return filter_str, True

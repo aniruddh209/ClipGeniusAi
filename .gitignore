@@ -46,6 +46,8 @@ backend/uploads/thumbnails/*
 !backend/uploads/thumbnails/.gitkeep
 backend/downloads/*
 !backend/downloads/.gitkeep
+backend/data/*.json
+!backend/data/.gitkeep
 *.part
 *.ytdl
 

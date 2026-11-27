@@ -1,10 +1,12 @@
 import os
 import re
 import time
+import json
 import uuid
 import shutil
 import asyncio
 import threading
+import subprocess
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timezone
@@ -68,11 +70,56 @@ class DownloaderManager:
         self._threads: Dict[str, threading.Thread] = {}
         self._stop_flags: Dict[str, threading.Event] = {}
         self._lock = threading.Lock()
+        self._storage_file = Path(settings.BASE_DIR) / "data" / "tasks_store.json"
+        try:
+            self._storage_file.parent.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
         self._initialized = False
         self._main_loop: Optional[asyncio.AbstractEventLoop] = None
+        self._load_tasks_from_disk()
+
+    def _save_tasks_to_disk(self):
+        """Persists all download tasks to a local atomic JSON file on disk"""
+        try:
+            with self._lock:
+                data = {}
+                for k, v in self._tasks.items():
+                    clean_v = v.copy()
+                    clean_v.pop("_id", None)
+                    data[k] = clean_v
+            tmp_file = self._storage_file.with_suffix(".tmp")
+            with open(tmp_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            tmp_file.replace(self._storage_file)
+        except Exception as e:
+            logger.error(f"Failed to persist download tasks to disk: {e}")
+
+    def _load_tasks_from_disk(self):
+        """Loads download tasks from disk JSON store on startup or reload"""
+        try:
+            if self._storage_file.exists() and self._storage_file.stat().st_size > 0:
+                with open(self._storage_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, dict):
+                    with self._lock:
+                        for k, v in data.items():
+                            if k not in self._tasks:
+                                out_p = v.get("output_path")
+                                if out_p and Path(out_p).exists():
+                                    v["status"] = "completed"
+                                    v["progress_percentage"] = 100.0
+                                elif v.get("status") in ["downloading", "queued", "connecting"]:
+                                    v["status"] = "interrupted"
+                                    v["speed_formatted"] = "Interrupted"
+                                    v["eta_formatted"] = "Ready to Resume"
+                                self._tasks[k] = v
+                    logger.info(f"Loaded {len(self._tasks)} download task(s) from persistent disk storage.")
+        except Exception as e:
+            logger.warning(f"Could not load download tasks from disk JSON: {e}")
 
     async def initialize(self):
-        """Loads existing tasks from database into cache on startup and restores queues safely"""
+        """Loads existing tasks from disk and database into cache on startup and restores queues safely"""
         try:
             self._main_loop = asyncio.get_running_loop()
         except Exception:
@@ -80,54 +127,88 @@ class DownloaderManager:
 
         if self._initialized:
             return
+
+        # First load from local disk
+        self._load_tasks_from_disk()
+
         db = get_database()
         if db is not None:
             try:
                 cursor = db.download_tasks.find().sort("created_at", -1)
                 async for doc in cursor:
                     doc["_id"] = str(doc.get("_id", ""))
-                    target_dir = Path(doc.get("destination_dir") or settings.DOWNLOADS_DIR)
                     task_id = doc.get("task_id")
-
-                    # Scan disk for partial files
-                    found_part_size = 0
-                    if target_dir.exists():
-                        for p in target_dir.glob(f"{task_id}.*"):
-                            if p.name.endswith(".part") or p.name.endswith(".ytdl"):
-                                try:
-                                    found_part_size = max(found_part_size, p.stat().st_size)
-                                except Exception:
-                                    pass
-
-                    if found_part_size > 0:
-                        doc["downloaded_bytes"] = found_part_size
-                        if doc.get("total_bytes") and doc["total_bytes"] > 0:
-                            doc["progress_percentage"] = min(99.0, round((found_part_size / doc["total_bytes"]) * 100.0, 1))
-
-                    # If server restarted while downloading, set to interrupted (safe recovery state)
-                    if doc.get("status") in ["downloading", "queued"]:
-                        doc["status"] = "interrupted"
-                        doc["speed_formatted"] = "Interrupted"
-                        doc["eta_formatted"] = "Interrupted"
-                        doc["error_message"] = f"Backend was restarted. Partial media preserved safely ({format_bytes(found_part_size)}). Ready to resume."
-                        await db.download_tasks.update_one(
-                            {"task_id": doc["task_id"]},
-                            {"$set": {
-                                "status": "interrupted",
-                                "speed_formatted": "Interrupted",
-                                "eta_formatted": "Interrupted",
-                                "downloaded_bytes": doc["downloaded_bytes"],
-                                "progress_percentage": doc["progress_percentage"],
-                                "error_message": doc["error_message"]
-                            }}
-                        )
-                    self._tasks[doc["task_id"]] = doc
+                    if task_id:
+                        self._tasks[task_id] = doc
             except Exception as e:
                 logger.warning(f"Could not load download tasks from MongoDB: {e}")
+
+        # Re-verify all tasks against filesystem
+        with self._lock:
+            for task_id, doc in list(self._tasks.items()):
+                target_dir = Path(doc.get("destination_dir") or settings.DOWNLOADS_DIR)
+                out_p = doc.get("output_path")
+
+                # If final file already exists, it is 100% completed
+                if out_p and Path(out_p).exists() and Path(out_p).stat().st_size > 0:
+                    doc["status"] = "completed"
+                    doc["progress_percentage"] = 100.0
+                    doc["speed_formatted"] = "0.0 MB/s"
+                    doc["eta_formatted"] = "Completed"
+                    continue
+
+                # Check if file exists matching task_id in target_dir
+                found_final = None
+                if target_dir.exists():
+                    for p in target_dir.glob(f"{task_id}.*"):
+                        if not p.name.endswith(".part") and not p.name.endswith(".ytdl") and ".temp." not in p.name and not re.search(r'\.f\d+\.', p.name):
+                            found_final = p
+                            break
+                    if not found_final:
+                        for p in target_dir.glob(f"*{task_id[-4:]}.*"):
+                            if not p.name.endswith(".part") and not p.name.endswith(".ytdl") and ".temp." not in p.name:
+                                found_final = p
+                                break
+
+                if found_final and found_final.exists() and found_final.stat().st_size > 0:
+                    doc["status"] = "completed"
+                    doc["output_path"] = str(found_final)
+                    doc["output_filename"] = found_final.name
+                    doc["progress_percentage"] = 100.0
+                    doc["speed_formatted"] = "0.0 MB/s"
+                    doc["eta_formatted"] = "Completed"
+                    continue
+
+                # Scan disk for partial files
+                found_part_size = 0
+                if target_dir.exists():
+                    for p in target_dir.glob(f"{task_id}.*"):
+                        if p.name.endswith(".part") or p.name.endswith(".ytdl") or re.search(r'\.f\d+\.', p.name):
+                            try:
+                                found_part_size = max(found_part_size, p.stat().st_size)
+                            except Exception:
+                                pass
+
+                if found_part_size > 0:
+                    doc["downloaded_bytes"] = max(doc.get("downloaded_bytes", 0), found_part_size)
+                    if doc.get("total_bytes") and doc["total_bytes"] > 0:
+                        doc["progress_percentage"] = min(99.0, round((doc["downloaded_bytes"] / doc["total_bytes"]) * 100.0, 1))
+
+                # If server restarted while downloading, set to interrupted (safe recovery state)
+                if doc.get("status") in ["downloading", "queued", "connecting"]:
+                    doc["status"] = "interrupted"
+                    doc["speed_formatted"] = "Interrupted"
+                    doc["eta_formatted"] = "Ready to Resume"
+                    doc["error_message"] = f"Backend was reloaded. Partial media preserved safely ({format_bytes(doc.get('downloaded_bytes', found_part_size))}). Ready to resume."
+
+        self._save_tasks_to_disk()
         self._initialized = True
 
     def _sync_save_task(self, task: Dict[str, Any]):
-        """Persists task state to MongoDB asynchronously without blocking"""
+        """Persists task state to local disk and MongoDB asynchronously without blocking"""
+        # Always write to local disk
+        self._save_tasks_to_disk()
+
         db = get_database()
         if db is not None:
             try:
@@ -499,6 +580,66 @@ class DownloaderManager:
 
         # Multi-stream progress tracker
         completed_streams: Dict[str, int] = {}
+        for p in target_dir.glob(f"{task_id}.*"):
+            if not p.name.endswith(".part") and not p.name.endswith(".ytdl") and ".temp." not in p.name:
+                try:
+                    completed_streams[str(p)] = p.stat().st_size
+                except Exception:
+                    pass
+
+        def _find_completed_file() -> Optional[Path]:
+            for p in target_dir.glob(f"{task_id}.*"):
+                name_l = p.name.lower()
+                if (
+                    not name_l.endswith(".part")
+                    and not name_l.endswith(".ytdl")
+                    and ".temp." not in name_l
+                    and not re.search(r'\.f\d+\.', name_l)
+                    and p.stat().st_size > 0
+                ):
+                    return p
+            return None
+
+        def _check_and_mux_existing_streams() -> Optional[Path]:
+            """If both video stream and audio stream already finished downloading on disk, mux them directly"""
+            try:
+                video_files = []
+                audio_files = []
+                for p in target_dir.glob(f"{task_id}.*"):
+                    n = p.name.lower()
+                    if n.endswith(".part") or n.endswith(".ytdl") or ".temp." in n:
+                        continue
+                    m = re.search(r'\.f(\d+)\.', n)
+                    if m and p.stat().st_size > 0:
+                        sz = p.stat().st_size
+                        if sz > 20 * 1024 * 1024:
+                            video_files.append((sz, p))
+                        else:
+                            audio_files.append((sz, p))
+                
+                if video_files and audio_files:
+                    video_files.sort(reverse=True, key=lambda x: x[0])
+                    audio_files.sort(reverse=True, key=lambda x: x[0])
+                    v_p = video_files[0][1]
+                    a_p = audio_files[0][1]
+                    mux_target = target_dir / f"{task_id}.{ext}"
+                    logger.info(f"Existing completed streams found on disk ({v_p.name}, {a_p.name}). Performing direct FFmpeg mux...")
+                    mux_cmd = [
+                        "/opt/homebrew/bin/ffmpeg", "-y",
+                        "-i", str(v_p),
+                        "-i", str(a_p),
+                        "-c", "copy",
+                        str(mux_target)
+                    ]
+                    res = subprocess.run(mux_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=180)
+                    if res.returncode == 0 and mux_target.exists() and mux_target.stat().st_size > 0:
+                        logger.info(f"Direct FFmpeg mux succeeded: {mux_target.name}")
+                        v_p.unlink(missing_ok=True)
+                        a_p.unlink(missing_ok=True)
+                        return mux_target
+            except Exception as e:
+                logger.warning(f"Direct mux check exception: {e}")
+            return None
 
         def progress_hook(d: Dict[str, Any]):
             if stop_event.is_set():
@@ -530,10 +671,10 @@ class DownloaderManager:
                 with self._lock:
                     if task_id in self._tasks:
                         t = self._tasks[task_id]
-                        t["downloaded_bytes"] = cumulative_downloaded
+                        t["downloaded_bytes"] = max(t.get("downloaded_bytes", 0), cumulative_downloaded)
                         if total > 0:
-                            t["total_bytes"] = total
-                        t["progress_percentage"] = percent
+                            t["total_bytes"] = max(t.get("total_bytes", 0), total)
+                        t["progress_percentage"] = max(t.get("progress_percentage", 0.0), percent)
                         t["speed_bytes_sec"] = speed
                         t["speed_formatted"] = format_speed(speed)
                         t["eta_seconds"] = eta
@@ -550,7 +691,7 @@ class DownloaderManager:
                 with self._lock:
                     if task_id in self._tasks:
                         t = self._tasks[task_id]
-                        t["progress_percentage"] = 99.0
+                        t["progress_percentage"] = max(t.get("progress_percentage", 0.0), 99.0)
                         t["status"] = "processing"
                         t["speed_formatted"] = "Finishing & Muxing..."
 
@@ -565,6 +706,13 @@ class DownloaderManager:
             "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
             "http_chunk_size": 10485760,  # 10MB chunks
             "socket_timeout": 35,
+            "continuedl": True,
+            "retries": 15,
+            "fragment_retries": 15,
+            "skip_unavailable_fragments": True,
+            "concurrent_fragment_downloads": 4,
+            "keepvideo": False,
+            "nopart": False,
             "http_headers": {
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
                 "Accept-Language": "en-US,en;q=0.9",
@@ -607,6 +755,37 @@ class DownloaderManager:
                 self._sync_save_task(self._tasks[task_id])
                 return
 
+            # Check if file or existing streams are already complete on disk before running yt-dlp
+            recovered_file = _find_completed_file() or _check_and_mux_existing_streams()
+            if recovered_file and recovered_file.exists() and recovered_file.stat().st_size > 0:
+                file_size = recovered_file.stat().st_size
+                safe_title = re.sub(r'[\\/*?:"<>|]', "", task.get("title", "video")).strip() or "video"
+                final_name = f"{safe_title[:60]}_{task_id[-4:]}.{recovered_file.suffix.lstrip('.')}"
+                final_path = target_dir / final_name
+                if recovered_file != final_path:
+                    shutil.move(str(recovered_file), str(final_path))
+
+                download_url = f"/uploads/{final_path.name}" if task["save_destination"] == "projects" else f"/downloads/{final_path.name}"
+                with self._lock:
+                    if task_id in self._tasks:
+                        t = self._tasks[task_id]
+                        t["status"] = "completed"
+                        t["output_path"] = str(final_path)
+                        t["output_filename"] = final_path.name
+                        t["download_url"] = download_url
+                        t["downloaded_bytes"] = file_size
+                        t["total_bytes"] = file_size
+                        t["progress_percentage"] = 100.0
+                        t["speed_formatted"] = "0.0 MB/s"
+                        t["eta_formatted"] = "Completed"
+                        t["error_message"] = None
+                        now_str = datetime.now(timezone.utc).isoformat()
+                        t["completed_at"] = now_str
+                        t["updated_at"] = now_str
+                self._sync_save_task(self._tasks[task_id])
+                logger.info(f"Download task {task_id} already satisfied from disk -> {final_path.name}")
+                return
+
             try:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(clean_url, download=True)
@@ -614,17 +793,10 @@ class DownloaderManager:
                     thumbnail = info.get("thumbnail") or task["thumbnail"]
 
                 # Locate completed file (strictly exclude incomplete temp/part/stream files)
-                found_file: Optional[Path] = None
-                for p in target_dir.glob(f"{task_id}.*"):
-                    name_l = p.name.lower()
-                    if (
-                        not name_l.endswith(".part")
-                        and not name_l.endswith(".ytdl")
-                        and ".temp." not in name_l
-                        and not re.search(r'\.f\d+\.', name_l)
-                    ):
-                        found_file = p
-                        break
+                found_file: Optional[Path] = _find_completed_file()
+                if not found_file:
+                    # Check if audio/video stream files are present and can be muxed directly
+                    found_file = _check_and_mux_existing_streams()
 
                 if not found_file or not found_file.exists():
                     raise FileNotFoundError(f"Target download file was not created in {target_dir}")
@@ -697,6 +869,37 @@ class DownloaderManager:
 
                 err_msg = str(e)
                 err_lower = err_msg.lower()
+
+                # If postprocessing or rename failed, check if the file or mux actually succeeded
+                recovered_file = _find_completed_file() or _check_and_mux_existing_streams()
+                if recovered_file and recovered_file.exists() and recovered_file.stat().st_size > 0:
+                    file_size = recovered_file.stat().st_size
+                    safe_title = re.sub(r'[\\/*?:"<>|]', "", task.get("title", "video")).strip() or "video"
+                    final_name = f"{safe_title[:60]}_{task_id[-4:]}.{recovered_file.suffix.lstrip('.')}"
+                    final_path = target_dir / final_name
+                    if recovered_file != final_path:
+                        shutil.move(str(recovered_file), str(final_path))
+
+                    download_url = f"/uploads/{final_path.name}" if task["save_destination"] == "projects" else f"/downloads/{final_path.name}"
+                    with self._lock:
+                        if task_id in self._tasks:
+                            t = self._tasks[task_id]
+                            t["status"] = "completed"
+                            t["output_path"] = str(final_path)
+                            t["output_filename"] = final_path.name
+                            t["download_url"] = download_url
+                            t["downloaded_bytes"] = file_size
+                            t["total_bytes"] = file_size
+                            t["progress_percentage"] = 100.0
+                            t["speed_formatted"] = "0.0 MB/s"
+                            t["eta_formatted"] = "Completed"
+                            t["error_message"] = None
+                            now_str = datetime.now(timezone.utc).isoformat()
+                            t["completed_at"] = now_str
+                            t["updated_at"] = now_str
+                    self._sync_save_task(self._tasks[task_id])
+                    logger.info(f"Download task {task_id} successfully salvaged following stream glitch -> {final_path.name}")
+                    return
 
                 # Detect non-retryable fatal errors immediately
                 is_fatal = any(f in err_lower for f in [
@@ -865,6 +1068,8 @@ class DownloaderManager:
         if not task:
             return False
 
+        self._save_tasks_to_disk()
+
         # Clean files
         try:
             if task.get("output_path") and Path(task["output_path"]).exists():
@@ -949,6 +1154,7 @@ class DownloaderManager:
                             asyncio.create_task(db.download_tasks.delete_one({"task_id": tid}))
                     except Exception:
                         pass
+        self._save_tasks_to_disk()
         return self.get_all_tasks()
 
     def get_history(self) -> List[Dict[str, Any]]:

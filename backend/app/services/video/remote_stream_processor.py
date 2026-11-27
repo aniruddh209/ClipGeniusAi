@@ -286,7 +286,16 @@ class RemoteStreamProcessor:
         Path(output_video_path).parent.mkdir(parents=True, exist_ok=True)
         duration = max(0.5, round(end_time - start_time, 3))
 
-        target_w, target_h = (1080, 1920) if aspect_ratio == "9:16" else (1080, 1080)
+        # Auto-detect target resolution: keep 4K / 2K source quality in 9:16 vertical cuts
+        if aspect_ratio == "9:16":
+            if source_h >= 2160 or source_w >= 3840:
+                target_w, target_h = 2160, 3840
+            elif source_h >= 1440 or source_w >= 2560:
+                target_w, target_h = 1440, 2560
+            else:
+                target_w, target_h = 1080, 1920
+        else:
+            target_w, target_h = (1080, 1080)
 
         # Build clean non-distorting filtergraph
         if template_layout in ("full_screen", "center_crop"):
@@ -305,6 +314,60 @@ class RemoteStreamProcessor:
                 f"[bg]scale={target_w}:{target_h}:force_original_aspect_ratio=increase,crop={target_w}:{target_h},boxblur=25:5,setsar=1[bg_blur]; "
                 f"[fg]scale={target_w}:{scaled_h}:flags=bicubic,setsar=1[fg_scaled]; "
                 f"[bg_blur][fg_scaled]overlay=0:{y_offset}[v]"
+            )
+            filter_args = ["-filter_complex", fc, "-map", "[v]", "-map", "0:a:0?"]
+        elif template_layout == "streamer_split":
+            top_h = int(round(target_h * 0.40))
+            top_h -= top_h % 2
+            bot_h = target_h - top_h
+            cam_aspect = target_w / top_h
+            cam_w = min(source_w, int(round(source_h * cam_aspect * 0.55)))
+            cam_w -= cam_w % 2
+            cam_h = int(round(cam_w / cam_aspect))
+            cam_h -= cam_h % 2
+            cam_x = max(0, source_w - cam_w - int(source_w * 0.05))
+            cam_x -= cam_x % 2
+            game_aspect = target_w / bot_h
+            game_w = min(source_w, int(round(source_h * game_aspect)))
+            game_w -= game_w % 2
+            game_h = min(source_h, int(round(game_w / game_aspect)))
+            game_h -= game_h % 2
+            game_x = max(0, (source_w - game_w) // 2)
+            game_x -= game_x % 2
+            game_y = max(0, (source_h - game_h) // 2)
+            game_y -= game_y % 2
+            fc = (
+                f"[0:v]split=2[in_cam][in_game]; "
+                f"[in_cam]crop={cam_w}:{cam_h}:{cam_x}:0,scale={target_w}:{top_h}:flags=bicubic,setsar=1[top]; "
+                f"[in_game]crop={game_w}:{game_h}:{game_x}:{game_y},scale={target_w}:{bot_h}:flags=bicubic,setsar=1[bottom]; "
+                f"[top][bottom]vstack=inputs=2[v]"
+            )
+            filter_args = ["-filter_complex", fc, "-map", "[v]", "-map", "0:a:0?"]
+        elif template_layout == "streamer_bottom":
+            top_h = int(round(target_h * 0.60))
+            top_h -= top_h % 2
+            bot_h = target_h - top_h
+            game_aspect = target_w / top_h
+            game_w = min(source_w, int(round(source_h * game_aspect)))
+            game_w -= game_w % 2
+            game_h = min(source_h, int(round(game_w / game_aspect)))
+            game_h -= game_h % 2
+            game_x = max(0, (source_w - game_w) // 2)
+            game_x -= game_x % 2
+            game_y = max(0, (source_h - game_h) // 2)
+            game_y -= game_y % 2
+            cam_aspect = target_w / bot_h
+            cam_w = min(source_w, int(round(source_h * cam_aspect * 0.55)))
+            cam_w -= cam_w % 2
+            cam_h = int(round(cam_w / cam_aspect))
+            cam_h -= cam_h % 2
+            cam_x = max(0, source_w - cam_w - int(source_w * 0.05))
+            cam_x -= cam_x % 2
+            fc = (
+                f"[0:v]split=2[in_game][in_cam]; "
+                f"[in_game]crop={game_w}:{game_h}:{game_x}:{game_y},scale={target_w}:{top_h}:flags=bicubic,setsar=1[top]; "
+                f"[in_cam]crop={cam_w}:{cam_h}:{cam_x}:0,scale={target_w}:{bot_h}:flags=bicubic,setsar=1[bottom]; "
+                f"[top][bottom]vstack=inputs=2[v]"
             )
             filter_args = ["-filter_complex", fc, "-map", "[v]", "-map", "0:a:0?"]
         else:
@@ -328,7 +391,7 @@ class RemoteStreamProcessor:
         cmd.extend([
             "-c:v", "libx264",
             "-preset", "veryfast",
-            "-crf", "19",
+            "-crf", "18",
             "-tune", "fastdecode",
             "-pix_fmt", "yuv420p",
             "-avoid_negative_ts", "make_zero",
