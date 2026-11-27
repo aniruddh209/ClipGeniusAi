@@ -176,6 +176,11 @@ class YouTubeSourceProvider(BaseSourceProvider):
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
                 "Accept-Language": "en-US,en;q=0.9",
             },
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "ios", "web", "mweb"]
+                }
+            }
         }
         if cookie_path:
             ydl_opts["cookiefile"] = cookie_path
@@ -205,7 +210,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
                     },
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["web_embedded", "mweb", "android"]
+                            "player_client": ["android", "ios"]
                         }
                     }
                 }

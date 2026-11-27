@@ -193,6 +193,11 @@ class VideoDownloader:
             "ffmpeg_location": FFMPEG_LOCATION,
             "socket_timeout": 45,
             "http_chunk_size": 10485760,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "ios", "web", "mweb"]
+                }
+            },
         }
 
         def _sync_download():
@@ -213,6 +218,11 @@ class VideoDownloader:
                     "prefer_ffmpeg": True,
                     "ffmpeg_location": FFMPEG_LOCATION,
                     "http_chunk_size": 10485760,
+                    "extractor_args": {
+                        "youtube": {
+                            "player_client": ["android", "ios"]
+                        }
+                    },
                 }
                 def _fallback_download():
                     with yt_dlp.YoutubeDL(fallback_opts) as ydl:
@@ -340,6 +350,11 @@ class VideoDownloader:
             "skip_download": True,
             "socket_timeout": 30,
             "ffmpeg_location": FFMPEG_LOCATION,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "ios", "web", "mweb"]
+                }
+            },
         }
 
         # Check for cookies file
@@ -409,6 +424,11 @@ class VideoDownloader:
             "no_warnings": True,
             "socket_timeout": 30,
             "ffmpeg_location": FFMPEG_LOCATION,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "ios", "web", "mweb"]
+                }
+            },
             "postprocessors": [{
                 "key": "FFmpegExtractAudio",
                 "preferredcodec": "mp3",
@@ -517,6 +537,11 @@ class VideoDownloader:
             "prefer_ffmpeg": True,
             "ffmpeg_location": FFMPEG_LOCATION,
             "socket_timeout": 35,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "ios", "web", "mweb"]
+                }
+            },
         }
 
         cookie_candidates = [

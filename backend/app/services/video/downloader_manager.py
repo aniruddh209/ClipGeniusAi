@@ -257,6 +257,11 @@ class DownloaderManager:
             "skip_download": True,
             "socket_timeout": 30,
             "ffmpeg_location": FFMPEG_LOCATION,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "ios", "web", "mweb"],
+                }
+            },
         }
         if cookie_path:
             ydl_opts["cookiefile"] = cookie_path
@@ -276,6 +281,11 @@ class DownloaderManager:
                 "skip_download": True,
                 "socket_timeout": 30,
                 "ffmpeg_location": FFMPEG_LOCATION,
+                "extractor_args": {
+                    "youtube": {
+                        "player_client": ["android", "ios"],
+                    }
+                },
             }
             if cookie_path:
                 fallback_opts["cookiefile"] = cookie_path
@@ -715,6 +725,11 @@ class DownloaderManager:
             "keepvideo": False,
             "nopart": False,
             "buffersize": 32768,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "ios", "web", "mweb"],
+                }
+            },
             "http_headers": {
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
                 "Accept-Language": "en-US,en;q=0.9",
