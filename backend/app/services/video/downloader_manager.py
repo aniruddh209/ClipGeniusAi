@@ -276,9 +276,10 @@ class DownloaderManager:
                 "skip_download": True,
                 "socket_timeout": 30,
                 "ffmpeg_location": FFMPEG_LOCATION,
+                "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["tv_embedded", "web_embedded", "android_creator"],
+                        "player_client": ["tv_samsung", "visionos", "mweb", "android"],
                     }
                 },
             }
@@ -720,14 +721,11 @@ class DownloaderManager:
             "keepvideo": False,
             "nopart": False,
             "buffersize": 32768,
+            "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_embedded", "web_embedded", "android_creator"],
+                    "player_client": ["tv_samsung", "visionos", "mweb", "android"],
                 }
-            },
-            "http_headers": {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-                "Accept-Language": "en-US,en;q=0.9",
             },
         }
 
@@ -914,18 +912,16 @@ class DownloaderManager:
                     logger.info(f"Download task {task_id} successfully salvaged following stream glitch -> {final_path.name}")
                     return
 
-                # Detect non-retryable fatal errors immediately
-                is_fatal = any(f in err_lower for f in [
-                    "unavailable", "private", "removed", "sign in", "copyright", "blocked", "not found"
+                # Check for permanently unavailable content
+                is_permanently_unavailable = any(f in err_lower for f in [
+                    "unavailable", "private", "removed", "copyright"
                 ])
-                if is_fatal:
+                if is_permanently_unavailable:
                     clean_detail = err_msg
                     if "unavailable" in err_lower:
                         clean_detail = "Video is unavailable or removed on YouTube"
                     elif "private" in err_lower:
                         clean_detail = "Video is private on YouTube"
-                    elif "sign in" in err_lower:
-                        clean_detail = "YouTube requires sign-in verification for this video"
                     logger.error(f"Fatal download error for task {task_id}: {clean_detail}")
                     with self._lock:
                         if task_id in self._tasks:
@@ -937,6 +933,17 @@ class DownloaderManager:
                             t["updated_at"] = datetime.now(timezone.utc).isoformat()
                     self._sync_save_task(self._tasks[task_id])
                     return
+
+                # If sign-in or client error encountered, rotate client and retry
+                if attempt < max_attempts - 1:
+                    logger.warning(f"Download attempt {attempt + 1} encountered glitch ({err_msg[:80]}). Switching client for attempt {attempt + 2}...")
+                    if attempt == 0:
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["mweb", "android"]}}
+                    elif attempt == 1:
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["android", "ios"]}}
+                        ydl_opts["format"] = "bestvideo+bestaudio/best"
+                    time.sleep(2)
+                    continue
 
                 # Check if this is a disk full or I/O error
                 is_disk_full = any(x in err_lower for x in ["errno 5", "errno 28", "no space left", "disk full", "input/output error"])
