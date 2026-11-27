@@ -31,7 +31,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
             <span className="font-semibold text-[var(--foreground)]">ClipGenius Studio</span>
             <span>/</span>
-            <span className="text-[#595a45] dark:text-[#9ca87d] font-medium">Workspace</span>
+            <span className="text-[#3F6212] dark:text-[#A3E635] font-bold">Workspace</span>
           </div>
         )}
       </div>
@@ -51,7 +51,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           rel="noreferrer"
           className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--foreground)] px-2.5 py-1.5 rounded-xl hover:bg-[var(--card)] border border-transparent hover:border-[var(--card-border)] transition-all"
         >
-          <ExternalLink className="w-3.5 h-3.5 text-[#595a45] dark:text-[#9ca87d]" />
+          <ExternalLink className="w-3.5 h-3.5 text-[#3F6212] dark:text-[#A3E635]" />
           <span>API Docs</span>
         </a>
 

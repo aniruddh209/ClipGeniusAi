@@ -107,8 +107,8 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--card-border)] bg-[var(--surface)]">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#595a45]/15 border border-[#595a45]/30 text-[#595a45] dark:text-[#9ca87d]">
-              <Zap className="w-5 h-5 text-[#595a45] dark:text-[#9ca87d]" />
+            <div className="p-2 rounded-xl bg-[#A3E635]/15 border border-[#A3E635]/30 text-[#4D7C0F] dark:text-[#A3E635]">
+              <Zap className="w-5 h-5 text-[#4D7C0F] dark:text-[#A3E635]" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-[var(--foreground)] flex items-center gap-2">
@@ -119,7 +119,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
                       ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                       : isFailed
                       ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                      : 'bg-[#595a45]/20 text-[#3a3d2e] dark:text-[#9ca87d] border border-[#595a45]/40'
+                      : 'bg-[#A3E635]/20 text-[#3F6212] dark:text-[#A3E635] border border-[#A3E635]/40 font-bold'
                   }`}
                 >
                   {isCompleted ? 'Completed' : isFailed ? 'Failed' : 'Processing'}
@@ -144,10 +144,10 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
           <div className="space-y-2">
             <div className="flex justify-between items-center text-xs">
               <span className="font-semibold text-[var(--foreground)] flex items-center gap-2">
-                {!isCompleted && !isFailed && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#595a45] dark:text-[#9ca87d]" />}
+                {!isCompleted && !isFailed && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#4D7C0F] dark:text-[#A3E635]" />}
                 {job?.current_step || 'Initializing AI clipping pipeline...'}
               </span>
-              <span className="font-mono font-bold text-[#595a45] dark:text-[#9ca87d] text-sm">{progress}%</span>
+              <span className="font-mono font-bold text-[#4D7C0F] dark:text-[#A3E635] text-sm">{progress}%</span>
             </div>
 
             <div className="w-full bg-[var(--surface)] rounded-full h-2.5 overflow-hidden border border-[var(--card-border)]">
@@ -157,7 +157,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
                     ? 'bg-red-500'
                     : isCompleted
                     ? 'bg-emerald-500'
-                    : 'bg-gradient-to-r from-[#595a45] to-[#7d8863]'
+                    : 'bg-gradient-to-r from-[#84cc16] to-[#A3E635]'
                 }`}
                 style={{ width: `${progress}%` }}
               />
@@ -183,7 +183,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
                     isPast
                       ? 'border-emerald-500/20 bg-emerald-500/5 text-[var(--foreground)]'
                       : isCurrent
-                      ? 'border-[#595a45] bg-[#595a45]/15 text-[var(--foreground)] shadow-md shadow-[#595a45]/10'
+                      ? 'border-[#A3E635] bg-[#A3E635]/15 text-[var(--foreground)] shadow-md shadow-[#A3E635]/10'
                       : 'border-[var(--card-border)] bg-[var(--surface)] text-[var(--muted)]'
                   }`}
                 >
@@ -192,7 +192,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
                       isPast
                         ? 'bg-emerald-500 text-black'
                         : isCurrent
-                        ? 'bg-[#595a45] text-white dark:bg-[#7d8863] dark:text-[#070807] animate-pulse'
+                        ? 'bg-[#A3E635] text-[#080A08] font-black animate-pulse'
                         : 'bg-[var(--card-border)] text-[var(--muted)]'
                     }`}
                   >
@@ -235,7 +235,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-[var(--foreground)] uppercase tracking-wider flex items-center gap-2">
-                  <Film className="w-3.5 h-3.5 text-[#595a45] dark:text-[#9ca87d]" />
+                  <Film className="w-3.5 h-3.5 text-[#4D7C0F] dark:text-[#A3E635]" />
                   Generated Viral Shorts ({job.completed_clips.length})
                 </h3>
                 <span className="text-[11px] text-emerald-500 font-semibold">Ready for Download</span>
@@ -245,7 +245,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
                 {job.completed_clips.map((clip) => (
                   <div
                     key={clip.id}
-                    className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)] flex flex-col justify-between space-y-2 hover:border-[#595a45]/50 transition-all"
+                    className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)] flex flex-col justify-between space-y-2 hover:border-[#A3E635]/50 transition-all"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -310,7 +310,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
             {/* Header */}
             <div className="px-5 py-4 border-b border-[var(--card-border)] flex items-center justify-between bg-[var(--surface)]">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-[#595a45]/20 border border-[#595a45]/30 flex items-center justify-center text-[#595a45] dark:text-[#9ca87d] shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-[#A3E635]/15 border border-[#A3E635]/30 flex items-center justify-center text-[#4D7C0F] dark:text-[#A3E635] shrink-0">
                   <Play className="w-4 h-4 fill-current" />
                 </div>
                 <div className="min-w-0">
@@ -322,7 +322,7 @@ export const PipelineProgressModal: React.FC<PipelineProgressModalProps> = ({
                     <span>•</span>
                     <span>{Math.round(previewClip.duration)}s</span>
                     <span>•</span>
-                    <span className="text-[#595a45] dark:text-[#9ca87d] font-mono">9:16 Vertical Short</span>
+                    <span className="text-[#4D7C0F] dark:text-[#A3E635] font-mono font-semibold">9:16 Vertical Short</span>
                   </div>
                 </div>
               </div>

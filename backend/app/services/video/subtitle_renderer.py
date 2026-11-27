@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import asyncio
 import subprocess
 import numpy as np
@@ -50,7 +51,7 @@ def parse_rgba_string(color_str: str) -> Tuple[int, int, int, int]:
 
 class SubtitleRenderer:
     def __init__(self):
-        self.ffmpeg_path = "/opt/homebrew/bin/ffmpeg"
+        self.ffmpeg_path = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
         self._font_cache: Dict[Tuple[str, int], ImageFont.FreeTypeFont] = {}
 
     def get_font(self, font_family: str, size: int) -> ImageFont.FreeTypeFont:
@@ -163,7 +164,7 @@ class SubtitleRenderer:
         bg_rgba = parse_rgba_string(style.background_color)
 
         # Launch FFmpeg encoding process
-        # Read raw video from pipe, copy audio from original video
+        # Read raw video from pipe, encode audio cleanly to AAC for guaranteed MP4 container compatibility
         ffmpeg_cmd = [
             self.ffmpeg_path,
             "-y",
@@ -182,7 +183,9 @@ class SubtitleRenderer:
             "-tune", "fastdecode",
             "-threads", "0",
             "-pix_fmt", "yuv420p",
-            "-c:a", "copy",
+            "-c:a", "aac",                   # Encode audio to AAC to ensure 100% MP4 compatibility
+            "-b:a", "192k",
+            "-shortest",
             output_video_path
         ]
 
@@ -191,7 +194,7 @@ class SubtitleRenderer:
             ffmpeg_cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.PIPE
         )
 
         frame_idx = 0
@@ -264,16 +267,23 @@ class SubtitleRenderer:
                 else:
                     cached_key = None
 
-                proc.stdin.write(frame.tobytes())
+                try:
+                    proc.stdin.write(frame.tobytes())
+                except (BrokenPipeError, OSError):
+                    break
                 frame_idx += 1
 
             cap.release()
-            proc.stdin.close()
-            proc.wait()
+            try:
+                proc.stdin.close()
+            except Exception:
+                pass
+            _, stderr_bytes = proc.communicate()
 
             if proc.returncode != 0:
-                logger.error(f"FFmpeg subtitle burn failed with return code {proc.returncode}")
-                raise RuntimeError(f"FFmpeg subtitle burn failed with return code {proc.returncode}")
+                err_text = stderr_bytes.decode("utf-8", errors="ignore") if stderr_bytes else f"Code {proc.returncode}"
+                logger.error(f"FFmpeg subtitle burn failed with return code {proc.returncode}: {err_text[:200]}")
+                raise RuntimeError(f"FFmpeg subtitle burn failed: {err_text[:200]}")
 
             logger.info(f"Subtitled clip rendered successfully: {output_video_path} ({frame_idx} frames)")
 

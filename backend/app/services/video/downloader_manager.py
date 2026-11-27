@@ -624,8 +624,9 @@ class DownloaderManager:
                     a_p = audio_files[0][1]
                     mux_target = target_dir / f"{task_id}.{ext}"
                     logger.info(f"Existing completed streams found on disk ({v_p.name}, {a_p.name}). Performing direct FFmpeg mux...")
+                    ffmpeg_bin = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
                     mux_cmd = [
-                        "/opt/homebrew/bin/ffmpeg", "-y",
+                        ffmpeg_bin, "-y",
                         "-i", str(v_p),
                         "-i", str(a_p),
                         "-c", "copy",
@@ -703,16 +704,15 @@ class DownloaderManager:
             "no_warnings": True,
             "progress_hooks": [progress_hook],
             "prefer_ffmpeg": True,
-            "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
-            "http_chunk_size": 10485760,  # 10MB chunks
-            "socket_timeout": 35,
+            "ffmpeg_location": shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg",
+            "socket_timeout": 45,
             "continuedl": True,
-            "retries": 15,
-            "fragment_retries": 15,
+            "retries": 25,
+            "fragment_retries": 25,
             "skip_unavailable_fragments": True,
-            "concurrent_fragment_downloads": 4,
             "keepvideo": False,
             "nopart": False,
+            "buffersize": 32768,
             "http_headers": {
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
                 "Accept-Language": "en-US,en;q=0.9",

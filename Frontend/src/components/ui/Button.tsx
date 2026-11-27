@@ -16,12 +16,12 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#595a45]/40 disabled:opacity-50 disabled:cursor-not-allowed select-none cursor-pointer';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#A3E635]/40 disabled:opacity-50 disabled:cursor-not-allowed select-none cursor-pointer';
 
   const variants = {
-    primary: 'bg-[#595a45] hover:bg-[#484b39] text-[#f7f8f4] dark:bg-[#7d8863] dark:hover:bg-[#8f9b72] dark:text-[#070807] font-bold shadow-md shadow-[#595a45]/20 border border-[#595a45]/30 active:scale-[0.98]',
-    secondary: 'bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--card-border)]/30 active:scale-[0.98] border border-[var(--card-border)]',
-    outline: 'border border-[#595a45]/40 text-[#595a45] dark:text-[#9ca87d] hover:bg-[#595a45]/10 hover:border-[#595a45] hover:text-[var(--foreground)]',
+    primary: 'bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] font-extrabold shadow-md shadow-[#A3E635]/25 border border-[#84cc16]/50 active:scale-[0.98]',
+    secondary: 'bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--card-border)]/40 active:scale-[0.98] border border-[var(--card-border)] font-medium',
+    outline: 'border border-[#A3E635]/40 text-[#4D7C0F] dark:text-[#A3E635] hover:bg-[#A3E635]/10 hover:border-[#A3E635] font-semibold active:scale-[0.98]',
     ghost: 'text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--card-border)]/30',
     danger: 'bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/20 active:scale-[0.98]',
   };

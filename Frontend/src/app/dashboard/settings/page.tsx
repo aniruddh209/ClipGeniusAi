@@ -94,7 +94,7 @@ export default function SettingsPage() {
                 onClick={() => setTab(item.id as any)}
                 className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 cursor-pointer ${
                   tab === item.id
-                    ? 'bg-[#595a45]/20 text-[#2c2f21] dark:text-[#9ca87d] border border-[#595a45]/40 shadow-xs font-bold'
+                    ? 'bg-[#A3E635]/15 text-[#3F6212] dark:text-[#A3E635] border border-[#A3E635]/30 shadow-xs font-bold'
                     : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                 }`}
               >
@@ -109,7 +109,7 @@ export default function SettingsPage() {
         {tab === 'profile' && (
           <Card className="border-[var(--card-border)] bg-[var(--card)] p-6 space-y-6">
             <div className="flex items-center gap-4 pb-6 border-b border-[var(--card-border)]">
-              <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-tr from-[#595a45] to-[#7d8863] p-[2px]">
+              <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-tr from-[#84cc16] to-[#A3E635] p-[2px]">
                 <img
                   src={DEFAULT_USER_PREFERENCES.avatarUrl}
                   alt="Avatar"
@@ -135,7 +135,7 @@ export default function SettingsPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#595a45]"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#A3E635]"
                 />
               </div>
 
@@ -147,7 +147,7 @@ export default function SettingsPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#595a45]"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#A3E635]"
                 />
               </div>
             </div>
@@ -156,7 +156,7 @@ export default function SettingsPage() {
             <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--card-border)] space-y-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                 <span className="text-zinc-700 dark:text-zinc-400 font-medium flex items-center gap-1.5">
-                  <HardDrive className="w-4 h-4 text-[#595a45] dark:text-[#9ca87d]" />
+                  <HardDrive className="w-4 h-4 text-[#4D7C0F] dark:text-[#A3E635]" />
                   Local Scratch Storage
                 </span>
                 <div className="flex items-center gap-2">
@@ -167,7 +167,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={handleCleanStorage}
                     disabled={isCleaning}
-                    className="text-[10px] px-2.5 py-1 rounded-lg bg-[#595a45]/15 text-[#2c2f21] dark:text-[#9ca87d] border border-[#595a45]/30 hover:bg-[#595a45]/25 transition-colors disabled:opacity-50 cursor-pointer font-medium"
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-[#A3E635]/15 text-[#3F6212] dark:text-[#A3E635] border border-[#A3E635]/30 hover:bg-[#A3E635]/25 transition-colors disabled:opacity-50 cursor-pointer font-bold"
                   >
                     {isCleaning ? 'Cleaning...' : 'Clean Cache'}
                   </button>
@@ -175,7 +175,7 @@ export default function SettingsPage() {
               </div>
               <div className="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-[#595a45] to-[#7d8863] h-full rounded-full transition-all duration-300"
+                  className="bg-[#A3E635] h-full rounded-full transition-all duration-300"
                   style={{ width: `${Math.min(100, Math.max(1, ((storage?.total_storage_mb || 10) / (50 * 1024)) * 100))}%` }}
                 />
               </div>
@@ -191,7 +191,7 @@ export default function SettingsPage() {
           <Card className="border-[var(--card-border)] bg-[var(--card)] p-6 space-y-6">
             <div>
               <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-[#595a45] dark:text-[#9ca87d]" />
+                <Cpu className="w-4 h-4 text-[#4D7C0F] dark:text-[#A3E635]" />
                 AI Transcription Engine (Faster-Whisper)
               </h3>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
@@ -212,12 +212,12 @@ export default function SettingsPage() {
                   onClick={() => setWhisperModel(model.id as any)}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                     whisperModel === model.id
-                      ? 'border-[#595a45] bg-[#595a45]/15 shadow-sm'
+                      ? 'border-[#A3E635] bg-[#A3E635]/15 shadow-sm'
                       : 'border-[var(--card-border)] bg-[var(--surface)] hover:border-zinc-400 dark:hover:border-zinc-700'
                   }`}
                 >
                   <span className="text-xs font-bold text-zinc-900 dark:text-white block">{model.name}</span>
-                  <span className="text-[10px] text-[#595a45] dark:text-[#9ca87d] block mt-1 font-semibold">{model.speed}</span>
+                  <span className="text-[10px] text-[#4D7C0F] dark:text-[#A3E635] block mt-1 font-bold">{model.speed}</span>
                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400 block">{model.vram}</span>
                 </button>
               ))}
@@ -235,7 +235,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setAutoFaceTracking(!autoFaceTracking)}
                 className={`w-11 h-6 rounded-full transition-colors p-1 cursor-pointer ${
-                  autoFaceTracking ? 'bg-[#595a45] dark:bg-[#7d8863]' : 'bg-zinc-300 dark:bg-zinc-800'
+                  autoFaceTracking ? 'bg-[#A3E635]' : 'bg-zinc-300 dark:bg-zinc-800'
                 }`}
               >
                 <div
@@ -253,7 +253,7 @@ export default function SettingsPage() {
           <Card className="border-[var(--card-border)] bg-[var(--card)] p-6 space-y-6">
             <div>
               <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                <Download className="w-4 h-4 text-[#595a45] dark:text-[#9ca87d]" />
+                <Download className="w-4 h-4 text-[#4D7C0F] dark:text-[#A3E635]" />
                 Default Video & Subtitle Export Settings
               </h3>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
@@ -269,7 +269,7 @@ export default function SettingsPage() {
                 <select
                   value={defaultAspectRatio}
                   onChange={(e) => setDefaultAspectRatio(e.target.value as any)}
-                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#595a45]"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#A3E635]"
                 >
                   <option value="9:16">9:16 Vertical (Shorts/Reels/TikTok)</option>
                   <option value="1:1">1:1 Square (Feed)</option>
@@ -284,7 +284,7 @@ export default function SettingsPage() {
                 <select
                   value={defaultResolution}
                   onChange={(e) => setDefaultResolution(e.target.value as any)}
-                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#595a45]"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#A3E635]"
                 >
                   <option value="1080p">1080x1920 (Full HD)</option>
                   <option value="4K">2160x3840 (4K Ultra HD)</option>
@@ -299,7 +299,7 @@ export default function SettingsPage() {
                 <select
                   value={fps}
                   onChange={(e) => setFps(e.target.value)}
-                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#595a45]"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#A3E635]"
                 >
                   <option value="30">30 FPS (Standard)</option>
                   <option value="60">60 FPS (High Smoothness)</option>
@@ -314,10 +314,9 @@ export default function SettingsPage() {
               </label>
               <div className="flex items-center gap-3">
                 {[
-                  { name: 'Vibrant Yellow', hex: '#FFDD00' },
-                  { name: 'Electric Green', hex: '#22c55e' },
-                  { name: 'Neon Cyan', hex: '#06b6d4' },
-                  { name: 'Hot Pink', hex: '#ec4899' },
+                  { name: 'Neon Lime', hex: '#A3E635' },
+                  { name: 'Mint Green', hex: '#4ADE80' },
+                  { name: 'Vibrant Yellow', hex: '#FACC15' },
                   { name: 'Clean White', hex: '#ffffff' },
                 ].map((c) => (
                   <button
@@ -327,7 +326,7 @@ export default function SettingsPage() {
                     style={{ backgroundColor: c.hex }}
                     className={`w-7 h-7 rounded-full border-2 transition-all cursor-pointer ${
                       subtitleColor === c.hex
-                        ? 'border-[#595a45] dark:border-[#9ca87d] scale-110 shadow-lg'
+                        ? 'border-[#A3E635] scale-110 shadow-lg ring-2 ring-[#A3E635]/40'
                         : 'border-zinc-300 dark:border-transparent opacity-80 hover:opacity-100'
                     }`}
                     title={c.name}
@@ -345,7 +344,7 @@ export default function SettingsPage() {
                 type="text"
                 value={fileNamePattern}
                 onChange={(e) => setFileNamePattern(e.target.value)}
-                className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-zinc-900 dark:text-white font-mono focus:outline-none focus:border-[#595a45]"
+                className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-zinc-900 dark:text-white font-mono focus:outline-none focus:border-[#A3E635]"
               />
               <p className="text-[10px] text-zinc-600 dark:text-zinc-400">
                 Variables: &#123;title&#125;, &#123;index&#125;, &#123;virality&#125;, &#123;date&#125;
@@ -360,7 +359,7 @@ export default function SettingsPage() {
             onClick={handleSave}
             variant="primary"
             size="md"
-            className="rounded-xl px-6 text-xs shadow-lg shadow-[#595a45]/20 bg-[#595a45] hover:bg-[#484b39] text-[#f7f8f4] dark:bg-[#7d8863] dark:hover:bg-[#8f9b72] dark:text-[#070807] font-bold"
+            className="rounded-xl px-6 text-xs shadow-lg shadow-[#A3E635]/20 bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] font-black border border-[#84cc16]/50"
           >
             <Save className="w-3.5 h-3.5 mr-1.5" /> Save Changes
           </Button>

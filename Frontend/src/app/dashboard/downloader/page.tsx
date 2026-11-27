@@ -501,7 +501,7 @@ function VideoDownloaderContent() {
               <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
               <div className="max-w-3xl space-y-4">
-                <div className="flex items-center gap-2 text-xs font-semibold text-[#595a45] dark:text-[#9ca87d] tracking-wider uppercase">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#4D7C0F] dark:text-[#A3E635] tracking-wider uppercase">
                   <Zap className="w-3.5 h-3.5" />
                   <span>Fast Video Downloader</span>
                 </div>
@@ -524,7 +524,7 @@ function VideoDownloaderContent() {
                         value={urlInput}
                         onChange={(e) => setUrlInput(e.target.value)}
                         placeholder="https://www.youtube.com/watch?v=... or direct MP4 link"
-                        className="w-full h-11 pl-10 pr-24 rounded-xl bg-[var(--card)] border border-[var(--card-border)] text-xs text-zinc-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-[#595a45] focus:ring-2 focus:ring-[#595a45]/20 transition-all font-mono"
+                        className="w-full h-11 pl-10 pr-24 rounded-xl bg-[var(--card)] border border-[var(--card-border)] text-xs text-zinc-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-[#A3E635] focus:ring-2 focus:ring-[#A3E635]/20 transition-all font-mono"
                       />
                       <button
                         type="button"
@@ -540,7 +540,7 @@ function VideoDownloaderContent() {
                     <button
                       type="submit"
                       disabled={isAnalyzing || !urlInput.trim()}
-                      className="h-11 px-6 rounded-xl bg-[#595a45] hover:bg-[#484b39] text-[#f7f8f4] dark:bg-[#7d8863] dark:hover:bg-[#8f9b72] dark:text-[#070807] font-bold text-xs tracking-wide flex items-center justify-center gap-2 shadow-md shadow-[#595a45]/20 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                      className="h-11 px-6 rounded-xl bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] font-extrabold text-xs tracking-wide flex items-center justify-center gap-2 shadow-md shadow-[#A3E635]/25 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0 border border-[#84cc16]/50"
                     >
                       {isAnalyzing ? (
                         <>
@@ -864,10 +864,10 @@ function VideoDownloaderContent() {
                 )}
 
                 {/* VIDEO QUALITY & FORMAT SELECTOR */}
-                <div className="rounded-2xl border border-[#595a45]/30 bg-[var(--card)] p-6 shadow-2xl space-y-6">
+                <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-2xl space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--card-border)] pb-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-[#595a45]/20 border border-[#595a45]/30 flex items-center justify-center text-[#595a45] dark:text-[#9ca87d]">
+                      <div className="w-8 h-8 rounded-lg bg-[#A3E635]/15 border border-[#A3E635]/30 flex items-center justify-center text-[#4D7C0F] dark:text-[#A3E635]">
                         <FileVideo className="w-4 h-4" />
                       </div>
                       <div>
@@ -891,7 +891,7 @@ function VideoDownloaderContent() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between text-xs">
                       <label className="font-semibold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-[#595a45] dark:text-[#9ca87d]" />
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#4D7C0F] dark:text-[#A3E635]" />
                         <span>Available Video & Audio Streams</span>
                       </label>
                       <span className="text-[11px] text-[var(--text-muted)]">
@@ -913,23 +913,23 @@ function VideoDownloaderContent() {
                             className={cn(
                               'p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer group',
                               isSelected
-                                ? 'bg-[#595a45]/15 border-[#595a45] shadow-md shadow-[#595a45]/20 ring-1 ring-[#595a45]/50'
-                                : 'bg-[var(--surface)] border-[var(--card-border)] hover:border-[#595a45]/40'
+                                ? 'bg-[#A3E635]/15 border-[#A3E635] shadow-md shadow-[#A3E635]/20 ring-1 ring-[#A3E635]/50'
+                                : 'bg-[var(--surface)] border-[var(--card-border)] hover:border-[#A3E635]/40'
                             )}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="space-y-0.5">
                                 <div className="flex items-center gap-1.5">
                                   {fmt.type === 'audio' ? (
-                                    <Music className="w-3.5 h-3.5 text-indigo-400" />
+                                    <Music className="w-3.5 h-3.5 text-[#4ADE80]" />
                                   ) : (
-                                    <FileVideo className="w-3.5 h-3.5 text-blue-400" />
+                                    <FileVideo className="w-3.5 h-3.5 text-[#A3E635]" />
                                   )}
                                   <span className="font-bold text-xs text-[var(--foreground)]">
                                     {fmt.resolution}
                                   </span>
                                   {fmt.recommended && (
-                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#595a45]/20 text-[#3a3c2d] dark:text-[#9ca87d] border border-[#595a45]/30">
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-[#A3E635]/20 text-[#3F6212] dark:text-[#A3E635] border border-[#A3E635]/30">
                                       RECOMMENDED
                                     </span>
                                   )}
@@ -941,7 +941,7 @@ function VideoDownloaderContent() {
 
                               <div className={cn(
                                 'w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors',
-                                isSelected ? 'border-[#595a45] dark:border-[#7d8863] bg-[#595a45] dark:bg-[#7d8863] text-white dark:text-[#070807]' : 'border-zinc-500 bg-black/40'
+                                isSelected ? 'border-[#84cc16] bg-[#A3E635] text-[#080A08]' : 'border-zinc-500 bg-black/40'
                               )}>
                                 {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                               </div>
@@ -949,10 +949,10 @@ function VideoDownloaderContent() {
 
                             <div className="mt-3 pt-2 border-t border-[var(--card-border)] flex items-center justify-between text-[10px]">
                               <span className="text-[var(--text-muted)] font-medium flex items-center gap-1">
-                                <ShieldCheck className="w-3 h-3 text-[#595a45] dark:text-[#9ca87d]" />
+                                <ShieldCheck className="w-3 h-3 text-[#4D7C0F] dark:text-[#A3E635]" />
                                 <span>{fmt.badge}</span>
                               </span>
-                              <span className="font-mono text-[#595a45] dark:text-[#9ca87d] font-semibold">{fmt.filesize_formatted}</span>
+                              <span className="font-mono text-[#3F6212] dark:text-[#A3E635] font-bold">{fmt.filesize_formatted}</span>
                             </div>
                           </button>
                         );
@@ -977,7 +977,7 @@ function VideoDownloaderContent() {
                                   className={cn(
                                     'flex-1 py-2 rounded-lg border text-xs font-semibold uppercase transition-all cursor-pointer',
                                     selectedExt === ext
-                                      ? 'bg-[#595a45]/20 border-[#595a45] text-[#3a3c2d] dark:text-[#9ca87d] font-bold shadow-xs'
+                                      ? 'bg-[#A3E635] border-[#84cc16] text-[#080A08] font-black shadow-xs'
                                       : 'bg-[var(--surface)] border-[var(--card-border)] text-[var(--text-muted)] hover:text-[var(--foreground)]'
                                   )}
                                 >
@@ -995,7 +995,7 @@ function VideoDownloaderContent() {
                                   className={cn(
                                     'flex-1 py-2 rounded-lg border text-xs font-semibold uppercase transition-all cursor-pointer',
                                     selectedExt === ext
-                                      ? 'bg-[#595a45]/20 border-[#595a45] text-[#3a3c2d] dark:text-[#9ca87d] font-bold shadow-xs'
+                                      ? 'bg-[#A3E635] border-[#84cc16] text-[#080A08] font-black shadow-xs'
                                       : 'bg-[var(--surface)] border-[var(--card-border)] text-[var(--text-muted)] hover:text-[var(--foreground)]'
                                   )}
                                 >
@@ -1015,7 +1015,7 @@ function VideoDownloaderContent() {
                         <select
                           value={saveDestination}
                           onChange={(e: any) => setSaveDestination(e.target.value)}
-                          className="w-full h-9 px-3 rounded-lg bg-[var(--card)] border border-[var(--card-border)] text-xs text-[var(--foreground)] focus:outline-none focus:border-[#595a45] cursor-pointer"
+                          className="w-full h-9 px-3 rounded-lg bg-[var(--card)] border border-[var(--card-border)] text-xs text-[var(--foreground)] focus:outline-none focus:border-[#A3E635] cursor-pointer"
                         >
                           <option value="downloads">💻 Save to My Mac (Downloads)</option>
                           <option value="projects">✂️ Save to AI Studio (Auto-Clip Ready)</option>
@@ -1033,7 +1033,7 @@ function VideoDownloaderContent() {
                           value={customPath}
                           onChange={(e) => setCustomPath(e.target.value)}
                           placeholder="/Users/username/Downloads/MyVideos"
-                          className="w-full h-9 px-3 rounded-lg bg-[var(--card)] border border-[var(--card-border)] text-xs text-[var(--foreground)] font-mono placeholder-zinc-500 focus:outline-none focus:border-[#595a45]"
+                          className="w-full h-9 px-3 rounded-lg bg-[var(--card)] border border-[var(--card-border)] text-xs text-[var(--foreground)] font-mono placeholder-zinc-500 focus:outline-none focus:border-[#A3E635]"
                         />
                       </div>
                     )}
@@ -1044,7 +1044,7 @@ function VideoDownloaderContent() {
                         type="button"
                         onClick={handleStartDownload}
                         disabled={isStartingDownload || !selectedFormat}
-                        className="w-full h-11 rounded-xl bg-[#595a45] hover:bg-[#484b39] text-[#f7f8f4] dark:bg-[#7d8863] dark:hover:bg-[#8f9b72] dark:text-[#070807] font-black text-xs tracking-wide flex items-center justify-center gap-2 shadow-xl shadow-[#595a45]/25 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                        className="w-full h-11 rounded-xl bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] font-black text-xs tracking-wide flex items-center justify-center gap-2 shadow-xl shadow-[#A3E635]/25 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 border border-[#84cc16]/50"
                       >
                         {isStartingDownload ? (
                           <>
@@ -1431,7 +1431,7 @@ function VideoDownloaderContent() {
 
                                   <button
                                     onClick={() => handleRevealFinder(task)}
-                                    className="w-8 h-8 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                                    className="w-8 h-8 rounded-lg bg-[#A3E635]/10 hover:bg-[#A3E635]/20 text-[#3F6212] dark:text-[#A3E635] border border-[#A3E635]/30 flex items-center justify-center transition-colors cursor-pointer"
                                     title="Reveal file in macOS Finder"
                                   >
                                     <Folder className="w-4 h-4" />
@@ -1439,7 +1439,7 @@ function VideoDownloaderContent() {
 
                                   <button
                                     onClick={() => setExportModalTask(task)}
-                                    className="w-8 h-8 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                                    className="w-8 h-8 rounded-lg bg-[#A3E635]/10 hover:bg-[#A3E635]/20 text-[#3F6212] dark:text-[#A3E635] border border-[#A3E635]/30 flex items-center justify-center transition-colors cursor-pointer"
                                     title="Export & Convert (Apple ProRes/HEVC/H.264/MOV)"
                                   >
                                     <Apple className="w-4 h-4" />
@@ -1455,7 +1455,7 @@ function VideoDownloaderContent() {
 
                                   <button
                                     onClick={() => handleClipInStudio(task.task_id)}
-                                    className="px-2.5 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+                                    className="px-2.5 h-8 rounded-lg bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] text-[11px] font-black flex items-center gap-1.5 shadow-md shadow-[#A3E635]/25 border border-[#84cc16]/50 transition-all cursor-pointer"
                                     title="Open directly in AI Clipper to generate viral shorts"
                                   >
                                     <Scissors className="w-3.5 h-3.5" />

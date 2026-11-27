@@ -1253,6 +1253,7 @@ async def _run_full_end_to_end_pipeline(
                     final_video_url = f"/generated-clips/{cut_filename}"
 
                     # 9. Animated Subtitles Burn-In (Skip completely if No Captions selected)
+                    subtitled_rendered = False
                     if burn_subtitles and subtitle_preset != "none" and has_speech and transcript_words:
                         chunks = slice_and_chunk_words(
                             words=transcript_words,
@@ -1264,13 +1265,18 @@ async def _run_full_end_to_end_pipeline(
                         if chunks:
                             subtitled_filename = f"{clip.id}_subtitled.mp4"
                             subtitled_path = str(settings.GENERATED_CLIPS_DIR / subtitled_filename)
-                            await subtitle_renderer.render_subtitles_to_video(
-                                input_video_path=cut_path,
-                                output_video_path=subtitled_path,
-                                chunks=chunks,
-                                style=style_config
-                            )
-                            final_video_url = f"/generated-clips/{subtitled_filename}"
+                            try:
+                                await subtitle_renderer.render_subtitles_to_video(
+                                    input_video_path=cut_path,
+                                    output_video_path=subtitled_path,
+                                    chunks=chunks,
+                                    style=style_config
+                                )
+                                final_video_url = f"/generated-clips/{subtitled_filename}"
+                                subtitled_rendered = True
+                            except Exception as sub_err:
+                                logger.warning(f"Subtitle burn failed for clip {clip.id}, using high-res reframed cut: {sub_err}")
+                                final_video_url = f"/generated-clips/{cut_filename}"
 
                     # 10. Update Clip Object with Playback & Download URLs
                     clip.video_url = final_video_url
@@ -1279,7 +1285,7 @@ async def _run_full_end_to_end_pipeline(
                     clip.thumbnail_url = f"/uploads/thumbnails/{thumb_filename}"
                     clip.aspect_ratio = target_aspect_ratio
                     clip.status = "completed"
-                    clip.has_subtitles = burn_subtitles and subtitle_preset != "none" and has_speech
+                    clip.has_subtitles = subtitled_rendered
 
                     # Persist to MongoDB
                     if db is not None:

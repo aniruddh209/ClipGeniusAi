@@ -263,14 +263,14 @@ export default function MyProjectsPage() {
           <div className="flex items-center gap-2">
             {storageInfo && (
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--card)] border border-[var(--card-border)] text-xs">
-                <HardDrive className="w-3.5 h-3.5 text-[#595a45] dark:text-[#9ca87d]" />
+                <HardDrive className="w-3.5 h-3.5 text-[#4D7C0F] dark:text-[#A3E635]" />
                 <span className="text-zinc-600 dark:text-white/70">
                   Storage: <strong className="text-zinc-900 dark:text-white font-mono">{storageInfo.total_storage_mb} MB</strong>
                 </span>
                 <button
                   onClick={handleCleanStorage}
                   disabled={isCleaningStorage}
-                  className="text-[10px] px-2 py-0.5 rounded-lg bg-[#595a45]/15 hover:bg-[#595a45]/25 text-[#3a3d2e] dark:text-[#9ca87d] font-semibold border border-[#595a45]/30 transition-colors disabled:opacity-50 cursor-pointer"
+                  className="text-[10px] px-2 py-0.5 rounded-lg bg-[#A3E635]/15 hover:bg-[#A3E635]/25 text-[#3F6212] dark:text-[#A3E635] font-bold border border-[#A3E635]/30 transition-colors disabled:opacity-50 cursor-pointer"
                   title="Clean temporary audio & cache files"
                 >
                   {isCleaningStorage ? 'Cleaning...' : 'Clean Cache'}
@@ -287,7 +287,7 @@ export default function MyProjectsPage() {
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
             <Link href="/dashboard/create">
-              <Button size="sm" variant="primary" className="rounded-xl text-xs">
+              <Button size="sm" variant="primary" className="rounded-xl text-xs bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] font-black border border-[#84cc16]/50 shadow-md shadow-[#A3E635]/20">
                 <Plus className="w-3.5 h-3.5 mr-1" /> New Project
               </Button>
             </Link>
@@ -311,7 +311,7 @@ export default function MyProjectsPage() {
                 onClick={() => setFilterTab(tab.id as any)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                   filterTab === tab.id
-                    ? 'bg-[#595a45]/20 text-[#2c2f21] dark:text-[#9ca87d] border border-[#595a45]/40 shadow-xs font-bold'
+                    ? 'bg-[#A3E635]/15 text-[#3F6212] dark:text-[#A3E635] border border-[#A3E635]/30 shadow-xs font-bold'
                     : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                 }`}
               >
@@ -331,7 +331,7 @@ export default function MyProjectsPage() {
               placeholder="Search by title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[var(--card)] border border-[var(--card-border)] rounded-xl pl-9 pr-4 py-2 text-xs text-zinc-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-[#595a45]"
+              className="w-full bg-[var(--card)] border border-[var(--card-border)] rounded-xl pl-9 pr-4 py-2 text-xs text-zinc-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-[#A3E635]"
             />
           </div>
         </div>
@@ -342,7 +342,7 @@ export default function MyProjectsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h3 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                  <Scissors className="w-4 h-4 text-[#595a45] dark:text-[#9ca87d]" />
+                  <Scissors className="w-4 h-4 text-[#4D7C0F] dark:text-[#A3E635]" />
                   All Saved Clips ({allClips.length})
                 </h3>
                 <p className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -350,7 +350,7 @@ export default function MyProjectsPage() {
                 </p>
               </div>
               <Link href="/dashboard/create">
-                <Button size="sm" variant="primary" className="rounded-xl text-xs bg-[#595a45] hover:bg-[#484b39] text-[#f7f8f4] dark:bg-[#7d8863] dark:hover:bg-[#8f9b72] dark:text-[#070807] font-bold">
+                <Button size="sm" variant="primary" className="rounded-xl text-xs bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] font-black border border-[#84cc16]/50 shadow-md shadow-[#A3E635]/20">
                   <Plus className="w-3.5 h-3.5 mr-1" /> Create More Clips
                 </Button>
               </Link>
@@ -369,7 +369,7 @@ export default function MyProjectsPage() {
                     return (
                       <div
                         key={clip.id}
-                        className="p-4 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] hover:border-[#595a45]/50 transition-all flex flex-col justify-between group shadow-xl"
+                        className="p-4 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] hover:border-[#A3E635]/50 transition-all flex flex-col justify-between group shadow-xl"
                       >
                         <div className="relative rounded-xl overflow-hidden aspect-[9/16] max-h-60 w-full bg-black mb-3">
                           {thumb ? (
@@ -384,8 +384,8 @@ export default function MyProjectsPage() {
                             <span className="text-[9px] bg-black/80 px-1.5 py-0.5 rounded font-mono text-zinc-300">
                               9:16 Short
                             </span>
-                            <span className="text-[10px] bg-[#595a45] dark:bg-[#7d8863] text-white dark:text-[#070807] px-2 py-0.5 rounded font-extrabold flex items-center gap-0.5 shadow">
-                              <Flame className="w-2.5 h-2.5 fill-current text-amber-300" />
+                            <span className="text-[10px] bg-[#A3E635] text-[#080A08] px-2 py-0.5 rounded font-extrabold flex items-center gap-0.5 shadow">
+                              <Flame className="w-2.5 h-2.5 fill-current text-[#080A08]" />
                               {Math.round(clip.virality_score || 75)}%
                             </span>
                           </div>
@@ -403,13 +403,13 @@ export default function MyProjectsPage() {
                               variant="secondary"
                               className="flex-1 rounded-xl text-xs py-1.5 bg-[var(--surface)] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-white border border-[var(--card-border)]"
                             >
-                              <Play className="w-3 h-3 mr-1 text-blue-500 dark:text-blue-400" /> Preview
+                              <Play className="w-3 h-3 mr-1 text-[#4D7C0F] dark:text-[#A3E635]" /> Preview
                             </Button>
                             {clip.video_url && (
                               <a
                                 href={api.getClipDownloadUrl(clip.id)}
                                 download={`${clip.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_9x16.mp4`}
-                                className="inline-flex items-center justify-center px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all cursor-pointer"
+                                className="inline-flex items-center justify-center px-2.5 py-1.5 rounded-xl text-xs font-black bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] shadow-md transition-all cursor-pointer border border-[#84cc16]/50"
                                 title="Download 9:16 Video Directly"
                               >
                                 <Download className="w-3.5 h-3.5" />
@@ -433,7 +433,7 @@ export default function MyProjectsPage() {
           </div>
         ) : projects.length === 0 ? (
           <div className="py-20 px-6 text-center rounded-3xl bg-[var(--card)] border border-[var(--card-border)] space-y-4 max-w-2xl mx-auto shadow-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-[#595a45]/15 border border-[#595a45]/30 flex items-center justify-center mx-auto text-[#595a45] dark:text-[#9ca87d]">
+            <div className="w-16 h-16 rounded-2xl bg-[#A3E635]/15 border border-[#A3E635]/30 flex items-center justify-center mx-auto text-[#4D7C0F] dark:text-[#A3E635]">
               <Film className="w-8 h-8" />
             </div>
             <div className="space-y-2">
@@ -444,8 +444,8 @@ export default function MyProjectsPage() {
             </div>
             <div className="pt-2">
               <Link href="/dashboard/create">
-                <Button size="lg" variant="primary" className="rounded-2xl text-xs font-bold bg-[#595a45] hover:bg-[#484b39] text-[#f7f8f4] dark:bg-[#7d8863] dark:hover:bg-[#8f9b72] dark:text-[#070807] shadow-xl shadow-[#595a45]/20">
-                  <Sparkles className="w-4 h-4 mr-2 text-amber-300" />
+                <Button size="lg" variant="primary" className="rounded-2xl text-xs font-black bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] shadow-xl shadow-[#A3E635]/20 border border-[#84cc16]/50">
+                  <Sparkles className="w-4 h-4 mr-2 text-[#080A08]" />
                   + Create New Viral Clips
                 </Button>
               </Link>
@@ -476,7 +476,7 @@ export default function MyProjectsPage() {
                       onClick={() => setSelectedProject(proj)}
                       className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                         isSelected
-                          ? 'border-[#595a45] bg-[#595a45]/10 shadow-lg shadow-[#595a45]/10'
+                          ? 'border-[#A3E635] bg-[#A3E635]/10 shadow-lg shadow-[#A3E635]/10'
                           : 'border-[var(--card-border)] bg-[var(--card)] hover:border-zinc-400 dark:hover:border-zinc-700'
                       }`}
                     >
@@ -495,7 +495,7 @@ export default function MyProjectsPage() {
                           <div className="flex items-center gap-2 mt-1 text-[11px] text-zinc-600 dark:text-zinc-400">
                             <span className="font-mono">{formatDuration(proj.duration)}</span>
                             <span>•</span>
-                            <span className="text-[#595a45] dark:text-[#9ca87d] font-semibold">{proj.clips_count} clips</span>
+                            <span className="text-[#4D7C0F] dark:text-[#A3E635] font-semibold">{proj.clips_count} clips</span>
                           </div>
                         </div>
                         
@@ -532,7 +532,7 @@ export default function MyProjectsPage() {
                           </div>
                           <div className="w-full bg-zinc-800 h-1 rounded-full overflow-hidden">
                             <div
-                              className="bg-[#595a45] dark:bg-[#7d8863] h-full rounded-full animate-pulse"
+                              className="bg-[#A3E635] h-full rounded-full animate-pulse"
                               style={{ width: `${proj.progress_percentage}%` }}
                             />
                           </div>
@@ -575,9 +575,9 @@ export default function MyProjectsPage() {
                       isLoading={isTriggeringPipeline}
                       size="sm"
                       variant="primary"
-                      className="rounded-xl text-xs bg-[#595a45] hover:bg-[#484b39] text-[#f7f8f4] dark:bg-[#7d8863] dark:hover:bg-[#8f9b72] dark:text-[#070807] font-bold shadow-lg shadow-[#595a45]/20"
+                      className="rounded-xl text-xs bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] font-black border border-[#84cc16]/50 shadow-lg shadow-[#A3E635]/20"
                     >
-                      <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-300" />
+                      <Sparkles className="w-3.5 h-3.5 mr-1 text-[#080A08]" />
                       ⚡ Generate 9:16 Shorts
                     </Button>
 
@@ -611,12 +611,12 @@ export default function MyProjectsPage() {
                   <Flame className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                   Generated 9:16 Shorts Gallery ({projectClips.length})
                 </span>
-                <span className="text-xs text-[#595a45] dark:text-[#9ca87d] font-semibold">Ready for YouTube & TikTok</span>
+                <span className="text-xs text-[#4D7C0F] dark:text-[#A3E635] font-semibold">Ready for YouTube & TikTok</span>
               </div>
 
               {isLoadingClips ? (
                 <div className="p-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-center text-xs text-zinc-600 dark:text-zinc-400">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#595a45] dark:text-[#9ca87d] mb-2" />
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#4D7C0F] dark:text-[#A3E635] mb-2" />
                   Loading candidate clips...
                 </div>
               ) : projectClips.length === 0 ? (
@@ -633,9 +633,9 @@ export default function MyProjectsPage() {
                       isLoading={isTriggeringPipeline}
                       size="sm"
                       variant="primary"
-                      className="rounded-xl text-xs bg-[#595a45] hover:bg-[#484b39] text-[#f7f8f4] dark:bg-[#7d8863] dark:hover:bg-[#8f9b72] dark:text-[#070807] font-bold"
+                      className="rounded-xl text-xs bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] font-black border border-[#84cc16]/50 shadow-md shadow-[#A3E635]/20"
                     >
-                      <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-300" />
+                      <Sparkles className="w-3.5 h-3.5 mr-1 text-[#080A08]" />
                       ⚡ Generate Shorts Now
                     </Button>
                     <Link href={`/dashboard/create?video_id=${selectedProject?.id || ''}`}>
@@ -658,7 +658,7 @@ export default function MyProjectsPage() {
                     return (
                       <div
                         key={clip.id}
-                        className="p-4 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] hover:border-[#595a45]/50 transition-all flex flex-col justify-between group shadow-lg"
+                        className="p-4 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] hover:border-[#A3E635]/50 transition-all flex flex-col justify-between group shadow-lg"
                       >
                         <div className="relative rounded-xl overflow-hidden aspect-[9/16] max-h-56 w-full bg-[var(--surface)] mb-3">
                           {thumb ? (
@@ -678,14 +678,14 @@ export default function MyProjectsPage() {
                             <span className="text-[9px] bg-black/70 px-1.5 py-0.5 rounded font-mono text-zinc-300">
                               9:16 Vertical
                             </span>
-                            <span className="text-[10px] bg-[#595a45] dark:bg-[#7d8863] text-white dark:text-[#070807] px-2 py-0.5 rounded font-extrabold flex items-center gap-0.5 shadow">
-                              <Flame className="w-2.5 h-2.5 fill-current text-amber-300" />
+                            <span className="text-[10px] bg-[#A3E635] text-[#080A08] px-2 py-0.5 rounded font-extrabold flex items-center gap-0.5 shadow">
+                              <Flame className="w-2.5 h-2.5 fill-current text-[#080A08]" />
                               {Math.round(clip.virality_score)}%
                             </span>
                           </div>
 
                           <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 z-10 text-center">
-                            <span className="inline-block bg-black/85 px-2 py-1 rounded text-[10px] font-black uppercase text-[#FFDD00] shadow-xl border border-[var(--card-border)]">
+                            <span className="inline-block bg-black/85 px-2 py-1 rounded text-[10px] font-black uppercase text-[#A3E635] shadow-xl border border-[var(--card-border)]">
                               {clip.title.slice(0, 24)}...
                             </span>
                           </div>
@@ -719,7 +719,7 @@ export default function MyProjectsPage() {
                               <a
                                 href={api.getClipDownloadUrl(clip.id)}
                                 download={`${clip.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_9x16.mp4`}
-                                className="inline-flex items-center justify-center px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all cursor-pointer"
+                                className="inline-flex items-center justify-center px-2.5 py-1.5 rounded-xl text-xs font-black bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] shadow-md transition-all cursor-pointer border border-[#84cc16]/50"
                                 title="Download 9:16 Video Directly"
                               >
                                 <Download className="w-3.5 h-3.5" />
@@ -730,7 +730,7 @@ export default function MyProjectsPage() {
                                 isLoading={renderingClipId === clip.id}
                                 size="sm"
                                 variant="outline"
-                                className="rounded-xl px-2.5 py-1.5 text-xs text-[#595a45] dark:text-[#9ca87d] border-[#595a45]/30 hover:bg-[#595a45]/10"
+                                className="rounded-xl px-2.5 py-1.5 text-xs text-[#3F6212] dark:text-[#A3E635] border-[#A3E635]/30 hover:bg-[#A3E635]/10"
                                 title="Cut 9:16 with FFmpeg"
                               >
                                 <Scissors className="w-3.5 h-3.5" />
@@ -771,7 +771,7 @@ export default function MyProjectsPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-zinc-900 dark:text-white line-clamp-1">{previewClip.title}</span>
                   {previewClip.ranking_badge && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#595a45]/20 text-[#3a3d2e] dark:text-[#9ca87d] border border-[#595a45]/40">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#A3E635]/20 text-[#3F6212] dark:text-[#A3E635] border border-[#A3E635]/40">
                       {previewClip.ranking_badge}
                     </span>
                   )}
@@ -820,7 +820,7 @@ export default function MyProjectsPage() {
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 flex flex-col justify-between p-4 text-center">
-                  <span className="text-[10px] bg-[#595a45] dark:bg-[#7d8863] text-white dark:text-[#070807] font-bold px-2 py-0.5 rounded self-end">
+                  <span className="text-[10px] bg-[#A3E635] text-[#080A08] font-black px-2 py-0.5 rounded self-end">
                     {Math.round(previewClip.overall_score ?? previewClip.virality_score)} Quality Score
                   </span>
                   <span className="inline-block bg-black/90 px-3 py-1.5 rounded-lg text-xs font-black uppercase text-[#FFDD00] shadow-xl border border-[var(--card-border)] mx-auto">

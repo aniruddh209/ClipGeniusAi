@@ -3,99 +3,104 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-olive: #595a45;
-  --color-olive-dark: #3e412f;
-  --color-olive-light: #7d8863;
-  --color-olive-sage: #9ca87d;
-  --color-charcoal: #262922;
-  --color-charcoal-hover: #33382e;
-  --color-studio-black: #070807;
-  --color-studio-surface: #0e100d;
-  --color-studio-card: #131612;
+  --color-neon: #A3E635;
+  --color-neon-hover: #bef264;
+  --color-neon-dark: #65a30d;
+  --color-mint: #4ADE80;
+  --color-studio-black: #080A08;
+  --color-studio-surface: #151A16;
+  --color-studio-card: #151A16;
+  --color-studio-border: #222A23;
 
-  --color-blue-50: #f7f8f4;
-  --color-blue-100: #edf0e6;
-  --color-blue-200: #d8decb;
-  --color-blue-300: #b5c09f;
-  --color-blue-400: #9ca87d;
-  --color-blue-500: #7d8863;
-  --color-blue-600: #595a45;
-  --color-blue-700: #454736;
-  --color-blue-800: #343628;
-  --color-blue-900: #24251b;
-  --color-blue-950: #14150f;
+  --color-blue-50: #f7fee7;
+  --color-blue-100: #ecfccb;
+  --color-blue-200: #d9f99d;
+  --color-blue-300: #bef264;
+  --color-blue-400: #a3e635;
+  --color-blue-500: #84cc16;
+  --color-blue-600: #65a30d;
+  --color-blue-700: #4d7c0f;
+  --color-blue-800: #3f6212;
+  --color-blue-900: #1a2e05;
+  --color-blue-950: #0d1a03;
 
-  --color-indigo-50: #f7f8f4;
-  --color-indigo-100: #edf0e6;
-  --color-indigo-200: #d8decb;
-  --color-indigo-300: #b5c09f;
-  --color-indigo-400: #9ca87d;
-  --color-indigo-500: #7d8863;
-  --color-indigo-600: #595a45;
-  --color-indigo-700: #454736;
-  --color-indigo-800: #343628;
-  --color-indigo-900: #24251b;
-  --color-indigo-950: #14150f;
+  --color-indigo-50: #f7fee7;
+  --color-indigo-100: #ecfccb;
+  --color-indigo-200: #d9f99d;
+  --color-indigo-300: #bef264;
+  --color-indigo-400: #a3e635;
+  --color-indigo-500: #84cc16;
+  --color-indigo-600: #65a30d;
+  --color-indigo-700: #4d7c0f;
+  --color-indigo-800: #3f6212;
+  --color-indigo-900: #1a2e05;
+  --color-indigo-950: #0d1a03;
 }
 
 :root {
-  --background: #070807;
-  --surface: #0e100d;
-  --foreground: #f1f3ed;
-  --card: #131612;
-  --card-border: #262a22;
-  --charcoal: #262a22;
-  --charcoal-hover: #353a2f;
-  --accent-blue: #7d8863;
-  --accent-blue-dark: #595a45;
-  --accent-blue-light: #9ca87d;
-  --accent-cyan: #8c9771;
-  --accent-olive: #595a45;
-  --accent-olive-dark: #3e412f;
-  --accent-olive-light: #7d8863;
-  --accent-olive-sage: #9ca87d;
-  --text-muted: #8a9182;
-  --border-subtle: #1f231b;
+  --background: #080A08;
+  --surface: #151A16;
+  --foreground: #F5F5F5;
+  --card: #151A16;
+  --card-border: #222A23;
+  --charcoal: #1c231d;
+  --charcoal-hover: #263128;
+  --accent-primary: #A3E635;
+  --accent-mint: #4ADE80;
+  --accent-blue: #A3E635;
+  --accent-blue-dark: #65a30d;
+  --accent-blue-light: #bef264;
+  --accent-cyan: #4ADE80;
+  --accent-olive: #A3E635;
+  --accent-olive-dark: #65a30d;
+  --accent-olive-light: #bef264;
+  --accent-olive-sage: #4ADE80;
+  --text-muted: #929A91;
+  --border-subtle: #1c231d;
 }
 
 html.light {
-  --background: #f7f8f4;
-  --surface: #ffffff;
-  --foreground: #141712;
-  --card: #ffffff;
-  --card-border: #d3d8cb;
-  --charcoal: #484b39;
-  --charcoal-hover: #e6e9df;
-  --accent-blue: #595a45;
-  --accent-blue-dark: #404331;
-  --accent-blue-light: #6e7754;
-  --accent-cyan: #595a45;
-  --accent-olive: #595a45;
-  --accent-olive-dark: #404331;
-  --accent-olive-light: #6e7754;
-  --accent-olive-sage: #595a45;
-  --text-muted: #52584d;
-  --border-subtle: #e2e6dc;
+  --background: #F8FAF7;
+  --surface: #FFFFFF;
+  --foreground: #0D130E;
+  --card: #FFFFFF;
+  --card-border: #E1E6DE;
+  --charcoal: #E8ECE6;
+  --charcoal-hover: #DCE2DA;
+  --accent-primary: #4D7C0F;
+  --accent-mint: #16A34A;
+  --accent-blue: #4D7C0F;
+  --accent-blue-dark: #3F6212;
+  --accent-blue-light: #65A30D;
+  --accent-cyan: #16A34A;
+  --accent-olive: #4D7C0F;
+  --accent-olive-dark: #3F6212;
+  --accent-olive-light: #65A30D;
+  --accent-olive-sage: #16A34A;
+  --text-muted: #525D53;
+  --border-subtle: #E8EDE6;
 }
 
 html.dark {
-  --background: #070807;
-  --surface: #0e100d;
-  --foreground: #f1f3ed;
-  --card: #131612;
-  --card-border: #262a22;
-  --charcoal: #262a22;
-  --charcoal-hover: #353a2f;
-  --accent-blue: #7d8863;
-  --accent-blue-dark: #595a45;
-  --accent-blue-light: #9ca87d;
-  --accent-cyan: #8c9771;
-  --accent-olive: #595a45;
-  --accent-olive-dark: #3e412f;
-  --accent-olive-light: #7d8863;
-  --accent-olive-sage: #9ca87d;
-  --text-muted: #8a9182;
-  --border-subtle: #1f231b;
+  --background: #080A08;
+  --surface: #151A16;
+  --foreground: #F5F5F5;
+  --card: #151A16;
+  --card-border: #222A23;
+  --charcoal: #1c231d;
+  --charcoal-hover: #263128;
+  --accent-primary: #A3E635;
+  --accent-mint: #4ADE80;
+  --accent-blue: #A3E635;
+  --accent-blue-dark: #65a30d;
+  --accent-blue-light: #bef264;
+  --accent-cyan: #4ADE80;
+  --accent-olive: #A3E635;
+  --accent-olive-dark: #65a30d;
+  --accent-olive-light: #bef264;
+  --accent-olive-sage: #4ADE80;
+  --text-muted: #929A91;
+  --border-subtle: #1c231d;
 }
 
 body {
@@ -122,7 +127,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-olive);
+  background: #A3E635;
 }
 
 /* Charcoal & Glassmorphism Panels */
@@ -143,30 +148,30 @@ body {
 }
 
 .glass-panel-hover:hover {
-  border-color: #595a45;
-  box-shadow: 0 0 25px -5px rgba(89, 90, 69, 0.3);
+  border-color: #A3E635;
+  box-shadow: 0 0 25px -5px rgba(163, 230, 53, 0.25);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #f1f3ed 0%, #c4cbba 50%, #8a9182 100%);
+  background: linear-gradient(135deg, #F5F5F5 0%, #A3E635 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 html.light .gradient-text {
-  background: linear-gradient(135deg, #141712 0%, #404331 50%, #595a45 100%);
+  background: linear-gradient(135deg, #0D130E 0%, #4D7C0F 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gradient-blue-text {
-  background: linear-gradient(135deg, #c4cbba 0%, #7d8863 50%, #595a45 100%);
+  background: linear-gradient(135deg, #4ADE80 0%, #A3E635 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gradient-blue-cyan {
-  background: linear-gradient(135deg, #9ca87d 0%, #7d8863 50%, #595a45 100%);
+  background: linear-gradient(135deg, #A3E635 0%, #4ADE80 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

@@ -19,12 +19,12 @@ export const Navbar: React.FC = () => {
     <header className="sticky top-0 z-50 w-full border-b border-[var(--card-border)] bg-[var(--surface)]/90 backdrop-blur-md transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-400 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
-            <Scissors className="w-4 h-4 text-white" />
+          <div className="w-9 h-9 rounded-xl bg-[#A3E635] flex items-center justify-center shadow-lg shadow-[#A3E635]/25 border border-[#84cc16]/50 group-hover:scale-105 transition-transform">
+            <Scissors className="w-4 h-4 text-[#080A08]" />
           </div>
           <div className="flex flex-col">
             <span className="font-extrabold text-base tracking-tight text-[var(--foreground)]">
-              ClipGenius <span className="text-blue-500 font-semibold">AI</span>
+              ClipGenius <span className="text-[#4D7C0F] dark:text-[#A3E635] font-black">AI</span>
             </span>
             <span className="text-[10px] text-[var(--text-muted)] font-medium tracking-widest uppercase -mt-0.5">
               Open-Source Video Studio
@@ -43,7 +43,7 @@ export const Navbar: React.FC = () => {
             Pricing
           </a>
           <Link href="/dashboard" className="hover:text-[var(--foreground)] transition-colors flex items-center gap-1.5">
-            <Video className="w-3.5 h-3.5 text-blue-500" />
+            <Video className="w-3.5 h-3.5 text-[#4D7C0F] dark:text-[#A3E635]" />
             Dashboard
           </Link>
         </nav>

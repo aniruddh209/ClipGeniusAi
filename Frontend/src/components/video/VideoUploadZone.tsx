@@ -209,9 +209,9 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
 
       {/* STATE 1: ACTIVE UPLOADING (REAL PROGRESS TRACKING) */}
       {uploadProgress !== null && currentFile && (
-        <div className="p-8 rounded-3xl bg-[var(--card)] border border-purple-500/40 text-center space-y-5 shadow-2xl">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-950/60 border border-purple-800/60 text-purple-400 flex items-center justify-center">
-            <RefreshCw className="w-6 h-6 animate-spin text-purple-400" />
+        <div className="p-8 rounded-3xl bg-[var(--card)] border border-[#A3E635]/40 text-center space-y-5 shadow-2xl">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-[#A3E635]/15 border border-[#A3E635]/30 text-[#4D7C0F] dark:text-[#A3E635] flex items-center justify-center">
+            <RefreshCw className="w-6 h-6 animate-spin text-[#4D7C0F] dark:text-[#A3E635]" />
           </div>
 
           <div>
@@ -227,11 +227,11 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
           <div className="max-w-md mx-auto space-y-2">
             <div className="flex justify-between text-xs font-mono">
               <span className="text-zinc-600 dark:text-zinc-400">Byte Transfer Progress</span>
-              <span className="text-purple-600 dark:text-purple-400 font-bold">{uploadProgress}%</span>
+              <span className="text-[#4D7C0F] dark:text-[#A3E635] font-bold">{uploadProgress}%</span>
             </div>
             <div className="w-full h-2 rounded-full bg-zinc-800 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-500 transition-all duration-150 rounded-full"
+                className="h-full bg-[#A3E635] transition-all duration-150 rounded-full"
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>
@@ -249,17 +249,17 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
           {/* Header Action Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[var(--card-border)]">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-950/70 border border-emerald-800/60 text-emerald-400 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-[#A3E635]/15 border border-[#A3E635]/30 text-[#4D7C0F] dark:text-[#A3E635] flex items-center justify-center">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white line-clamp-1">
+                <h3 className="text-sm font-bold text-[var(--foreground)] line-clamp-1">
                   {uploadedVideo.title}
                 </h3>
-                <span className="text-[11px] text-zinc-400 flex items-center gap-1.5">
-                  <span className="font-mono text-emerald-400 font-semibold">Video Verified</span>
+                <span className="text-[11px] text-[var(--text-muted)] flex items-center gap-1.5">
+                  <span className="font-mono text-emerald-600 dark:text-[#A3E635] font-semibold">Video Verified</span>
                   <span>•</span>
-                  <span>Stored on Backend</span>
+                  <span>Ready for AI Clipping</span>
                 </span>
               </div>
             </div>
@@ -270,14 +270,14 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
               isLoading={isDeleting}
               variant="outline"
               size="sm"
-              className="rounded-xl text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 border-rose-900/50"
+              className="rounded-xl text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-500/10 border-rose-500/30"
             >
               <Trash2 className="w-3.5 h-3.5 mr-1.5" />
               Remove / Replace Video
             </Button>
           </div>
 
-          {/* Video Player (Embedded YouTube Player for direct YouTube streams or HTML5 for local/cloud files) */}
+          {/* Video Player */}
           <div className="relative rounded-2xl overflow-hidden aspect-video bg-black border border-[var(--card-border)] group shadow-inner">
             {isDirectYt && ytEmbedUrl ? (
               <iframe
@@ -304,57 +304,57 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-12 gap-5 pt-2">
             {/* Left: Metadata Details (8 cols) */}
             <div className="md:col-span-8 space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                <Cpu className="w-3.5 h-3.5 text-purple-400" />
-                FFprobe Extracted Metadata
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5 text-[#4D7C0F] dark:text-[#A3E635]" />
+                Video Metadata
               </span>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)]">
-                  <span className="text-[10px] text-zinc-500 uppercase font-semibold block">Duration</span>
-                  <span className="text-xs font-mono font-bold text-white mt-0.5 block">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold block">Duration</span>
+                  <span className="text-xs font-mono font-bold text-[var(--foreground)] mt-0.5 block">
                     {formatDuration(uploadedVideo.duration)}
                   </span>
-                  <span className="text-[9px] text-zinc-500">
+                  <span className="text-[9px] text-[var(--text-muted)] font-mono">
                     ({uploadedVideo.duration}s)
                   </span>
                 </div>
 
                 <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)]">
-                  <span className="text-[10px] text-zinc-500 uppercase font-semibold block">File Size</span>
-                  <span className="text-xs font-mono font-bold text-white mt-0.5 block">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold block">File Size</span>
+                  <span className="text-xs font-mono font-bold text-[var(--foreground)] mt-0.5 block">
                     {formatFileSize(uploadedVideo.file_size_mb)}
                   </span>
-                  <span className="text-[9px] text-zinc-500">
+                  <span className="text-[9px] text-[var(--text-muted)] font-mono">
                     {uploadedVideo.file_size_mb} MB
                   </span>
                 </div>
 
                 <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)]">
-                  <span className="text-[10px] text-zinc-500 uppercase font-semibold block">Resolution</span>
-                  <span className="text-xs font-mono font-bold text-white mt-0.5 block">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold block">Resolution</span>
+                  <span className="text-xs font-mono font-bold text-[var(--foreground)] mt-0.5 block">
                     {uploadedVideo.metadata?.width || 1920}x{uploadedVideo.metadata?.height || 1080}
                   </span>
-                  <span className="text-[9px] text-purple-400 font-semibold">
+                  <span className="text-[9px] text-emerald-600 dark:text-[#4ADE80] font-semibold">
                     {uploadedVideo.metadata?.aspect_ratio || '16:9'}
                   </span>
                 </div>
 
                 <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)]">
-                  <span className="text-[10px] text-zinc-500 uppercase font-semibold block">Frame Rate</span>
-                  <span className="text-xs font-mono font-bold text-white mt-0.5 block">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold block">Frame Rate</span>
+                  <span className="text-xs font-mono font-bold text-[var(--foreground)] mt-0.5 block">
                     {uploadedVideo.metadata?.fps || 30} FPS
                   </span>
-                  <span className="text-[9px] text-zinc-500">
+                  <span className="text-[9px] text-[var(--text-muted)] font-mono">
                     {uploadedVideo.metadata?.video_codec?.toUpperCase() || 'H264'}
                   </span>
                 </div>
               </div>
 
               {/* Extra technical details badge row */}
-              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-zinc-400">
-                <span className="text-[11px] text-zinc-500">Storage Filename:</span>
-                <code className="px-2 py-0.5 rounded bg-[var(--surface)] text-[10px] text-purple-300 font-mono border border-[var(--card-border)]">
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-[var(--text-muted)]">
+                <span className="text-[11px]">Storage:</span>
+                <code className="px-2 py-0.5 rounded bg-[var(--surface)] text-[10px] text-[var(--foreground)] font-mono border border-[var(--card-border)]">
                   {uploadedVideo.stored_filename}
                 </code>
                 {uploadedVideo.metadata?.audio_codec && (
@@ -372,9 +372,9 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
 
             {/* Right: FFmpeg Generated Thumbnail (4 cols) */}
             <div className="md:col-span-4 space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center justify-between">
-                <span>FFmpeg Thumbnail</span>
-                <Badge variant="purple" className="text-[9px] py-0">Auto-Frame</Badge>
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center justify-between">
+                <span>Thumbnail</span>
+                <Badge variant="success" className="text-[9px] py-0">Verified</Badge>
               </span>
 
               {thumbnailStreamUrl ? (
@@ -391,7 +391,7 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="rounded-xl aspect-video bg-[var(--surface)] border border-[var(--card-border)] flex items-center justify-center text-zinc-600 text-xs">
+                <div className="rounded-xl aspect-video bg-[var(--surface)] border border-[var(--card-border)] flex items-center justify-center text-[var(--text-muted)] text-xs">
                   No thumbnail
                 </div>
               )}
@@ -410,8 +410,8 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
           onClick={() => fileInputRef.current?.click()}
           className={`border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center transition-all cursor-pointer relative overflow-hidden group ${
             dragActive
-              ? 'border-purple-500 bg-purple-950/25 shadow-2xl shadow-purple-950/40 scale-[1.01]'
-              : 'border-[var(--card-border)] hover:border-purple-500/50 bg-[var(--card)] hover:bg-[#14141b]'
+              ? 'border-[#A3E635] bg-[#A3E635]/10 shadow-2xl scale-[1.01]'
+              : 'border-[var(--card-border)] hover:border-[#A3E635]/60 bg-[var(--card)] hover:bg-[var(--surface)]'
           }`}
         >
           {/* Hidden HTML File Input */}
@@ -424,18 +424,18 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
           />
 
           {/* Animated Glow on Hover */}
-          <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-purple-600/10 rounded-full blur-3xl pointer-events-none group-hover:bg-purple-600/20 transition-all" />
+          <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#A3E635]/10 rounded-full blur-3xl pointer-events-none group-hover:bg-[#A3E635]/20 transition-all" />
 
           {/* Center Icon */}
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-purple-950/80 via-zinc-900 to-zinc-800 border border-purple-500/30 text-purple-400 flex items-center justify-center group-hover:scale-110 group-hover:border-purple-500/60 transition-all shadow-xl">
-            <UploadCloud className="w-8 h-8" />
+          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-[#A3E635]/15 border border-[#A3E635]/30 text-[#4D7C0F] dark:text-[#A3E635] flex items-center justify-center group-hover:scale-110 group-hover:border-[#A3E635] transition-all shadow-md">
+            <UploadCloud className="w-7 h-7" />
           </div>
 
-          <h3 className="text-base font-bold text-zinc-900 dark:text-white mb-1.5">
+          <h3 className="text-base font-bold text-[var(--foreground)] mb-1">
             Drag and drop your long-form video here
           </h3>
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mb-5 leading-relaxed">
-            ClipGenius AI extracts speech timestamps with Faster-Whisper, centers faces with OpenCV, and crops to 9:16 vertical shorts.
+          <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto mb-5 leading-relaxed">
+            Drop any MP4, MOV, or WebM to auto-detect viral moments and cut 9:16 shorts.
           </p>
 
           <div className="flex items-center justify-center gap-3">
@@ -443,20 +443,20 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
               type="button"
               variant="primary"
               size="sm"
-              className="rounded-xl px-5 pointer-events-none text-xs"
+              className="rounded-xl px-5 pointer-events-none text-xs font-bold"
             >
               Browse Computer
             </Button>
           </div>
 
           {/* Supported Format Tags */}
-          <div className="mt-6 pt-5 border-t border-[var(--card-border)] flex flex-wrap items-center justify-center gap-3 text-[11px] text-zinc-600 dark:text-zinc-400">
-            <span className="font-semibold text-zinc-800 dark:text-zinc-400">Supported Formats:</span>
-            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] text-purple-700 dark:text-purple-300 font-mono">MP4</span>
-            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] text-blue-700 dark:text-blue-300 font-mono">MOV</span>
-            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] text-pink-700 dark:text-pink-300 font-mono">WebM</span>
+          <div className="mt-6 pt-5 border-t border-[var(--card-border)] flex flex-wrap items-center justify-center gap-3 text-[11px] text-[var(--text-muted)]">
+            <span className="font-semibold text-[var(--foreground)]">Supported Formats:</span>
+            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] font-mono text-[var(--foreground)]">MP4</span>
+            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] font-mono text-[var(--foreground)]">MOV</span>
+            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] font-mono text-[var(--foreground)]">WebM</span>
             <span>•</span>
-            <span>Max Size: <strong className="text-zinc-800 dark:text-zinc-300">500MB</strong></span>
+            <span>Max Size: <strong className="text-[var(--foreground)]">500MB</strong></span>
           </div>
         </div>
       )}

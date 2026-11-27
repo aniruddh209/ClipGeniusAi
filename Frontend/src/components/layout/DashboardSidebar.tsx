@@ -90,12 +90,12 @@ function DashboardSidebarContent() {
         {/* Brand Header */}
         <div className="h-16 px-5 flex items-center justify-between border-b border-[var(--card-border)]">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-[#595a45] dark:bg-[#7d8863] text-white dark:text-[#070807] flex items-center justify-center shadow-md shadow-[#595a45]/25 group-hover:scale-105 transition-all">
-              <Scissors className="w-4 h-4 text-white dark:text-[#070807]" />
+            <div className="w-9 h-9 rounded-xl bg-[#A3E635] text-[#080A08] flex items-center justify-center shadow-md shadow-[#A3E635]/25 group-hover:scale-105 transition-all">
+              <Scissors className="w-4 h-4 text-[#080A08]" />
             </div>
             <div>
               <span className="font-bold text-sm tracking-tight text-[var(--foreground)] flex items-center gap-1.5">
-                ClipGenius <span className="text-[#595a45] dark:text-[#9ca87d] font-bold">AI</span>
+                ClipGenius <span className="text-[#4D7C0F] dark:text-[#A3E635] font-bold">AI</span>
               </span>
               <span className="text-[10px] text-[var(--text-muted)] block -mt-0.5 tracking-wider uppercase font-medium">
                 Studio Suite
@@ -116,7 +116,7 @@ function DashboardSidebarContent() {
         {/* Quick Action Button */}
         <div className="p-4">
           <Link href="/dashboard/create">
-            <button className="w-full h-10 rounded-xl bg-[#595a45] hover:bg-[#484b39] text-[#f7f8f4] dark:bg-[#7d8863] dark:hover:bg-[#8f9b72] dark:text-[#070807] font-bold text-xs tracking-wide flex items-center justify-center gap-2 shadow-md shadow-[#595a45]/20 active:scale-[0.98] transition-all cursor-pointer">
+            <button className="w-full h-10 rounded-xl bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] font-extrabold text-xs tracking-wide flex items-center justify-center gap-2 shadow-md shadow-[#A3E635]/25 active:scale-[0.98] transition-all cursor-pointer border border-[#84cc16]/50">
               <Plus className="w-4 h-4" />
               <span>Create New Clips</span>
             </button>
@@ -150,7 +150,7 @@ function DashboardSidebarContent() {
                 className={cn(
                   'flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all group',
                   isActive
-                    ? 'bg-[#595a45]/15 text-[#3a3c2d] dark:text-[#9ca87d] border border-[#595a45]/30 shadow-xs font-bold'
+                    ? 'bg-[#A3E635]/15 text-[#3F6212] dark:text-[#A3E635] border border-[#A3E635]/30 shadow-xs font-bold'
                     : 'text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--card-border)]/30'
                 )}
               >
@@ -158,7 +158,7 @@ function DashboardSidebarContent() {
                   <Icon
                     className={cn(
                       'w-4 h-4 transition-colors',
-                      isActive ? 'text-[#595a45] dark:text-[#9ca87d]' : 'text-[var(--text-muted)] group-hover:text-[var(--foreground)]'
+                      isActive ? 'text-[#3F6212] dark:text-[#A3E635]' : 'text-[var(--text-muted)] group-hover:text-[var(--foreground)]'
                     )}
                   />
                   <span>{item.label}</span>
@@ -168,7 +168,7 @@ function DashboardSidebarContent() {
                     className={cn(
                       'px-1.5 py-0.5 text-[10px] rounded-md font-semibold border',
                       isActive
-                        ? 'bg-[#595a45]/20 text-[#3a3c2d] dark:text-[#9ca87d] border-[#595a45]/30'
+                        ? 'bg-[#A3E635]/20 text-[#3F6212] dark:text-[#A3E635] border-[#A3E635]/30'
                         : 'bg-[var(--surface)] text-[var(--foreground)] border-[var(--card-border)]'
                     )}
                   >
@@ -184,7 +184,7 @@ function DashboardSidebarContent() {
       {/* Clean, Minimalist Studio Footer */}
       <div className="p-4 border-t border-[var(--card-border)] flex items-center justify-between text-[11px] text-[var(--text-muted)]">
         <span className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#A3E635]" />
           <span>v1.0 Studio</span>
         </span>
         <span className="text-[10px] font-mono opacity-60">Open Source</span>
@@ -197,11 +197,11 @@ function DashboardSidebarContent() {
       {/* Mobile Sticky Top Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[var(--surface)]/95 backdrop-blur-md border-b border-[var(--card-border)] px-4 flex items-center justify-between z-40">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#595a45] dark:bg-[#7d8863] text-white dark:text-[#070807] flex items-center justify-center shadow-md shadow-[#595a45]/25">
-            <Scissors className="w-3.5 h-3.5 text-white dark:text-[#070807]" />
+          <div className="w-7 h-7 rounded-lg bg-[#A3E635] text-[#080A08] flex items-center justify-center shadow-md shadow-[#A3E635]/25">
+            <Scissors className="w-3.5 h-3.5 text-[#080A08]" />
           </div>
           <span className="font-bold text-sm tracking-tight text-[var(--foreground)]">
-            ClipGenius <span className="text-[#595a45] dark:text-[#9ca87d] font-bold">AI</span>
+            ClipGenius <span className="text-[#4D7C0F] dark:text-[#A3E635] font-bold">AI</span>
           </span>
         </Link>
         <button

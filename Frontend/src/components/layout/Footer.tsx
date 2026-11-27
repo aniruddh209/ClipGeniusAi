@@ -19,8 +19,8 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-white/[0.06]">
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white">
-                <Scissors className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-lg bg-[#A3E635] flex items-center justify-center text-[#080A08] font-bold">
+                <Scissors className="w-4 h-4 text-[#080A08]" />
               </div>
               <span className="font-bold text-white text-base">ClipGenius AI</span>
             </div>
