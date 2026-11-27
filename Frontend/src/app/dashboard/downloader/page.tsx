@@ -506,7 +506,7 @@ function VideoDownloaderContent() {
                   <span>Fast Video Downloader</span>
                 </div>
 
-                <h2 className="text-xl font-bold text-white tracking-tight">
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
                   Enter Video or Media Link
                 </h2>
                 <p className="text-xs text-[var(--text-muted)]">
@@ -524,12 +524,12 @@ function VideoDownloaderContent() {
                         value={urlInput}
                         onChange={(e) => setUrlInput(e.target.value)}
                         placeholder="https://www.youtube.com/watch?v=... or direct MP4 link"
-                        className="w-full h-11 pl-10 pr-24 rounded-xl bg-[var(--card)] border border-[var(--card-border)] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/80 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono"
+                        className="w-full h-11 pl-10 pr-24 rounded-xl bg-[var(--card)] border border-[var(--card-border)] text-xs text-zinc-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-blue-500/80 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono"
                       />
                       <button
                         type="button"
                         onClick={handlePaste}
-                        className="absolute inset-y-1.5 right-1.5 px-3 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-zinc-300 hover:text-white text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="absolute inset-y-1.5 right-1.5 px-3 rounded-lg bg-zinc-100 dark:bg-white/[0.06] hover:bg-zinc-200 dark:hover:bg-white/[0.1] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-[var(--card-border)]"
                         title="Paste from clipboard"
                       >
                         <ClipboardPaste className="w-3.5 h-3.5" />
@@ -1071,7 +1071,7 @@ function VideoDownloaderContent() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--card-border)] pb-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
                       <span>Download Manager</span>
                       <Badge variant="blue" className="text-[11px]">
                         {activeDownloads.length} Active / {tasks.length} Total
@@ -1093,49 +1093,49 @@ function VideoDownloaderContent() {
                       placeholder="Filter downloads..."
                       value={searchFilter}
                       onChange={(e) => setSearchFilter(e.target.value)}
-                      className="w-40 sm:w-48 h-8 pl-8 pr-2.5 rounded-lg bg-white/[0.04] border border-[var(--card-border)] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50"
+                      className="w-40 sm:w-48 h-8 pl-8 pr-2.5 rounded-lg bg-[var(--surface)] border border-[var(--card-border)] text-xs text-zinc-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-blue-500/50"
                     />
                   </div>
 
                   <button
                     onClick={() => handleSelectAllVisible(filteredTasks)}
-                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg bg-[var(--surface)] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Select or deselect all items"
                   >
-                    <CheckSquare className="w-3.5 h-3.5 text-blue-400" />
+                    <CheckSquare className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                     <span>{selectedTaskIds.size === filteredTasks.length && filteredTasks.length > 0 ? 'Deselect' : 'Select All'}</span>
                   </button>
 
                   <button
                     onClick={() => handleBatch('resume_all')}
-                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg bg-[var(--surface)] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Resume all paused and interrupted downloads"
                   >
-                    <Play className="w-3.5 h-3.5 text-emerald-400" />
+                    <Play className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
                     <span className="hidden sm:inline">Resume All</span>
                   </button>
 
                   <button
                     onClick={() => handleBatch('pause_all')}
-                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg bg-[var(--surface)] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Pause all active downloads"
                   >
-                    <Pause className="w-3.5 h-3.5 text-amber-400" />
+                    <Pause className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
                     <span className="hidden sm:inline">Pause All</span>
                   </button>
 
                   <button
                     onClick={() => handleBatch('retry_failed')}
-                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-blue-300 hover:text-white border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg bg-[var(--surface)] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Retry all failed and interrupted downloads"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 text-blue-400" />
+                    <RotateCcw className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                     <span className="hidden sm:inline">Retry Failed</span>
                   </button>
 
                   <button
                     onClick={() => handleBatch('cancel_all')}
-                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 text-[var(--text-muted)] hover:text-rose-400 border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg bg-[var(--surface)] hover:bg-rose-50 dark:hover:bg-rose-500/20 text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Cancel all active downloads"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -1144,28 +1144,28 @@ function VideoDownloaderContent() {
 
                   <button
                     onClick={() => handleBatch('clear_completed')}
-                    className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[var(--text-muted)] hover:text-zinc-200 border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg bg-[var(--surface)] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-[var(--text-muted)] hover:text-zinc-900 dark:hover:text-zinc-200 border border-[var(--card-border)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Clear completed tasks from view"
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                     <span className="hidden sm:inline">Clear Done</span>
                   </button>
                 </div>
               </div>
 
               {/* Download Engine Status Strip */}
-              <div className="p-3 px-4 rounded-xl bg-blue-950/20 border border-blue-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div className="p-3 px-4 rounded-xl bg-blue-50/80 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="font-semibold text-white">Resumable Download Engine</span>
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="font-semibold text-zinc-900 dark:text-white">Resumable Download Engine</span>
                   <span className="text-[var(--text-muted)] hidden sm:inline">•</span>
                   <span className="text-[var(--text-muted)] text-[11px] hidden sm:inline">Auto-reconnects on network drops without file corruption.</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono shrink-0">
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 text-[10px] font-mono shrink-0">
                     Range Resumption
                   </span>
-                  <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-300 border border-blue-500/20 text-[10px] font-mono shrink-0">
+                  <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/20 text-[10px] font-mono shrink-0">
                     macOS Native
                   </span>
                 </div>
@@ -1173,10 +1173,10 @@ function VideoDownloaderContent() {
 
               {/* Multi-Selection Batch Actions Banner */}
               {selectedTaskIds.size > 0 && (
-                <div className="p-3.5 rounded-2xl bg-blue-950/40 border border-blue-500/30 flex items-center justify-between text-xs animate-in fade-in">
+                <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-500/30 flex items-center justify-between text-xs animate-in fade-in">
                   <div className="flex items-center gap-2">
-                    <CheckSquare className="w-4 h-4 text-blue-400" />
-                    <span className="font-bold text-white">
+                    <CheckSquare className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                    <span className="font-bold text-zinc-900 dark:text-white">
                       {selectedTaskIds.size} item(s) selected
                     </span>
                   </div>
@@ -1275,7 +1275,7 @@ function VideoDownloaderContent() {
                             </div>
 
                             <div className="min-w-0 flex-1">
-                              <h4 className="text-xs font-semibold text-white truncate leading-tight">
+                              <h4 className="text-xs font-semibold text-zinc-900 dark:text-white truncate leading-tight">
                                 {task.title}
                               </h4>
                               <div className="flex flex-wrap items-center gap-2 text-[11px] text-[var(--text-muted)] mt-0.5">
@@ -1643,11 +1643,11 @@ function VideoDownloaderContent() {
                       </div>
 
                       <div>
-                        <h4 className="font-semibold text-xs text-white line-clamp-2 leading-snug">
+                        <h4 className="font-semibold text-xs text-zinc-900 dark:text-white line-clamp-2 leading-snug">
                           {item.title}
                         </h4>
                         <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] mt-1">
-                          <span className="uppercase font-mono text-blue-400">{item.ext}</span>
+                          <span className="uppercase font-mono text-blue-500 dark:text-blue-400">{item.ext}</span>
                           <span>•</span>
                           <span>{(item.total_bytes / (1024 * 1024)).toFixed(1)} MB</span>
                           <span>•</span>
@@ -1661,15 +1661,15 @@ function VideoDownloaderContent() {
                       <div className="grid grid-cols-4 gap-1.5">
                         <button
                           onClick={() => handleOpenPlayer(item as any)}
-                          className="h-7 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                          className="h-7 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-center transition-colors cursor-pointer"
                           title="Open in QuickTime / Mac Player"
                         >
-                          <Play className="w-3.5 h-3.5 fill-emerald-400/20" />
+                          <Play className="w-3.5 h-3.5 fill-emerald-500/20" />
                         </button>
 
                         <button
                           onClick={() => handleRevealFinder(item as any)}
-                          className="h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                          className="h-7 rounded-lg bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 flex items-center justify-center transition-colors cursor-pointer"
                           title="Reveal in Finder"
                         >
                           <Folder className="w-3.5 h-3.5" />
@@ -1677,7 +1677,7 @@ function VideoDownloaderContent() {
 
                         <button
                           onClick={() => setExportModalTask(item as any)}
-                          className="h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                          className="h-7 rounded-lg bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30 flex items-center justify-center transition-colors cursor-pointer"
                           title="macOS Export & Convert"
                         >
                           <Apple className="w-3.5 h-3.5" />
@@ -1685,7 +1685,7 @@ function VideoDownloaderContent() {
 
                         <button
                           onClick={() => setDetailsModalTask(item as any)}
-                          className="h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 border border-[var(--card-border)] flex items-center justify-center transition-colors cursor-pointer"
+                          className="h-7 rounded-lg bg-[var(--surface)] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white border border-[var(--card-border)] flex items-center justify-center transition-colors cursor-pointer"
                           title="File Specs & Location"
                         >
                           <Info className="w-3.5 h-3.5" />
@@ -1696,7 +1696,7 @@ function VideoDownloaderContent() {
                       <div className="flex items-center justify-between gap-2">
                         <button
                           onClick={() => handleClipInStudio(item.task_id)}
-                          className="flex-1 h-8 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          className="flex-1 h-8 rounded-lg bg-blue-50 dark:bg-blue-600/20 hover:bg-blue-100 dark:hover:bg-blue-600/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                         >
                           <Scissors className="w-3.5 h-3.5" />
                           <span>Clip with AI</span>
@@ -1705,7 +1705,7 @@ function VideoDownloaderContent() {
                         <a
                           href={api.getDownloadFileUrl(item.task_id)}
                           download={item.output_filename || 'download'}
-                          className="h-8 px-2.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-zinc-200 text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                          className="h-8 px-2.5 rounded-lg bg-[var(--surface)] hover:bg-zinc-100 dark:hover:bg-white/[0.1] text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white border border-[var(--card-border)] text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                           title="Download file via browser"
                         >
                           <FolderDown className="w-3.5 h-3.5" />

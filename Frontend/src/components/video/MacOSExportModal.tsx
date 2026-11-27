@@ -222,22 +222,22 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-[#0a0a0a] border border-white/[0.12] rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl space-y-6 p-6 sm:p-7 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl space-y-6 p-6 sm:p-7 animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+        <div className="flex items-center justify-between pb-4 border-b border-[var(--card-border)]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-600/30">
               <Apple className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
                 <span>macOS Video Export & File Manager</span>
                 <Badge variant="blue" className="text-[10px] uppercase font-bold tracking-wider">
                   MacBook Optimized
                 </Badge>
               </h3>
-              <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 line-clamp-1">
                 {title}
               </p>
             </div>
@@ -245,7 +245,7 @@ export const MacOSExportModal: React.FC<MacOSExportModalProps> = ({
           <button
             onClick={onClose}
             disabled={isExporting}
-            className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+            className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>

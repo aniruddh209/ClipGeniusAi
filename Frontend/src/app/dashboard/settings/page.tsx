@@ -74,8 +74,8 @@ export default function SettingsPage() {
       <div className="px-6 sm:px-8 pt-8 max-w-5xl mx-auto space-y-6">
         {/* Saved Feedback Alert */}
         {savedAlert && (
-          <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-800/60 text-xs text-emerald-300 flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-400" />
+          <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+            <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Settings and preferences saved successfully!</span>
           </div>
         )}
@@ -94,7 +94,7 @@ export default function SettingsPage() {
                 onClick={() => setTab(item.id as any)}
                 className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 cursor-pointer ${
                   tab === item.id
-                    ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
+                    ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30 shadow-xs'
                     : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                 }`}
               >
@@ -117,37 +117,37 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">{name}</h3>
-                <p className="text-xs text-zinc-400">{email}</p>
+                <h3 className="text-base font-bold text-zinc-900 dark:text-white">{name}</h3>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">{email}</p>
                 <div className="mt-2 flex items-center gap-2">
                   <Badge variant="blue">Community OSS Free</Badge>
-                  <span className="text-[11px] text-zinc-500">Self-Hosted Engine</span>
+                  <span className="text-[11px] text-zinc-600 dark:text-zinc-400">Self-Hosted Engine</span>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-400">
                   Display Name
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-400">
                   Email Address
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
             </div>
@@ -155,31 +155,31 @@ export default function SettingsPage() {
             {/* Current Storage Meter */}
             <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--card-border)] space-y-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                <span className="text-zinc-400 font-medium flex items-center gap-1.5">
-                  <HardDrive className="w-4 h-4 text-blue-400" />
+                <span className="text-zinc-700 dark:text-zinc-400 font-medium flex items-center gap-1.5">
+                  <HardDrive className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                   Local Scratch Storage
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="text-zinc-300 font-mono font-bold">
+                  <span className="text-zinc-900 dark:text-white font-mono font-bold">
                     {storage ? `${storage.total_storage_mb} MB / 50 GB Used` : 'Calculating...'}
                   </span>
                   <button
                     type="button"
                     onClick={handleCleanStorage}
                     disabled={isCleaning}
-                    className="text-[10px] px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 transition-colors disabled:opacity-50"
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30 hover:bg-blue-100 dark:hover:bg-blue-500/30 transition-colors disabled:opacity-50 cursor-pointer font-medium"
                   >
                     {isCleaning ? 'Cleaning...' : 'Clean Cache'}
                   </button>
                 </div>
               </div>
-              <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+              <div className="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                 <div
                   className="bg-gradient-to-r from-blue-500 to-blue-500 h-full rounded-full transition-all duration-300"
                   style={{ width: `${Math.min(100, Math.max(1, ((storage?.total_storage_mb || 10) / (50 * 1024)) * 100))}%` }}
                 />
               </div>
-              <p className="text-[10px] text-zinc-500">
+              <p className="text-[10px] text-zinc-600 dark:text-zinc-400">
                 Videos and generated clips are stored locally inside `backend/uploads/` and `backend/generated-clips/`.
               </p>
             </div>
@@ -190,11 +190,11 @@ export default function SettingsPage() {
         {tab === 'preferences' && (
           <Card className="border-[var(--card-border)] bg-[var(--card)] p-6 space-y-6">
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-blue-400" />
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                 AI Transcription Engine (Faster-Whisper)
               </h3>
-              <p className="text-xs text-zinc-400 mt-1">
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
                 Select the local Faster-Whisper model size. Higher models offer greater accuracy but require slightly more RAM.
               </p>
             </div>
@@ -212,13 +212,13 @@ export default function SettingsPage() {
                   onClick={() => setWhisperModel(model.id as any)}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                     whisperModel === model.id
-                      ? 'border-blue-500 bg-blue-950/30'
-                      : 'border-[var(--card-border)] bg-[var(--surface)] hover:border-zinc-700'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                      : 'border-[var(--card-border)] bg-[var(--surface)] hover:border-zinc-400 dark:hover:border-zinc-700'
                   }`}
                 >
-                  <span className="text-xs font-bold text-white block">{model.name}</span>
-                  <span className="text-[10px] text-blue-400 block mt-1 font-semibold">{model.speed}</span>
-                  <span className="text-[10px] text-zinc-500 block">{model.vram}</span>
+                  <span className="text-xs font-bold text-zinc-900 dark:text-white block">{model.name}</span>
+                  <span className="text-[10px] text-blue-600 dark:text-blue-400 block mt-1 font-semibold">{model.speed}</span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 block">{model.vram}</span>
                 </button>
               ))}
             </div>
@@ -226,8 +226,8 @@ export default function SettingsPage() {
             {/* OpenCV Face Centering Toggle */}
             <div className="pt-4 border-t border-[var(--card-border)] flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-white block">Auto Speaker Face Tracking</span>
-                <span className="text-xs text-zinc-400">
+                <span className="text-xs font-bold text-zinc-900 dark:text-white block">Auto Speaker Face Tracking</span>
+                <span className="text-xs text-zinc-600 dark:text-zinc-400">
                   Dynamically centers the active speaker during 9:16 vertical crop with OpenCV
                 </span>
               </div>
@@ -235,7 +235,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setAutoFaceTracking(!autoFaceTracking)}
                 className={`w-11 h-6 rounded-full transition-colors p-1 cursor-pointer ${
-                  autoFaceTracking ? 'bg-blue-600' : 'bg-zinc-800'
+                  autoFaceTracking ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-800'
                 }`}
               >
                 <div
@@ -252,24 +252,24 @@ export default function SettingsPage() {
         {tab === 'export' && (
           <Card className="border-[var(--card-border)] bg-[var(--card)] p-6 space-y-6">
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Download className="w-4 h-4 text-blue-400" />
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                <Download className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                 Default Video & Subtitle Export Settings
               </h3>
-              <p className="text-xs text-zinc-400 mt-1">
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
                 These defaults will automatically apply to newly generated clips.
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-400">
                   Default Aspect Ratio
                 </label>
                 <select
                   value={defaultAspectRatio}
                   onChange={(e) => setDefaultAspectRatio(e.target.value as any)}
-                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500"
                 >
                   <option value="9:16">9:16 Vertical (Shorts/Reels/TikTok)</option>
                   <option value="1:1">1:1 Square (Feed)</option>
@@ -278,13 +278,13 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-400">
                   Default Resolution
                 </label>
                 <select
                   value={defaultResolution}
                   onChange={(e) => setDefaultResolution(e.target.value as any)}
-                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500"
                 >
                   <option value="1080p">1080x1920 (Full HD)</option>
                   <option value="4K">2160x3840 (4K Ultra HD)</option>
@@ -293,13 +293,13 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-400">
                   Frame Rate (FPS)
                 </label>
                 <select
                   value={fps}
                   onChange={(e) => setFps(e.target.value)}
-                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-3 py-2.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500"
                 >
                   <option value="30">30 FPS (Standard)</option>
                   <option value="60">60 FPS (High Smoothness)</option>
@@ -309,7 +309,7 @@ export default function SettingsPage() {
 
             {/* Subtitle Accent Color */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-400 block">
                 Active Word Highlight Color
               </label>
               <div className="flex items-center gap-3">
@@ -327,8 +327,8 @@ export default function SettingsPage() {
                     style={{ backgroundColor: c.hex }}
                     className={`w-7 h-7 rounded-full border-2 transition-all cursor-pointer ${
                       subtitleColor === c.hex
-                        ? 'border-white scale-110 shadow-lg'
-                        : 'border-transparent opacity-80 hover:opacity-100'
+                        ? 'border-blue-600 dark:border-white scale-110 shadow-lg'
+                        : 'border-zinc-300 dark:border-transparent opacity-80 hover:opacity-100'
                     }`}
                     title={c.name}
                   />
@@ -338,16 +338,16 @@ export default function SettingsPage() {
 
             {/* Naming Pattern */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-400">
                 Export File Naming Template
               </label>
               <input
                 type="text"
                 value={fileNamePattern}
                 onChange={(e) => setFileNamePattern(e.target.value)}
-                className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-blue-500"
+                className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-zinc-900 dark:text-white font-mono focus:outline-none focus:border-blue-500"
               />
-              <p className="text-[10px] text-zinc-500">
+              <p className="text-[10px] text-zinc-600 dark:text-zinc-400">
                 Variables: &#123;title&#125;, &#123;index&#125;, &#123;virality&#125;, &#123;date&#125;
               </p>
             </div>

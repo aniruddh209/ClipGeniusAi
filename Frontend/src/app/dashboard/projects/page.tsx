@@ -262,15 +262,15 @@ export default function MyProjectsPage() {
         action={
           <div className="flex items-center gap-2">
             {storageInfo && (
-              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-900 border border-[var(--card-border)] text-xs">
-                <HardDrive className="w-3.5 h-3.5 text-blue-400" />
-                <span className="text-white/70">
-                  Storage: <strong className="text-white font-mono">{storageInfo.total_storage_mb} MB</strong>
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--card)] border border-[var(--card-border)] text-xs">
+                <HardDrive className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
+                <span className="text-zinc-600 dark:text-white/70">
+                  Storage: <strong className="text-zinc-900 dark:text-white font-mono">{storageInfo.total_storage_mb} MB</strong>
                 </span>
                 <button
                   onClick={handleCleanStorage}
                   disabled={isCleaningStorage}
-                  className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-blue-300 font-semibold transition-colors disabled:opacity-50"
+                  className="text-[10px] px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-white/10 hover:bg-blue-100 dark:hover:bg-white/20 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200 dark:border-transparent transition-colors disabled:opacity-50 cursor-pointer"
                   title="Clean temporary audio & cache files"
                 >
                   {isCleaningStorage ? 'Cleaning...' : 'Clean Cache'}
@@ -311,12 +311,12 @@ export default function MyProjectsPage() {
                 onClick={() => setFilterTab(tab.id as any)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                   filterTab === tab.id
-                    ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
+                    ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30 shadow-xs'
                     : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                 }`}
               >
                 <span>{tab.label}</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-zinc-800 text-zinc-400">
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 font-mono">
                   {tab.count}
                 </span>
               </button>
@@ -331,7 +331,7 @@ export default function MyProjectsPage() {
               placeholder="Search by title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[var(--card)] border border-[var(--card-border)] rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+              className="w-full bg-[var(--card)] border border-[var(--card-border)] rounded-xl pl-9 pr-4 py-2 text-xs text-zinc-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-blue-500"
             />
           </div>
         </div>
@@ -341,11 +341,11 @@ export default function MyProjectsPage() {
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Scissors className="w-4 h-4 text-blue-400" />
+                <h3 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                  <Scissors className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                   All Saved Clips ({allClips.length})
                 </h3>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
                   These clips remain preserved on your server even if source videos are removed. Delete them individually whenever you choose.
                 </p>
               </div>
@@ -395,15 +395,15 @@ export default function MyProjectsPage() {
                         </div>
 
                         <div className="space-y-2 flex-1 flex flex-col justify-between">
-                          <h4 className="text-xs font-bold text-white line-clamp-2">{clip.title}</h4>
+                          <h4 className="text-xs font-bold text-zinc-900 dark:text-white line-clamp-2">{clip.title}</h4>
                           <div className="pt-2 border-t border-[var(--card-border)] flex items-center gap-2">
                             <Button
                               onClick={() => setPreviewClip(clip)}
                               size="sm"
                               variant="secondary"
-                              className="flex-1 rounded-xl text-xs py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white"
+                              className="flex-1 rounded-xl text-xs py-1.5 bg-[var(--surface)] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-white border border-[var(--card-border)]"
                             >
-                              <Play className="w-3 h-3 mr-1 text-blue-400" /> Preview
+                              <Play className="w-3 h-3 mr-1 text-blue-500 dark:text-blue-400" /> Preview
                             </Button>
                             {clip.video_url && (
                               <a
@@ -433,12 +433,12 @@ export default function MyProjectsPage() {
           </div>
         ) : projects.length === 0 ? (
           <div className="py-20 px-6 text-center rounded-3xl bg-[var(--card)] border border-[var(--card-border)] space-y-4 max-w-2xl mx-auto shadow-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600/20 to-pink-600/20 border border-blue-500/30 flex items-center justify-center mx-auto text-blue-400">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600/20 to-pink-600/20 border border-blue-500/30 flex items-center justify-center mx-auto text-blue-500 dark:text-blue-400">
               <Film className="w-8 h-8" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-lg font-bold text-white">No Projects in Workspace</h3>
-              <p className="text-xs text-zinc-400 max-w-md mx-auto">
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white">No Projects in Workspace</h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
                 All source videos and clips have been cleaned. Import a YouTube link or upload an MP4/WebM to extract high-virality 9:16 shorts.
               </p>
             </div>
@@ -455,12 +455,12 @@ export default function MyProjectsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Projects List (5 cols) */}
             <div className="lg:col-span-5 space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 block px-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-400 block px-1">
                 Source Projects ({filteredProjects.length})
               </span>
 
               {filteredProjects.length === 0 ? (
-                <div className="p-8 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-center text-xs text-zinc-400">
+                <div className="p-8 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-center text-xs text-zinc-600 dark:text-zinc-400">
                   No projects match your search query.
                 </div>
               ) : (
@@ -476,8 +476,8 @@ export default function MyProjectsPage() {
                       onClick={() => setSelectedProject(proj)}
                       className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                         isSelected
-                          ? 'border-blue-500/60 bg-blue-950/20 shadow-lg shadow-blue-950/20'
-                          : 'border-[var(--card-border)] bg-[var(--card)] hover:border-zinc-700'
+                          ? 'border-blue-500/60 bg-blue-50 dark:bg-blue-950/20 shadow-lg shadow-blue-950/20'
+                          : 'border-[var(--card-border)] bg-[var(--card)] hover:border-zinc-400 dark:hover:border-zinc-700'
                       }`}
                     >
                       <div className="flex gap-3 items-start">
@@ -491,11 +491,11 @@ export default function MyProjectsPage() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-bold text-white line-clamp-1">{proj.title}</h4>
-                          <div className="flex items-center gap-2 mt-1 text-[11px] text-zinc-400">
+                          <h4 className="text-xs font-bold text-zinc-900 dark:text-white line-clamp-1">{proj.title}</h4>
+                          <div className="flex items-center gap-2 mt-1 text-[11px] text-zinc-600 dark:text-zinc-400">
                             <span className="font-mono">{formatDuration(proj.duration)}</span>
                             <span>•</span>
-                            <span className="text-blue-400 font-semibold">{proj.clips_count} clips</span>
+                            <span className="text-blue-500 dark:text-blue-400 font-semibold">{proj.clips_count} clips</span>
                           </div>
                         </div>
                         
@@ -564,8 +564,8 @@ export default function MyProjectsPage() {
                         </Badge>
                       )}
                     </div>
-                    <h3 className="text-base font-bold text-white">{selectedProject.title}</h3>
-                    <p className="text-xs text-zinc-400 mt-1">{selectedProject.current_step}</p>
+                    <h3 className="text-base font-bold text-zinc-900 dark:text-white">{selectedProject.title}</h3>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{selectedProject.current_step}</p>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
@@ -582,7 +582,7 @@ export default function MyProjectsPage() {
                     </Button>
 
                     <Link href={`/dashboard/create?video_id=${selectedProject?.id || ''}`}>
-                      <Button size="sm" variant="outline" className="rounded-xl text-xs border-white/20 text-zinc-300 hover:text-white">
+                      <Button size="sm" variant="outline" className="rounded-xl text-xs border-[var(--card-border)] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white">
                         <Scissors className="w-3.5 h-3.5 mr-1" /> Configure & Clip
                       </Button>
                     </Link>
@@ -607,23 +607,23 @@ export default function MyProjectsPage() {
             {/* Generated Shorts for Selected Project */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                  <Flame className="w-4 h-4 text-amber-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-400 flex items-center gap-1.5">
+                  <Flame className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                   Generated 9:16 Shorts Gallery ({projectClips.length})
                 </span>
-                <span className="text-xs text-blue-400">Ready for YouTube & TikTok</span>
+                <span className="text-xs text-blue-500 dark:text-blue-400 font-semibold">Ready for YouTube & TikTok</span>
               </div>
 
               {isLoadingClips ? (
-                <div className="p-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-center text-xs text-zinc-400">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-400 mb-2" />
+                <div className="p-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-center text-xs text-zinc-600 dark:text-zinc-400">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500 mb-2" />
                   Loading candidate clips...
                 </div>
               ) : projectClips.length === 0 ? (
                 <div className="p-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-center space-y-3">
-                  <Scissors className="w-8 h-8 text-zinc-600 mx-auto" />
-                  <p className="text-sm font-semibold text-white">No clips generated for this video yet</p>
-                  <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+                  <Scissors className="w-8 h-8 text-zinc-400 dark:text-zinc-600 mx-auto" />
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">No clips generated for this video yet</p>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto">
                     Run the AI Moment Detection engine to identify high-engagement segments and cut them into vertical shorts.
                   </p>
                   <div className="flex justify-center items-center gap-3 pt-2">
@@ -639,7 +639,7 @@ export default function MyProjectsPage() {
                       ⚡ Generate Shorts Now
                     </Button>
                     <Link href={`/dashboard/create?video_id=${selectedProject?.id || ''}`}>
-                      <Button size="sm" variant="outline" className="rounded-xl text-xs border-white/20 text-zinc-300 hover:text-white">
+                      <Button size="sm" variant="outline" className="rounded-xl text-xs border-[var(--card-border)] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white">
                         <Scissors className="w-3.5 h-3.5 mr-1" /> Open in Studio
                       </Button>
                     </Link>
@@ -697,9 +697,9 @@ export default function MyProjectsPage() {
 
                         <div className="space-y-2 flex-1 flex flex-col justify-between">
                           <div>
-                            <h4 className="text-xs font-bold text-white line-clamp-1">{clip.title}</h4>
+                            <h4 className="text-xs font-bold text-zinc-900 dark:text-white line-clamp-1">{clip.title}</h4>
                             {hookText && (
-                              <p className="text-[11px] text-zinc-400 mt-1 line-clamp-2 italic">
+                              <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-2 italic">
                                 &quot;{hookText}&quot;
                               </p>
                             )}
@@ -710,7 +710,7 @@ export default function MyProjectsPage() {
                               onClick={() => setPreviewClip(clip)}
                               size="sm"
                               variant="secondary"
-                              className="flex-1 rounded-xl text-xs py-1.5"
+                              className="flex-1 rounded-xl text-xs py-1.5 bg-[var(--surface)] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-white border border-[var(--card-border)]"
                             >
                               <Play className="w-3 h-3 mr-1" /> Preview
                             </Button>
@@ -730,7 +730,7 @@ export default function MyProjectsPage() {
                                 isLoading={renderingClipId === clip.id}
                                 size="sm"
                                 variant="outline"
-                                className="rounded-xl px-2.5 py-1.5 text-xs text-blue-300 border-blue-500/30 hover:bg-blue-950/40"
+                                className="rounded-xl px-2.5 py-1.5 text-xs text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-500/30 hover:bg-blue-50 dark:hover:bg-blue-950/40"
                                 title="Cut 9:16 with FFmpeg"
                               >
                                 <Scissors className="w-3.5 h-3.5" />
@@ -769,7 +769,7 @@ export default function MyProjectsPage() {
             <div className="flex items-center justify-between pb-3 border-b border-[var(--card-border)]">
               <div className="space-y-1 pr-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white line-clamp-1">{previewClip.title}</span>
+                  <span className="text-xs font-bold text-zinc-900 dark:text-white line-clamp-1">{previewClip.title}</span>
                   {previewClip.ranking_badge && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-950 text-blue-300 border border-blue-800/40">
                       {previewClip.ranking_badge}

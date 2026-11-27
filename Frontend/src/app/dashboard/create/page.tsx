@@ -873,13 +873,13 @@ function CreateClipsContent() {
                         onClick={() => handleContentTypeChange(cat.id as any)}
                         className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                           isSelected
-                            ? 'border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-300 shadow-md shadow-blue-950/30'
-                            : 'border-[var(--card-border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-zinc-700'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 shadow-md shadow-blue-950/30'
+                            : 'border-[var(--card-border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-zinc-400 dark:hover:border-zinc-700'
                         }`}
                       >
                         <div className="flex items-center gap-1.5">
-                          <IconComp className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-400' : 'text-[var(--text-muted)]'}`} />
-                          <span className="text-xs font-bold truncate">{cat.label}</span>
+                          <IconComp className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-500 dark:text-[var(--text-muted)]'}`} />
+                          <span className={`text-xs font-bold truncate ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-zinc-900 dark:text-white'}`}>{cat.label}</span>
                         </div>
                         <span className="text-[9px] text-[var(--text-muted)] mt-1 line-clamp-1">{cat.desc}</span>
                       </button>

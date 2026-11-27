@@ -128,26 +128,26 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-[#0a0a0a] border border-white/[0.12] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl space-y-5 p-6 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl space-y-5 p-6 animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+        <div className="flex items-center justify-between pb-3 border-b border-[var(--card-border)]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-950/60 border border-blue-500/30 text-blue-400 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <FileVideo className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white tracking-tight">
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-white tracking-tight">
                 macOS File Information & Operations
               </h3>
-              <p className="text-[11px] text-zinc-400 font-mono truncate max-w-xs">
+              <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-mono truncate max-w-xs">
                 {info?.filename || 'Loading specifications...'}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.08]"
+            className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -169,27 +169,27 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
 
             {/* Specs Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-              <div className="p-3 rounded-xl bg-zinc-950/70 border border-white/[0.04] space-y-0.5">
+              <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)] space-y-0.5">
                 <span className="text-[10px] text-zinc-500 uppercase font-semibold">File Size</span>
-                <p className="font-bold text-emerald-400 font-mono">{info.size_mb} MB</p>
-                <span className="text-[9px] text-zinc-600 block font-mono">{info.size_bytes.toLocaleString()} B</span>
+                <p className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">{info.size_mb} MB</p>
+                <span className="text-[9px] text-zinc-500 block font-mono">{info.size_bytes.toLocaleString()} B</span>
               </div>
-              <div className="p-3 rounded-xl bg-zinc-950/70 border border-white/[0.04] space-y-0.5">
+              <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)] space-y-0.5">
                 <span className="text-[10px] text-zinc-500 uppercase font-semibold">Resolution</span>
-                <p className="font-bold text-white font-mono">{info.resolution || 'N/A'}</p>
-                <span className="text-[9px] text-zinc-400 block">{info.fps ? `${info.fps} fps` : ''}</span>
+                <p className="font-bold text-zinc-900 dark:text-white font-mono">{info.resolution || 'N/A'}</p>
+                <span className="text-[9px] text-zinc-600 dark:text-zinc-400 block">{info.fps ? `${info.fps} fps` : ''}</span>
               </div>
-              <div className="p-3 rounded-xl bg-zinc-950/70 border border-white/[0.04] space-y-0.5">
+              <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)] space-y-0.5">
                 <span className="text-[10px] text-zinc-500 uppercase font-semibold">Video Codec</span>
-                <p className="font-bold text-blue-400 font-mono uppercase">{info.video_codec || 'N/A'}</p>
+                <p className="font-bold text-blue-600 dark:text-blue-400 font-mono uppercase">{info.video_codec || 'N/A'}</p>
                 <span className="text-[9px] text-zinc-500 block">Audio: {info.audio_codec || 'aac'}</span>
               </div>
             </div>
 
             {/* Exact Location */}
-            <div className="p-3 rounded-xl bg-zinc-950/90 border border-white/[0.06] text-xs space-y-1">
+            <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)] text-xs space-y-1">
               <span className="text-[10px] uppercase font-bold text-zinc-500 block">Exact macOS Path</span>
-              <p className="font-mono text-zinc-300 text-[11px] break-all select-all bg-black/40 p-2 rounded-lg">
+              <p className="font-mono text-zinc-800 dark:text-zinc-300 text-[11px] break-all select-all bg-zinc-100 dark:bg-black/40 p-2 rounded-lg border border-[var(--card-border)]">
                 {info.filepath}
               </p>
             </div>
