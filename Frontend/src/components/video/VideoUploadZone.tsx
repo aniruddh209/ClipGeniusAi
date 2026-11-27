@@ -215,10 +215,10 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
           </div>
 
           <div>
-            <h3 className="text-base font-bold text-white">
+            <h3 className="text-base font-bold text-zinc-900 dark:text-white">
               Uploading &quot;{currentFile.name}&quot;
             </h3>
-            <p className="text-xs text-zinc-400 mt-1">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
               Streaming video chunks securely to backend storage ({formatFileSize(currentFile.size / (1024 * 1024))})
             </p>
           </div>
@@ -226,8 +226,8 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
           {/* Real Percentage Bar */}
           <div className="max-w-md mx-auto space-y-2">
             <div className="flex justify-between text-xs font-mono">
-              <span className="text-zinc-400">Byte Transfer Progress</span>
-              <span className="text-purple-400 font-bold">{uploadProgress}%</span>
+              <span className="text-zinc-600 dark:text-zinc-400">Byte Transfer Progress</span>
+              <span className="text-purple-600 dark:text-purple-400 font-bold">{uploadProgress}%</span>
             </div>
             <div className="w-full h-2 rounded-full bg-zinc-800 overflow-hidden">
               <div
@@ -431,10 +431,10 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
             <UploadCloud className="w-8 h-8" />
           </div>
 
-          <h3 className="text-base font-bold text-white mb-1.5">
+          <h3 className="text-base font-bold text-zinc-900 dark:text-white mb-1.5">
             Drag and drop your long-form video here
           </h3>
-          <p className="text-xs text-zinc-400 max-w-sm mx-auto mb-5 leading-relaxed">
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mb-5 leading-relaxed">
             ClipGenius AI extracts speech timestamps with Faster-Whisper, centers faces with OpenCV, and crops to 9:16 vertical shorts.
           </p>
 
@@ -450,13 +450,13 @@ export const VideoUploadZone: React.FC<VideoUploadZoneProps> = ({
           </div>
 
           {/* Supported Format Tags */}
-          <div className="mt-6 pt-5 border-t border-[var(--card-border)] flex flex-wrap items-center justify-center gap-3 text-[11px] text-zinc-500">
-            <span className="font-semibold text-zinc-400">Supported Formats:</span>
-            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] text-purple-300 font-mono">MP4</span>
-            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] text-blue-300 font-mono">MOV</span>
-            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] text-pink-300 font-mono">WebM</span>
+          <div className="mt-6 pt-5 border-t border-[var(--card-border)] flex flex-wrap items-center justify-center gap-3 text-[11px] text-zinc-600 dark:text-zinc-400">
+            <span className="font-semibold text-zinc-800 dark:text-zinc-400">Supported Formats:</span>
+            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] text-purple-700 dark:text-purple-300 font-mono">MP4</span>
+            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] text-blue-700 dark:text-blue-300 font-mono">MOV</span>
+            <span className="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--card-border)] text-pink-700 dark:text-pink-300 font-mono">WebM</span>
             <span>•</span>
-            <span>Max Size: <strong className="text-zinc-300">500MB</strong></span>
+            <span>Max Size: <strong className="text-zinc-800 dark:text-zinc-300">500MB</strong></span>
           </div>
         </div>
       )}

@@ -890,7 +890,7 @@ function VideoDownloaderContent() {
                   {/* Confirmed Quality Selection Grid */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between text-xs">
-                      <label className="font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <label className="font-semibold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                         <span>Available Video & Audio Streams</span>
                       </label>
@@ -1207,7 +1207,7 @@ function VideoDownloaderContent() {
                   <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-[var(--card-border)] flex items-center justify-center mx-auto text-[var(--text-muted)]">
                     <DownloadCloud className="w-6 h-6" />
                   </div>
-                  <h3 className="font-semibold text-sm text-zinc-300">No Active Downloads</h3>
+                  <h3 className="font-semibold text-sm text-zinc-800 dark:text-zinc-200">No Active Downloads</h3>
                   <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
                     Paste a YouTube link above and click Analyze to begin downloading high-definition videos with verified source qualities.
                   </p>
@@ -1588,7 +1588,7 @@ function VideoDownloaderContent() {
                 <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-[var(--card-border)] flex items-center justify-center mx-auto text-[var(--text-muted)]">
                   <Clock className="w-6 h-6" />
                 </div>
-                <h3 className="font-semibold text-sm text-zinc-300">No Download History Yet</h3>
+                <h3 className="font-semibold text-sm text-zinc-800 dark:text-zinc-200">No Download History Yet</h3>
                 <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
                   Completed downloads will appear here with instant offline access and one-click AI clipping.
                 </p>
