@@ -1,5 +1,6 @@
 import os
 import math
+import shutil
 import asyncio
 import subprocess
 from pathlib import Path
@@ -19,8 +20,8 @@ from app.core.logging import logger
 
 class IntelligentVideoReframer:
     def __init__(self):
-        self.ffmpeg_path = "/opt/homebrew/bin/ffmpeg"
-        self.ffprobe_path = "/opt/homebrew/bin/ffprobe"
+        self.ffmpeg_path = shutil.which("ffmpeg") or ("/opt/homebrew/bin/ffmpeg" if os.path.exists("/opt/homebrew/bin/ffmpeg") else "ffmpeg")
+        self.ffprobe_path = shutil.which("ffprobe") or ("/opt/homebrew/bin/ffprobe" if os.path.exists("/opt/homebrew/bin/ffprobe") else "ffprobe")
         self.yunet_model_path = str(settings.BASE_DIR / "weights" / "face_detection_yunet_2023mar.onnx")
         self._detector = None
         self._init_detector()

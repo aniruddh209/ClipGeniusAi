@@ -9,8 +9,8 @@ from app.core.logging import logger
 
 class FFmpegEditor:
     def __init__(self):
-        self.ffmpeg_path = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
-        self.ffprobe_path = shutil.which("ffprobe") or "/opt/homebrew/bin/ffprobe"
+        self.ffmpeg_path = shutil.which("ffmpeg") or ("/opt/homebrew/bin/ffmpeg" if os.path.exists("/opt/homebrew/bin/ffmpeg") else "ffmpeg")
+        self.ffprobe_path = shutil.which("ffprobe") or ("/opt/homebrew/bin/ffprobe" if os.path.exists("/opt/homebrew/bin/ffprobe") else "ffprobe")
 
     def is_available(self) -> bool:
         return bool(shutil.which("ffmpeg") or Path(self.ffmpeg_path).exists())

@@ -1,0 +1,52 @@
+# Render Blueprint Specification (render.yaml)
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  # ==========================================================
+  # 1. ClipGenius AI Backend Service (FastAPI + FFmpeg + Whisper)
+  # ==========================================================
+  - type: web
+    name: clipgenius-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    plan: starter # Starter plan recommended for FFmpeg AI CPU workloads (or Free tier)
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: HOST
+        value: 0.0.0.0
+      - key: WHISPER_MODEL
+        value: tiny
+      - key: WHISPER_DEVICE
+        value: cpu
+      - key: MAX_UPLOAD_SIZE_MB
+        value: "500"
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: DATABASE_NAME
+        value: clipgenius
+      - key: MONGODB_URL
+        sync: false # Provide your MongoDB Atlas URI, or leave unset for memory fallback
+
+  # ==========================================================
+  # 2. ClipGenius AI Frontend Service (Next.js Production)
+  # ==========================================================
+  - type: web
+    name: clipgenius-frontend
+    runtime: node
+    rootDir: Frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: starter # or Free tier
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        sync: false # Set to https://<your-backend-service-url>.onrender.com/api/v1
+      - key: NEXT_PUBLIC_BACKEND_URL
+        sync: false # Set to https://<your-backend-service-url>.onrender.com

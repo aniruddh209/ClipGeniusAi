@@ -51,7 +51,7 @@ def parse_rgba_string(color_str: str) -> Tuple[int, int, int, int]:
 
 class SubtitleRenderer:
     def __init__(self):
-        self.ffmpeg_path = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
+        self.ffmpeg_path = shutil.which("ffmpeg") or ("/opt/homebrew/bin/ffmpeg" if os.path.exists("/opt/homebrew/bin/ffmpeg") else "ffmpeg")
         self._font_cache: Dict[Tuple[str, int], ImageFont.FreeTypeFont] = {}
 
     def get_font(self, font_family: str, size: int) -> ImageFont.FreeTypeFont:

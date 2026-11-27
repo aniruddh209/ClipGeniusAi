@@ -7,6 +7,7 @@ import {
   ExternalLink 
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { BACKEND_URL } from '@/lib/api';
 
 interface DashboardHeaderProps {
   title?: string;
@@ -46,7 +47,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
         {/* Swagger Docs Shortcut */}
         <a
-          href="http://localhost:8001/docs"
+          href={`${BACKEND_URL}/docs`}
           target="_blank"
           rel="noreferrer"
           className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--foreground)] px-2.5 py-1.5 rounded-xl hover:bg-[var(--card)] border border-transparent hover:border-[var(--card-border)] transition-all"

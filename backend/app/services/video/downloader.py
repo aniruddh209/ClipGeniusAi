@@ -12,6 +12,8 @@ from app.core.logging import logger
 from app.services.storage.file_manager import file_manager
 from app.services.video.ffmpeg_editor import ffmpeg_editor
 
+FFMPEG_LOCATION = shutil.which("ffmpeg") or ("/opt/homebrew/bin/ffmpeg" if os.path.exists("/opt/homebrew/bin/ffmpeg") else "ffmpeg")
+
 SUPPORTED_MIME_TYPES = [
     "video/mp4",
     "video/quicktime",
@@ -188,7 +190,7 @@ class VideoDownloader:
             "quiet": True,
             "no_warnings": True,
             "prefer_ffmpeg": True,
-            "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
+            "ffmpeg_location": FFMPEG_LOCATION,
             "socket_timeout": 45,
             "http_chunk_size": 10485760,
         }
@@ -209,7 +211,7 @@ class VideoDownloader:
                     "noplaylist": True,
                     "quiet": True,
                     "prefer_ffmpeg": True,
-                    "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
+                    "ffmpeg_location": FFMPEG_LOCATION,
                     "http_chunk_size": 10485760,
                 }
                 def _fallback_download():
@@ -337,7 +339,7 @@ class VideoDownloader:
             "noplaylist": True,
             "skip_download": True,
             "socket_timeout": 30,
-            "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
+            "ffmpeg_location": FFMPEG_LOCATION,
         }
 
         # Check for cookies file
@@ -406,7 +408,7 @@ class VideoDownloader:
             "quiet": True,
             "no_warnings": True,
             "socket_timeout": 30,
-            "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
+            "ffmpeg_location": FFMPEG_LOCATION,
             "postprocessors": [{
                 "key": "FFmpegExtractAudio",
                 "preferredcodec": "mp3",
@@ -513,7 +515,7 @@ class VideoDownloader:
             "quiet": True,
             "no_warnings": True,
             "prefer_ffmpeg": True,
-            "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
+            "ffmpeg_location": FFMPEG_LOCATION,
             "socket_timeout": 35,
         }
 

@@ -17,6 +17,8 @@ from app.core.logging import logger
 from app.core.database import get_database
 from app.services.video.downloader import sanitize_media_url
 
+FFMPEG_LOCATION = shutil.which("ffmpeg") or ("/opt/homebrew/bin/ffmpeg" if os.path.exists("/opt/homebrew/bin/ffmpeg") else "ffmpeg")
+
 def format_bytes(b: Optional[int]) -> str:
     if not b or b <= 0:
         return "Unknown size"
@@ -254,7 +256,7 @@ class DownloaderManager:
             "no_warnings": True,
             "skip_download": True,
             "socket_timeout": 30,
-            "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
+            "ffmpeg_location": FFMPEG_LOCATION,
         }
         if cookie_path:
             ydl_opts["cookiefile"] = cookie_path
@@ -273,7 +275,7 @@ class DownloaderManager:
                 "no_warnings": True,
                 "skip_download": True,
                 "socket_timeout": 30,
-                "ffmpeg_location": "/opt/homebrew/bin/ffmpeg",
+                "ffmpeg_location": FFMPEG_LOCATION,
             }
             if cookie_path:
                 fallback_opts["cookiefile"] = cookie_path
@@ -624,7 +626,7 @@ class DownloaderManager:
                     a_p = audio_files[0][1]
                     mux_target = target_dir / f"{task_id}.{ext}"
                     logger.info(f"Existing completed streams found on disk ({v_p.name}, {a_p.name}). Performing direct FFmpeg mux...")
-                    ffmpeg_bin = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
+                    ffmpeg_bin = FFMPEG_LOCATION
                     mux_cmd = [
                         ffmpeg_bin, "-y",
                         "-i", str(v_p),
@@ -704,7 +706,7 @@ class DownloaderManager:
             "no_warnings": True,
             "progress_hooks": [progress_hook],
             "prefer_ffmpeg": True,
-            "ffmpeg_location": shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg",
+            "ffmpeg_location": FFMPEG_LOCATION,
             "socket_timeout": 45,
             "continuedl": True,
             "retries": 25,

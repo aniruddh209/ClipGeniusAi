@@ -1,0 +1,15 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.local
+uploads/*
+!uploads/thumbnails
+outputs/*
+generated-clips/*
+downloads/*
+.DS_Store
+.git
+.pytest_cache

@@ -70,8 +70,8 @@ class MacOSVideoExporter:
     }
 
     def __init__(self):
-        self.ffmpeg_path = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
-        self.ffprobe_path = shutil.which("ffprobe") or "/opt/homebrew/bin/ffprobe"
+        self.ffmpeg_path = shutil.which("ffmpeg") or ("/opt/homebrew/bin/ffmpeg" if os.path.exists("/opt/homebrew/bin/ffmpeg") else "ffmpeg")
+        self.ffprobe_path = shutil.which("ffprobe") or ("/opt/homebrew/bin/ffprobe" if os.path.exists("/opt/homebrew/bin/ffprobe") else "ffprobe")
 
     def get_supported_formats(self) -> List[Dict[str, Any]]:
         return [

@@ -30,13 +30,35 @@ class Settings(BaseSettings):
     MONGODB_URL: str = "mongodb://localhost:27017"
     DATABASE_NAME: str = "clipgenius"
     
-    # Storage Paths (relative to backend root)
+    # Storage Paths (relative to backend root, or persistent disk if DATA_DIR is provided)
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
-    UPLOAD_DIR: Path = BASE_DIR / "uploads"
-    OUTPUT_DIR: Path = BASE_DIR / "outputs"
-    GENERATED_CLIPS_DIR: Path = BASE_DIR / "generated-clips"
-    DOWNLOADS_DIR: Path = BASE_DIR / "downloads"
-    THUMBNAIL_DIR: Path = UPLOAD_DIR / "thumbnails"
+    DATA_DIR: Optional[str] = None
+
+    @property
+    def storage_root(self) -> Path:
+        if self.DATA_DIR:
+            return Path(self.DATA_DIR)
+        return self.BASE_DIR
+
+    @property
+    def UPLOAD_DIR(self) -> Path:
+        return self.storage_root / "uploads"
+
+    @property
+    def OUTPUT_DIR(self) -> Path:
+        return self.storage_root / "outputs"
+
+    @property
+    def GENERATED_CLIPS_DIR(self) -> Path:
+        return self.storage_root / "generated-clips"
+
+    @property
+    def DOWNLOADS_DIR(self) -> Path:
+        return self.storage_root / "downloads"
+
+    @property
+    def THUMBNAIL_DIR(self) -> Path:
+        return self.storage_root / "uploads" / "thumbnails"
     
     # Video & AI Processing
     MAX_UPLOAD_SIZE_MB: int = 500

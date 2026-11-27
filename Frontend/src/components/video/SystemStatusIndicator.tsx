@@ -54,7 +54,7 @@ export const SystemStatusIndicator: React.FC = () => {
                 ? 'Connecting to ClipGenius Backend...'
                 : health?.status === 'healthy'
                 ? 'Backend & Processing Engine Active'
-                : 'Backend Disconnected (Run FastAPI on port 8001)'}
+                : 'Backend Disconnected (Check API connection)'}
             </p>
           </div>
         </div>
@@ -95,7 +95,7 @@ export const SystemStatusIndicator: React.FC = () => {
       {error && (
         <div className="mt-3 flex items-center gap-2 rounded-xl bg-rose-950/40 border border-rose-800/50 p-2.5 text-xs text-rose-300">
           <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
-          <span>Backend link warning: {error}. Ensure FastAPI is running at http://localhost:8001</span>
+          <span>Backend connection warning: {error}. Check API server URL and status.</span>
         </div>
       )}
     </div>

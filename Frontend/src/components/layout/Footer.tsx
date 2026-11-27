@@ -4,6 +4,7 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import { Scissors, Heart } from 'lucide-react';
 import Link from 'next/link';
+import { BACKEND_URL, API_BASE_URL } from '@/lib/api';
 
 export const Footer: React.FC = () => {
   const pathname = usePathname();
@@ -48,8 +49,8 @@ export const Footer: React.FC = () => {
           <div>
             <h5 className="text-xs font-semibold text-white uppercase tracking-wider mb-4">Developers</h5>
             <ul className="space-y-2.5 text-xs text-zinc-400">
-              <li><a href="http://localhost:8001/docs" target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">FastAPI Swagger API</a></li>
-              <li><a href="http://localhost:8001/api/v1/health" target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">System Health Ping</a></li>
+              <li><a href={`${BACKEND_URL}/docs`} target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">FastAPI Swagger API</a></li>
+              <li><a href={`${API_BASE_URL}/health`} target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">System Health Ping</a></li>
               <li><a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">GitHub Repository</a></li>
               <li><a href="#how-it-works" className="hover:text-blue-400 transition-colors">Architecture Overview</a></li>
             </ul>

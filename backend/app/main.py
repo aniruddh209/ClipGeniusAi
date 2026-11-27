@@ -7,6 +7,7 @@ from app.core.logging import logger
 from app.core.database import connect_to_mongo, close_mongo_connection
 from app.services.video.downloader_manager import downloader_manager
 from app.services.downloader.engine import download_engine
+import os
 import subprocess
 from pathlib import Path
 from app.api.v1.router import api_router
@@ -58,9 +59,18 @@ app = FastAPI(
 )
 
 # CORS Middleware
+cors_origins = list(settings.CORS_ORIGINS)
+env_cors = os.getenv("CORS_ORIGINS")
+if env_cors:
+    for o in env_cors.split(","):
+        stripped = o.strip()
+        if stripped and stripped not in cors_origins:
+            cors_origins.append(stripped)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=cors_origins,
+    allow_origin_regex=r"^https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
