@@ -195,7 +195,7 @@ class VideoDownloader:
             "http_chunk_size": 10485760,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["android", "ios", "web", "mweb"]
+                    "player_client": ["tv_embedded", "web_embedded", "android_creator"]
                 }
             },
         }
@@ -220,7 +220,7 @@ class VideoDownloader:
                     "http_chunk_size": 10485760,
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["android", "ios"]
+                            "player_client": ["tv_embedded", "web_embedded", "android_creator"]
                         }
                     },
                 }
@@ -352,7 +352,7 @@ class VideoDownloader:
             "ffmpeg_location": FFMPEG_LOCATION,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["android", "ios", "web", "mweb"]
+                    "player_client": ["tv_embedded", "web_embedded", "android_creator"]
                 }
             },
         }
@@ -361,6 +361,8 @@ class VideoDownloader:
         cookie_candidates = [
             settings.BASE_DIR / "cookies.txt",
             settings.BASE_DIR.parent / "cookies.txt",
+            Path("/tmp/cookies.txt"),
+            Path.cwd() / "cookies.txt",
             Path.home() / ".config" / "yt-dlp" / "cookies.txt",
         ]
         for cpath in cookie_candidates:
@@ -426,7 +428,7 @@ class VideoDownloader:
             "ffmpeg_location": FFMPEG_LOCATION,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["android", "ios", "web", "mweb"]
+                    "player_client": ["tv_embedded", "web_embedded", "android_creator"]
                 }
             },
             "postprocessors": [{
@@ -539,7 +541,7 @@ class VideoDownloader:
             "socket_timeout": 35,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["android", "ios", "web", "mweb"]
+                    "player_client": ["tv_embedded", "web_embedded", "android_creator"]
                 }
             },
         }
@@ -547,6 +549,8 @@ class VideoDownloader:
         cookie_candidates = [
             settings.BASE_DIR / "cookies.txt",
             settings.BASE_DIR.parent / "cookies.txt",
+            Path("/tmp/cookies.txt"),
+            Path.cwd() / "cookies.txt",
             Path.home() / ".config" / "yt-dlp" / "cookies.txt",
         ]
         for cpath in cookie_candidates:

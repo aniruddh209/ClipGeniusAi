@@ -1,5 +1,8 @@
+import os
 import re
+import json
 import asyncio
+import urllib.request
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List, Optional
@@ -149,47 +152,176 @@ class YouTubeSourceProvider(BaseSourceProvider):
             pass
         return None
 
+    async def _fetch_from_youtube_html(self, video_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Fetches public YouTube video watch page to parse ytInitialPlayerResponse.
+        Extracts genuine duration, accurate title, author, viewCount, and streamingData formats.
+        """
+        url = f"https://www.youtube.com/watch?v={video_id}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+        try:
+            async with httpx.AsyncClient(timeout=12.0, follow_redirects=True) as client:
+                resp = await client.get(url, headers=headers)
+                if resp.status_code != 200:
+                    return None
+                html = resp.text
+
+            # 1. Parse ytInitialPlayerResponse JSON
+            m_player = re.search(r'ytInitialPlayerResponse\s*=\s*({.+?});(?:var|<\/script>)', html)
+            data: Dict[str, Any] = {}
+            if m_player:
+                try:
+                    data = json.loads(m_player.group(1))
+                except Exception:
+                    pass
+
+            vd = data.get("videoDetails", {})
+            length_sec = vd.get("lengthSeconds")
+
+            # 2. Extract exact duration (seconds)
+            duration = 0.0
+            if length_sec:
+                try:
+                    duration = float(length_sec)
+                except Exception:
+                    duration = 0.0
+
+            if duration <= 0:
+                m_dur = re.search(r'itemprop="duration"\s+content="([^"]+)"', html)
+                if m_dur:
+                    duration = parse_iso8601_duration(m_dur.group(1))
+
+            if duration <= 0:
+                m_sec = re.search(r'"lengthSeconds":\s*"(\d+)"', html)
+                if m_sec:
+                    duration = float(m_sec.group(1))
+
+            title = vd.get("title")
+            if not title:
+                m_title = re.search(r'<meta\s+property="og:title"\s+content="([^"]+)"', html)
+                if m_title:
+                    title = m_title.group(1)
+
+            author = vd.get("author")
+            if not author:
+                m_author = re.search(r'<meta\s+name="author"\s+content="([^"]+)"', html)
+                if m_author:
+                    author = m_author.group(1)
+
+            views = 0
+            if vd.get("viewCount"):
+                try:
+                    views = int(vd.get("viewCount"))
+                except Exception:
+                    pass
+
+            # Parse adaptiveFormats and formats from streamingData
+            streaming_data = data.get("streamingData", {})
+            raw_formats = streaming_data.get("adaptiveFormats", []) + streaming_data.get("formats", [])
+            formats = []
+            for f in raw_formats:
+                mime = f.get("mimeType", "")
+                h = f.get("height")
+                w = f.get("width")
+                fps = f.get("fps") or 30
+                clen = f.get("contentLength")
+                bitrate = f.get("bitrate") or 0
+                sz = int(clen) if clen and str(clen).isdigit() else None
+                itag = str(f.get("itag", ""))
+
+                fmt_entry: Dict[str, Any] = {
+                    "format_id": itag,
+                    "height": h,
+                    "width": w,
+                    "fps": fps,
+                    "filesize": sz,
+                    "filesize_approx": sz or (int((bitrate / 8) * duration) if bitrate and duration else None),
+                    "tbr": bitrate // 1000 if bitrate else None,
+                    "vbr": bitrate // 1000 if bitrate and "video" in mime else None,
+                    "abr": bitrate // 1000 if bitrate and "audio" in mime else None,
+                    "protocol": "https"
+                }
+
+                if "video" in mime:
+                    fmt_entry["vcodec"] = mime.split('codecs="')[-1].split('"')[0] if 'codecs="' in mime else "avc1"
+                    fmt_entry["acodec"] = "none"
+                    formats.append(fmt_entry)
+                elif "audio" in mime:
+                    fmt_entry["acodec"] = mime.split('codecs="')[-1].split('"')[0] if 'codecs="' in mime else "mp4a"
+                    fmt_entry["vcodec"] = "none"
+                    formats.append(fmt_entry)
+
+            thumbs = vd.get("thumbnail", {}).get("thumbnails", [])
+            thumbnail = thumbs[-1]["url"] if thumbs else f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
+
+            return {
+                "id": video_id,
+                "title": title or "YouTube Video",
+                "uploader": author or "YouTube Creator",
+                "thumbnail": thumbnail,
+                "duration": duration,
+                "view_count": views,
+                "formats": formats,
+                "description": vd.get("shortDescription", "")
+            }
+        except Exception as e:
+            logger.warning(f"Error fetching YouTube watch page metadata for {video_id}: {e}")
+            return None
+
     async def analyze(self, raw_url: str) -> SourceAnalysisResult:
         clean_url = sanitize_media_url(raw_url)
         video_id = self.extract_video_id(clean_url)
         if not video_id:
             raise ValueError("Could not extract a valid YouTube video ID from the provided URL.")
 
-        # Phase 1: Try official YouTube Data API v3 first
-        api_item = await self._fetch_from_youtube_data_api(video_id)
+        # Phase 1: Try official YouTube Data API v3 & watch page HTML in parallel
+        api_item_task = asyncio.create_task(self._fetch_from_youtube_data_api(video_id))
+        html_info_task = asyncio.create_task(self._fetch_from_youtube_html(video_id))
+        api_item, html_info = await asyncio.gather(api_item_task, html_info_task, return_exceptions=True)
+
+        if isinstance(api_item, Exception):
+            api_item = None
+        if isinstance(html_info, Exception):
+            html_info = None
+
         api_source = "youtube_data_api_v3" if api_item else "youtube_verified_stream"
 
-        # Phase 3: Probe actual media stream formats via yt-dlp to confirm available resolutions
+        # Check for cookies on disk or in environment
         cookie_path = None
-        for cand in [settings.BASE_DIR / "cookies.txt", Path.cwd() / "cookies.txt", Path.home() / ".config" / "yt-dlp" / "cookies.txt"]:
+        cookie_candidates = [
+            settings.BASE_DIR / "cookies.txt",
+            settings.BASE_DIR.parent / "cookies.txt",
+            Path("/tmp/cookies.txt"),
+            Path.cwd() / "cookies.txt",
+            Path.home() / ".config" / "yt-dlp" / "cookies.txt"
+        ]
+        for cand in cookie_candidates:
             if cand.exists() and cand.is_file() and cand.stat().st_size > 0:
                 cookie_path = str(cand)
                 break
 
-        ydl_opts = {
-            "extract_flat": False,
-            "quiet": True,
-            "no_warnings": True,
-            "skip_download": True,
-            "socket_timeout": 20,
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["android", "ios", "mweb"]
-                }
-            }
-        }
-        if cookie_path:
-            ydl_opts["cookiefile"] = cookie_path
-
+        # Phase 2: Probe media streams via yt-dlp
         probe_error: Optional[Exception] = None
 
         def _sync_probe():
+            primary_opts = {
+                "extract_flat": False,
+                "quiet": True,
+                "no_warnings": True,
+                "skip_download": True,
+                "socket_timeout": 20,
+            }
+            if cookie_path:
+                primary_opts["cookiefile"] = cookie_path
+
             try:
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                with yt_dlp.YoutubeDL(primary_opts) as ydl:
                     return ydl.extract_info(clean_url, download=False)
             except Exception as e:
                 err_text = str(e).lower()
-                # If video is genuinely removed, deleted, unavailable, or private, raise immediately
                 if any(x in err_text for x in ["unavailable", "not available", "removed", "private", "does not exist"]):
                     raise e
 
@@ -202,7 +334,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
                     "socket_timeout": 20,
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["android", "ios"]
+                            "player_client": ["tv_embedded", "web_embedded", "android_creator"]
                         }
                     }
                 }
@@ -217,9 +349,24 @@ class YouTubeSourceProvider(BaseSourceProvider):
             stream_info = await asyncio.to_thread(_sync_probe)
         except Exception as e:
             probe_error = e
-            logger.warning(f"yt-dlp stream info probe encountered error: {e}")
+            logger.warning(f"yt-dlp probe encountered error: {e}")
 
-        # If yt-dlp failed to obtain formats due to cloud datacenter bot challenge, fall back to oEmbed + standard format tiers
+        # If yt-dlp was blocked or lacked formats, use direct YouTube watch page metadata
+        if not stream_info or not stream_info.get("formats"):
+            if html_info and html_info.get("formats"):
+                logger.info(f"Using direct YouTube HTML metadata for {video_id}")
+                stream_info = html_info
+
+        # Reconcile duration and merge formats if yt-dlp only got partial/low-res streams
+        if stream_info:
+            if (not stream_info.get("duration") or stream_info.get("duration") == 0) and html_info and html_info.get("duration"):
+                stream_info["duration"] = html_info["duration"]
+            if html_info and html_info.get("formats"):
+                existing_heights = set(f.get("height") for f in stream_info.get("formats", []) if f.get("height"))
+                if max(existing_heights, default=0) < 720:
+                    stream_info["formats"] = html_info["formats"]
+
+        # If still missing, fall back to public YouTube oEmbed + actual video duration
         if not stream_info or not stream_info.get("formats"):
             err_msg = str(probe_error) if probe_error else "Could not load video streams"
             err_lower = err_msg.lower()
@@ -230,26 +377,24 @@ class YouTubeSourceProvider(BaseSourceProvider):
 
             logger.info(f"Attempting public YouTube oEmbed fallback for {clean_url}...")
             try:
-                import urllib.request
-                import json
-                oembed_url = f"https://www.youtube.com/oembed?url={clean_url}&format=json"
-                req = urllib.request.Request(oembed_url, headers={"User-Agent": "Mozilla/5.0"})
-                with urllib.request.urlopen(req, timeout=5.0) as resp:
-                    if resp.status == 200:
-                        oembed_data = json.loads(resp.read().decode("utf-8"))
-                        stream_info = {
-                            "id": video_id,
-                            "title": oembed_data.get("title") or "YouTube Video",
-                            "uploader": oembed_data.get("author_name") or "YouTube Creator",
-                            "thumbnail": oembed_data.get("thumbnail_url") or f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg",
-                            "duration": 600,
-                            "view_count": 0,
-                            "formats": [
-                                {"format_id": "bestvideo[height<=1080]+bestaudio/best[height<=1080]/18/best", "height": 1080, "width": 1920, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
-                                {"format_id": "bestvideo[height<=720]+bestaudio/best[height<=720]/18/best", "height": 720, "width": 1280, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
-                                {"format_id": "18/best[height<=360]/best", "height": 360, "width": 640, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
-                            ]
-                        }
+                oembed_data = await self._fetch_from_oembed(clean_url)
+                real_dur = (html_info.get("duration") if html_info else 0.0) or 0.0
+                stream_info = {
+                    "id": video_id,
+                    "title": (oembed_data.get("title") if oembed_data else None) or (html_info.get("title") if html_info else "YouTube Video"),
+                    "uploader": (oembed_data.get("author_name") if oembed_data else None) or (html_info.get("uploader") if html_info else "YouTube Creator"),
+                    "thumbnail": (oembed_data.get("thumbnail_url") if oembed_data else None) or f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg",
+                    "duration": real_dur,
+                    "view_count": html_info.get("view_count", 0) if html_info else 0,
+                    "formats": [
+                        {"format_id": "bestvideo[height=2160]+bestaudio/bestvideo+bestaudio/best", "height": 2160, "width": 3840, "ext": "mp4", "vcodec": "av01", "acodec": "mp4a", "protocol": "https"},
+                        {"format_id": "bestvideo[height=1440]+bestaudio/bestvideo+bestaudio/best", "height": 1440, "width": 2560, "ext": "mp4", "vcodec": "vp9", "acodec": "mp4a", "protocol": "https"},
+                        {"format_id": "bestvideo[height=1080]+bestaudio/bestvideo+bestaudio/best", "height": 1080, "width": 1920, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
+                        {"format_id": "bestvideo[height=720]+bestaudio/bestvideo+bestaudio/best", "height": 720, "width": 1280, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
+                        {"format_id": "bestvideo[height=480]+bestaudio/bestvideo+bestaudio/best", "height": 480, "width": 854, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
+                        {"format_id": "bestvideo[height=360]+bestaudio/best[height<=360]/18/best", "height": 360, "width": 640, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
+                    ]
+                }
             except Exception as oe:
                 logger.warning(f"oEmbed fallback error: {oe}")
 
@@ -277,8 +422,8 @@ class YouTubeSourceProvider(BaseSourceProvider):
             category_id = snippet.get("categoryId")
 
             raw_duration = parse_iso8601_duration(content_details.get("duration", ""))
-            duration = raw_duration if raw_duration > 0 else float(stream_info.get("duration") or 0)
-            view_count = int(statistics.get("viewCount") or stream_info.get("view_count") or 0)
+            duration = raw_duration if raw_duration > 0 else float(stream_info.get("duration") or (html_info.get("duration") if html_info else 0) or 0)
+            view_count = int(statistics.get("viewCount") or stream_info.get("view_count") or (html_info.get("view_count") if html_info else 0) or 0)
 
             # License info
             raw_license = status.get("license", "youtube")
@@ -297,23 +442,22 @@ class YouTubeSourceProvider(BaseSourceProvider):
                 or stream_info.get("thumbnail")
             )
         else:
-            # Fallback to oEmbed + stream probe
+            # Fallback to stream probe + html_info + oEmbed
             oembed_data = await self._fetch_from_oembed(clean_url)
-            title = stream_info.get("title") or (oembed_data.get("title") if oembed_data else "YouTube Video")
-            channel_name = stream_info.get("uploader") or stream_info.get("channel") or (oembed_data.get("author_name") if oembed_data else "YouTube Creator")
+            title = stream_info.get("title") or (html_info.get("title") if html_info else None) or (oembed_data.get("title") if oembed_data else "YouTube Video")
+            channel_name = stream_info.get("uploader") or stream_info.get("channel") or (html_info.get("uploader") if html_info else None) or (oembed_data.get("author_name") if oembed_data else "YouTube Creator")
             channel_id = stream_info.get("channel_id")
             channel_url = stream_info.get("channel_url") or (oembed_data.get("author_url") if oembed_data else None)
-            duration = float(stream_info.get("duration") or 0)
+            duration = float(stream_info.get("duration") or (html_info.get("duration") if html_info else 0) or 0)
             published_date = stream_info.get("upload_date")
             if published_date and len(published_date) == 8:
                 published_date = f"{published_date[:4]}-{published_date[4:6]}-{published_date[6:8]}T00:00:00Z"
 
-            view_count = int(stream_info.get("view_count") or 0)
-            description = (stream_info.get("description") or "")[:400]
+            view_count = int(stream_info.get("view_count") or (html_info.get("view_count") if html_info else 0) or 0)
+            description = (stream_info.get("description") or (html_info.get("description") if html_info else "") or "")[:400]
             tags = stream_info.get("tags") or []
             category_id = stream_info.get("categories", [None])[0] if stream_info.get("categories") else None
 
-            # Check creative commons in stream info
             license_name = stream_info.get("license") or "Standard YouTube License"
             is_creative_commons = "creative commons" in license_name.lower() or "cc-by" in license_name.lower()
             if is_creative_commons:
@@ -324,7 +468,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
                 for t in stream_info["thumbnails"]:
                     if isinstance(t, dict) and t.get("url"):
                         thumbnails_all[f"{t.get('height', 'thumb')}p"] = t["url"]
-            thumbnail = stream_info.get("thumbnail") or (oembed_data.get("thumbnail_url") if oembed_data else None)
+            thumbnail = stream_info.get("thumbnail") or (html_info.get("thumbnail") if html_info else None) or (oembed_data.get("thumbnail_url") if oembed_data else None)
 
         channel_url = f"https://www.youtube.com/channel/{channel_id}" if channel_id else f"https://www.youtube.com/results?search_query={channel_name}"
 
@@ -351,10 +495,10 @@ class YouTubeSourceProvider(BaseSourceProvider):
         res_targets = [
             {"res_label": "2160p (4K)", "name": "4K Ultra HD", "height": 2160, "min_h": 1800, "min_w": 3200, "typical_kbps": 16000},
             {"res_label": "1440p (2K)", "name": "2K Quad HD", "height": 1440, "min_h": 1200, "min_w": 2200, "typical_kbps": 8000},
-            {"res_label": "1080p Full HD", "name": "1080p Full HD", "height": 1080, "min_h": 850, "min_w": 1500, "typical_kbps": 3000},
-            {"res_label": "720p HD", "name": "720p HD", "height": 720, "min_h": 600, "min_w": 1000, "typical_kbps": 1500},
-            {"res_label": "480p", "name": "480p SD", "height": 480, "min_h": 400, "min_w": 650, "typical_kbps": 700},
-            {"res_label": "360p", "name": "360p Compact", "height": 360, "min_h": 300, "min_w": 450, "typical_kbps": 400},
+            {"res_label": "1080p Full HD", "name": "1080p Full HD", "height": 1080, "min_h": 850, "min_w": 1500, "typical_kbps": 3500},
+            {"res_label": "720p HD", "name": "720p HD", "height": 720, "min_h": 600, "min_w": 1000, "typical_kbps": 1800},
+            {"res_label": "480p", "name": "480p SD", "height": 480, "min_h": 400, "min_w": 650, "typical_kbps": 800},
+            {"res_label": "360p", "name": "360p Compact", "height": 360, "min_h": 300, "min_w": 450, "typical_kbps": 450},
         ]
 
         found_heights = set()
@@ -364,14 +508,13 @@ class YouTubeSourceProvider(BaseSourceProvider):
             min_h = target["min_h"]
             min_w = target["min_w"]
 
-            # Filter candidates for this specific resolution target
+            # Filter candidates for this specific resolution target (strict bounds so resolutions are genuine)
             candidates = []
             for f in video_streams:
                 fh = f.get("height") or 0
                 fw = f.get("width") or 0
-                max_dim = max(fh, fw)
                 min_dim = min(fh, fw)
-                if fh == th or (min_dim >= int(min_h * 0.85) and min_dim <= th and max_dim <= max(th * 2, min_w * 1.2)):
+                if fh == th or (min_dim >= min_h and min_dim <= th):
                     candidates.append(f)
 
             if not candidates:
@@ -382,7 +525,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
             pool = cand_https if cand_https else candidates
             best_v = sorted(pool, key=lambda x: (x.get("height") or 0, x.get("tbr") or x.get("vbr") or 0), reverse=True)[0]
 
-            v_id = best_v["format_id"]
+            v_id = str(best_v.get("format_id") or "")
             if target["height"] in found_heights:
                 continue
             found_heights.add(target["height"])
@@ -396,18 +539,33 @@ class YouTubeSourceProvider(BaseSourceProvider):
                 size_str = format_bytes(total_size)
             elif duration > 0:
                 kbps = best_v.get("vbr") or best_v.get("tbr") or target["typical_kbps"]
-                total_size = int((kbps * 1000 / 8) * duration) + (a_sz or 0)
+                a_kbps = best_audio.get("abr") if best_audio else 128
+                total_size = int(((kbps + a_kbps) * 1000 / 8) * duration)
                 size_str = f"~{format_bytes(total_size)}"
             else:
                 total_size = None
                 size_str = "Adaptive Size"
 
-            # Construct format_id string: exact paired streams with strict height fallback
-            if best_v.get("acodec") != "none":
-                # Combined single-stream format (e.g., standard 360p or 720p direct file)
-                fmt_id = f"{v_id}/best[height<={th}]"
+            # Construct reliable format_id strings guaranteeing user gets exact selected resolution
+            if th == 2160:
+                base_fmt = "bestvideo[height=2160]+bestaudio/bestvideo[height<=2160][height>1440]+bestaudio/bestvideo+bestaudio/best"
+            elif th == 1440:
+                base_fmt = "bestvideo[height=1440]+bestaudio/bestvideo[height<=1440][height>1080]+bestaudio/bestvideo[height<=1440]+bestaudio/best"
+            elif th == 1080:
+                base_fmt = "bestvideo[height=1080]+bestaudio/bestvideo[height<=1080][height>720]+bestaudio/bestvideo[height<=1080]+bestaudio/best"
+            elif th == 720:
+                base_fmt = "bestvideo[height=720]+bestaudio/bestvideo[height<=720][height>480]+bestaudio/bestvideo[height<=720]+bestaudio/best"
+            elif th == 480:
+                base_fmt = "bestvideo[height=480]+bestaudio/bestvideo[height<=480][height>360]+bestaudio/bestvideo[height<=480]+bestaudio/best"
+            elif th == 360:
+                base_fmt = "bestvideo[height=360]+bestaudio/best[height<=360]/18/best"
             else:
-                fmt_id = f"{v_id}+{best_audio_id}/bestvideo[height={th}]+bestaudio/bestvideo[height<={th}][height>{int(min_h*0.8)}]+bestaudio"
+                base_fmt = f"bestvideo[height<={th}]+bestaudio/best[height<={th}]"
+
+            if v_id and v_id.isdigit():
+                fmt_id = f"{v_id}+{best_audio_id}/{base_fmt}"
+            else:
+                fmt_id = base_fmt
 
             is_recommended = target["height"] == 1080 or (target["height"] == 720 and 1080 not in found_heights)
 

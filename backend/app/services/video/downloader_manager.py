@@ -257,11 +257,6 @@ class DownloaderManager:
             "skip_download": True,
             "socket_timeout": 30,
             "ffmpeg_location": FFMPEG_LOCATION,
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["android", "ios", "web", "mweb"],
-                }
-            },
         }
         if cookie_path:
             ydl_opts["cookiefile"] = cookie_path
@@ -283,7 +278,7 @@ class DownloaderManager:
                 "ffmpeg_location": FFMPEG_LOCATION,
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["android", "ios"],
+                        "player_client": ["tv_embedded", "web_embedded", "android_creator"],
                     }
                 },
             }
@@ -727,11 +722,11 @@ class DownloaderManager:
             "buffersize": 32768,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["android", "ios", "web", "mweb"],
+                    "player_client": ["tv_embedded", "web_embedded", "android_creator"],
                 }
             },
             "http_headers": {
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
                 "Accept-Language": "en-US,en;q=0.9",
             },
         }
@@ -739,6 +734,7 @@ class DownloaderManager:
         cookie_candidates = [
             settings.BASE_DIR / "cookies.txt",
             settings.BASE_DIR.parent / "cookies.txt",
+            Path("/tmp/cookies.txt"),
             Path.cwd() / "cookies.txt",
             Path.home() / ".config" / "yt-dlp" / "cookies.txt"
         ]
