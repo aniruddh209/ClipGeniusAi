@@ -1,6 +1,8 @@
 from pydantic_settings import BaseSettings
-from typing import List, Optional
+from pydantic import field_validator
+from typing import List, Optional, Union, Any
 import os
+import json
 from pathlib import Path
 
 class Settings(BaseSettings):
@@ -15,7 +17,7 @@ class Settings(BaseSettings):
     PORT: int = 8001
     
     # CORS
-    CORS_ORIGINS: List[str] = [
+    CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
@@ -25,6 +27,23 @@ class Settings(BaseSettings):
         "http://localhost:8001",
         "http://127.0.0.1:8001"
     ]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            trimmed = v.strip()
+            if trimmed.startswith("[") and trimmed.endswith("]"):
+                try:
+                    parsed = json.loads(trimmed)
+                    if isinstance(parsed, list):
+                        return [str(x).strip() for x in parsed if str(x).strip()]
+                except Exception:
+                    pass
+            return [i.strip() for i in trimmed.split(",") if i.strip()]
+        elif isinstance(v, list):
+            return [str(i).strip() for i in v if str(i).strip()]
+        return ["*"]
     
     # MongoDB
     MONGODB_URL: str = "mongodb://localhost:27017"
@@ -62,7 +81,24 @@ class Settings(BaseSettings):
     
     # Video & AI Processing
     MAX_UPLOAD_SIZE_MB: int = 500
-    ALLOWED_EXTENSIONS: List[str] = [".mp4", ".mov", ".webm"]
+    ALLOWED_EXTENSIONS: Union[List[str], str] = [".mp4", ".mov", ".webm"]
+
+    @field_validator("ALLOWED_EXTENSIONS", mode="before")
+    @classmethod
+    def assemble_allowed_extensions(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            trimmed = v.strip()
+            if trimmed.startswith("[") and trimmed.endswith("]"):
+                try:
+                    parsed = json.loads(trimmed)
+                    if isinstance(parsed, list):
+                        return [str(x).strip() for x in parsed]
+                except Exception:
+                    pass
+            return [i.strip() for i in trimmed.split(",") if i.strip()]
+        elif isinstance(v, list):
+            return [str(i).strip() for i in v]
+        return [".mp4", ".mov", ".webm"]
     WHISPER_MODEL: str = "tiny"  # tiny, base, small, medium
     WHISPER_DEVICE: str = "cpu"  # cpu or cuda
     DEFAULT_CLIP_MIN_DURATION: int = 15  # seconds
