@@ -162,100 +162,146 @@ class YouTubeSourceProvider(BaseSourceProvider):
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
             "Accept-Language": "en-US,en;q=0.9",
         }
+        duration = 0.0
+        title = None
+        author = None
+        views = 0
+        formats = []
+        thumbnail = f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
+        description = ""
+
         try:
             async with httpx.AsyncClient(timeout=12.0, follow_redirects=True) as client:
-                resp = await client.get(url, headers=headers)
-                if resp.status_code != 200:
-                    return None
-                html = resp.text
-
-            # 1. Parse ytInitialPlayerResponse JSON
-            m_player = re.search(r'ytInitialPlayerResponse\s*=\s*({.+?});(?:var|<\/script>)', html)
-            data: Dict[str, Any] = {}
-            if m_player:
+                # 1. Try public watch page HTML
                 try:
-                    data = json.loads(m_player.group(1))
-                except Exception:
-                    pass
+                    resp = await client.get(url, headers=headers)
+                    if resp.status_code == 200:
+                        html = resp.text
+                        m_player = re.search(r'ytInitialPlayerResponse\s*=\s*({.+?});(?:var|<\/script>)', html)
+                        data: Dict[str, Any] = {}
+                        if m_player:
+                            try:
+                                data = json.loads(m_player.group(1))
+                            except Exception:
+                                pass
 
-            vd = data.get("videoDetails", {})
-            length_sec = vd.get("lengthSeconds")
+                        vd = data.get("videoDetails", {})
+                        if vd.get("lengthSeconds"):
+                            try:
+                                duration = float(vd["lengthSeconds"])
+                            except Exception:
+                                pass
 
-            # 2. Extract exact duration (seconds)
-            duration = 0.0
-            if length_sec:
-                try:
-                    duration = float(length_sec)
-                except Exception:
-                    duration = 0.0
+                        if duration <= 0:
+                            m_dur = re.search(r'itemprop="duration"\s+content="([^"]+)"', html)
+                            if m_dur:
+                                duration = parse_iso8601_duration(m_dur.group(1))
 
-            if duration <= 0:
-                m_dur = re.search(r'itemprop="duration"\s+content="([^"]+)"', html)
-                if m_dur:
-                    duration = parse_iso8601_duration(m_dur.group(1))
+                        if duration <= 0:
+                            m_sec = re.search(r'"lengthSeconds":\s*"(\d+)"', html)
+                            if m_sec:
+                                duration = float(m_sec.group(1))
 
-            if duration <= 0:
-                m_sec = re.search(r'"lengthSeconds":\s*"(\d+)"', html)
-                if m_sec:
-                    duration = float(m_sec.group(1))
+                        title = vd.get("title")
+                        if not title:
+                            m_title = re.search(r'<meta\s+property="og:title"\s+content="([^"]+)"', html)
+                            if m_title:
+                                title = m_title.group(1)
 
-            title = vd.get("title")
-            if not title:
-                m_title = re.search(r'<meta\s+property="og:title"\s+content="([^"]+)"', html)
-                if m_title:
-                    title = m_title.group(1)
+                        author = vd.get("author")
+                        if not author:
+                            m_author = re.search(r'<meta\s+name="author"\s+content="([^"]+)"', html)
+                            if m_author:
+                                author = m_author.group(1)
 
-            author = vd.get("author")
-            if not author:
-                m_author = re.search(r'<meta\s+name="author"\s+content="([^"]+)"', html)
-                if m_author:
-                    author = m_author.group(1)
+                        if vd.get("viewCount"):
+                            try:
+                                views = int(vd.get("viewCount"))
+                            except Exception:
+                                pass
 
-            views = 0
-            if vd.get("viewCount"):
-                try:
-                    views = int(vd.get("viewCount"))
-                except Exception:
-                    pass
+                        streaming_data = data.get("streamingData", {})
+                        raw_formats = streaming_data.get("adaptiveFormats", []) + streaming_data.get("formats", [])
+                        for f in raw_formats:
+                            mime = f.get("mimeType", "")
+                            h = f.get("height")
+                            w = f.get("width")
+                            fps = f.get("fps") or 30
+                            clen = f.get("contentLength")
+                            bitrate = f.get("bitrate") or 0
+                            sz = int(clen) if clen and str(clen).isdigit() else None
+                            itag = str(f.get("itag", ""))
 
-            # Parse adaptiveFormats and formats from streamingData
-            streaming_data = data.get("streamingData", {})
-            raw_formats = streaming_data.get("adaptiveFormats", []) + streaming_data.get("formats", [])
-            formats = []
-            for f in raw_formats:
-                mime = f.get("mimeType", "")
-                h = f.get("height")
-                w = f.get("width")
-                fps = f.get("fps") or 30
-                clen = f.get("contentLength")
-                bitrate = f.get("bitrate") or 0
-                sz = int(clen) if clen and str(clen).isdigit() else None
-                itag = str(f.get("itag", ""))
+                            fmt_entry: Dict[str, Any] = {
+                                "format_id": itag,
+                                "height": h,
+                                "width": w,
+                                "fps": fps,
+                                "filesize": sz,
+                                "filesize_approx": sz or (int((bitrate / 8) * duration) if bitrate and duration else None),
+                                "tbr": bitrate // 1000 if bitrate else None,
+                                "vbr": bitrate // 1000 if bitrate and "video" in mime else None,
+                                "abr": bitrate // 1000 if bitrate and "audio" in mime else None,
+                                "protocol": "https"
+                            }
 
-                fmt_entry: Dict[str, Any] = {
-                    "format_id": itag,
-                    "height": h,
-                    "width": w,
-                    "fps": fps,
-                    "filesize": sz,
-                    "filesize_approx": sz or (int((bitrate / 8) * duration) if bitrate and duration else None),
-                    "tbr": bitrate // 1000 if bitrate else None,
-                    "vbr": bitrate // 1000 if bitrate and "video" in mime else None,
-                    "abr": bitrate // 1000 if bitrate and "audio" in mime else None,
-                    "protocol": "https"
-                }
+                            if "video" in mime:
+                                fmt_entry["vcodec"] = mime.split('codecs="')[-1].split('"')[0] if 'codecs="' in mime else "avc1"
+                                fmt_entry["acodec"] = "none"
+                                formats.append(fmt_entry)
+                            elif "audio" in mime:
+                                fmt_entry["acodec"] = mime.split('codecs="')[-1].split('"')[0] if 'codecs="' in mime else "mp4a"
+                                fmt_entry["vcodec"] = "none"
+                                formats.append(fmt_entry)
 
-                if "video" in mime:
-                    fmt_entry["vcodec"] = mime.split('codecs="')[-1].split('"')[0] if 'codecs="' in mime else "avc1"
-                    fmt_entry["acodec"] = "none"
-                    formats.append(fmt_entry)
-                elif "audio" in mime:
-                    fmt_entry["acodec"] = mime.split('codecs="')[-1].split('"')[0] if 'codecs="' in mime else "mp4a"
-                    fmt_entry["vcodec"] = "none"
-                    formats.append(fmt_entry)
+                        thumbs = vd.get("thumbnail", {}).get("thumbnails", [])
+                        if thumbs:
+                            thumbnail = thumbs[-1]["url"]
+                        description = vd.get("shortDescription", "")
+                except Exception as html_err:
+                    logger.warning(f"Watch page HTML fetch warning: {html_err}")
 
-            thumbs = vd.get("thumbnail", {}).get("thumbnails", [])
-            thumbnail = thumbs[-1]["url"] if thumbs else f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
+                # 2. If duration or basic metadata still missing, call official YouTube InnerTube player endpoint
+                if duration <= 0 or not title:
+                    try:
+                        innertube_url = "https://www.youtube.com/youtubei/v1/player?prettyPrint=false"
+                        inner_payload = {
+                            "context": {
+                                "client": {
+                                    "clientName": "WEB",
+                                    "clientVersion": "2.20240901.01.00",
+                                    "hl": "en",
+                                    "gl": "US"
+                                }
+                            },
+                            "videoId": video_id
+                        }
+                        inner_resp = await client.post(
+                            innertube_url,
+                            json=inner_payload,
+                            headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"}
+                        )
+                        if inner_resp.status_code == 200:
+                            inner_data = inner_resp.json()
+                            inner_vd = inner_data.get("videoDetails", {})
+                            if inner_vd.get("lengthSeconds"):
+                                duration = float(inner_vd["lengthSeconds"])
+                            if not title and inner_vd.get("title"):
+                                title = inner_vd["title"]
+                            if not author and inner_vd.get("author"):
+                                author = inner_vd["author"]
+                            if not views and inner_vd.get("viewCount"):
+                                try:
+                                    views = int(inner_vd["viewCount"])
+                                except Exception:
+                                    pass
+                            inner_thumbs = inner_vd.get("thumbnail", {}).get("thumbnails", [])
+                            if inner_thumbs:
+                                thumbnail = inner_thumbs[-1]["url"]
+                            if not description:
+                                description = inner_vd.get("shortDescription", "")
+                    except Exception as inner_err:
+                        logger.warning(f"InnerTube fallback error: {inner_err}")
 
             return {
                 "id": video_id,
@@ -265,7 +311,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
                 "duration": duration,
                 "view_count": views,
                 "formats": formats,
-                "description": vd.get("shortDescription", "")
+                "description": description
             }
         except Exception as e:
             logger.warning(f"Error fetching YouTube watch page metadata for {video_id}: {e}")
@@ -387,12 +433,13 @@ class YouTubeSourceProvider(BaseSourceProvider):
                     "duration": real_dur,
                     "view_count": html_info.get("view_count", 0) if html_info else 0,
                     "formats": [
-                        {"format_id": "bestvideo[height=2160]+bestaudio/bestvideo+bestaudio/best", "height": 2160, "width": 3840, "ext": "mp4", "vcodec": "av01", "acodec": "mp4a", "protocol": "https"},
-                        {"format_id": "bestvideo[height=1440]+bestaudio/bestvideo+bestaudio/best", "height": 1440, "width": 2560, "ext": "mp4", "vcodec": "vp9", "acodec": "mp4a", "protocol": "https"},
-                        {"format_id": "bestvideo[height=1080]+bestaudio/bestvideo+bestaudio/best", "height": 1080, "width": 1920, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
-                        {"format_id": "bestvideo[height=720]+bestaudio/bestvideo+bestaudio/best", "height": 720, "width": 1280, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
-                        {"format_id": "bestvideo[height=480]+bestaudio/bestvideo+bestaudio/best", "height": 480, "width": 854, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
-                        {"format_id": "bestvideo[height=360]+bestaudio/best[height<=360]/18/best", "height": 360, "width": 640, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
+                        {"format_id": "bestvideo[height=2160]+bestaudio/bestvideo+bestaudio/best", "height": 2160, "width": 3840, "ext": "mp4", "vcodec": "av01", "acodec": "mp4a", "vbr": 16000, "protocol": "https"},
+                        {"format_id": "bestvideo[height=1440]+bestaudio/bestvideo+bestaudio/best", "height": 1440, "width": 2560, "ext": "mp4", "vcodec": "vp9", "acodec": "mp4a", "vbr": 8000, "protocol": "https"},
+                        {"format_id": "bestvideo[height=1080]+bestaudio/bestvideo+bestaudio/best", "height": 1080, "width": 1920, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "vbr": 3500, "protocol": "https"},
+                        {"format_id": "bestvideo[height=720]+bestaudio/bestvideo+bestaudio/best", "height": 720, "width": 1280, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "vbr": 1800, "protocol": "https"},
+                        {"format_id": "bestvideo[height=480]+bestaudio/bestvideo+bestaudio/best", "height": 480, "width": 854, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "vbr": 800, "protocol": "https"},
+                        {"format_id": "bestvideo[height=360]+bestaudio/best[height<=360]/18/best", "height": 360, "width": 640, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "vbr": 450, "protocol": "https"},
+                        {"format_id": "bestaudio", "height": 0, "width": 0, "ext": "m4a", "vcodec": "none", "acodec": "mp4a", "abr": 128, "protocol": "https"},
                     ]
                 }
             except Exception as oe:
