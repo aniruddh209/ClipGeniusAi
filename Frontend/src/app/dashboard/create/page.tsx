@@ -377,7 +377,7 @@ function CreateClipsContent() {
                     onClick={() => setIngestMode('upload')}
                     className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${
                       ingestMode === 'upload'
-                        ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
+                        ? 'bg-[#595a45]/20 text-[#3a3c2d] dark:text-[#9ca87d] border border-[#595a45]/30 shadow-xs font-bold'
                         : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
@@ -388,7 +388,7 @@ function CreateClipsContent() {
                     onClick={() => setIngestMode('direct_cloud')}
                     className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
                       ingestMode === 'direct_cloud'
-                        ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30'
+                        ? 'bg-[#595a45]/20 text-[#3a3c2d] dark:text-[#9ca87d] border border-[#595a45]/30 shadow-xs font-bold'
                         : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
@@ -400,7 +400,7 @@ function CreateClipsContent() {
                     onClick={() => setIngestMode('url')}
                     className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${
                       ingestMode === 'url'
-                        ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
+                        ? 'bg-[#595a45]/20 text-[#3a3c2d] dark:text-[#9ca87d] border border-[#595a45]/30 shadow-xs font-bold'
                         : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
@@ -607,7 +607,7 @@ function CreateClipsContent() {
                     <LinkIcon className="w-4 h-4 text-blue-400" />
                     <h4 className="text-sm font-bold text-[var(--foreground)]">YouTube & Online Video AI Clipper</h4>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold uppercase">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#595a45]/20 text-[#3a3c2d] dark:text-[#9ca87d] border border-[#595a45]/30 font-bold uppercase">
                     4K Supported
                   </span>
                 </div>
@@ -620,7 +620,7 @@ function CreateClipsContent() {
                     className={cn(
                       'flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer',
                       youtubeMode === 'direct_fast'
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                        ? 'bg-[#595a45] text-white dark:bg-[#7d8863] dark:text-[#070807] shadow-md shadow-[#595a45]/20 font-bold'
                         : 'text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-white/[0.04]'
                     )}
                   >
@@ -633,7 +633,7 @@ function CreateClipsContent() {
                     className={cn(
                       'flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer',
                       youtubeMode === 'download_full'
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                        ? 'bg-[#595a45] text-white dark:bg-[#7d8863] dark:text-[#070807] shadow-md shadow-[#595a45]/20 font-bold'
                         : 'text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-white/[0.04]'
                     )}
                   >
@@ -643,7 +643,7 @@ function CreateClipsContent() {
                 </div>
 
                 {youtubeMode === 'direct_fast' ? (
-                  <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 flex items-start gap-2.5 text-xs text-blue-800 dark:text-blue-200">
+                  <div className="p-3 rounded-xl bg-[#595a45]/10 border border-[#595a45]/30 flex items-start gap-2.5 text-xs text-[#3a3c2d] dark:text-[#c5cdb5]">
                     <Zap className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-zinc-900 dark:text-white">Direct 4K Clipping Mode Active</p>
@@ -654,7 +654,7 @@ function CreateClipsContent() {
                   </div>
                 ) : (
                   <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--card-border)] flex items-start gap-2.5 text-xs text-zinc-700 dark:text-zinc-300">
-                    <DownloadCloud className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
+                    <DownloadCloud className="w-4 h-4 text-[#595a45] dark:text-[#9ca87d] shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-zinc-900 dark:text-white">Full Video Ingest Mode</p>
                       <p className="text-[11px] text-[var(--text-muted)]">
@@ -672,14 +672,14 @@ function CreateClipsContent() {
                       value={youtubeUrl}
                       disabled={isDownloadingUrl}
                       onChange={(e) => setYoutubeUrl(cleanYoutubeUrl(e.target.value))}
-                      className="flex-1 bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:outline-none focus:border-blue-500 disabled:opacity-50"
+                      className="flex-1 bg-[var(--surface)] border border-[var(--card-border)] rounded-xl px-4 py-2.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#595a45] disabled:opacity-50"
                     />
                     <Button
                       onClick={handleYoutubeSubmit}
                       isLoading={isDownloadingUrl}
                       variant="primary"
                       size="sm"
-                      className="rounded-xl px-5 text-xs whitespace-nowrap bg-blue-600 hover:bg-blue-500 text-white"
+                      className="rounded-xl px-5 text-xs whitespace-nowrap bg-[#595a45] hover:bg-[#484b39] text-white dark:bg-[#7d8863] dark:hover:bg-[#8f9b72] dark:text-[#070807] font-bold"
                     >
                       {isDownloadingUrl
                         ? (youtubeMode === 'direct_fast' ? 'Analyzing 4K Stream...' : 'Downloading Video...')
@@ -688,8 +688,8 @@ function CreateClipsContent() {
                   </div>
 
                   {isDownloadingUrl && (
-                    <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 flex items-center gap-3 text-xs text-blue-800 dark:text-blue-200">
-                      <div className="w-4 h-4 border-2 border-blue-500 dark:border-blue-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                    <div className="p-3 rounded-xl bg-[#595a45]/15 border border-[#595a45]/30 flex items-center gap-3 text-xs text-[#3a3c2d] dark:text-[#c5cdb5]">
+                      <div className="w-4 h-4 border-2 border-[#595a45] dark:border-[#9ca87d] border-t-transparent rounded-full animate-spin shrink-0" />
                       <div>
                         <p className="font-semibold text-zinc-900 dark:text-white">
                           {youtubeMode === 'direct_fast'
@@ -731,7 +731,7 @@ function CreateClipsContent() {
                     onClick={() => setStudioTab('clips')}
                     className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                       studioTab === 'clips'
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                        ? 'bg-[#595a45] text-white dark:bg-[#7d8863] dark:text-[#070807] shadow-md shadow-[#595a45]/20 font-bold'
                         : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
@@ -744,7 +744,7 @@ function CreateClipsContent() {
                     onClick={() => setStudioTab('transcript')}
                     className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                       studioTab === 'transcript'
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                        ? 'bg-[#595a45] text-white dark:bg-[#7d8863] dark:text-[#070807] shadow-md shadow-[#595a45]/20 font-bold'
                         : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
@@ -757,7 +757,7 @@ function CreateClipsContent() {
                     onClick={() => setStudioTab('reframing')}
                     className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                       studioTab === 'reframing'
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                        ? 'bg-[#595a45] text-white dark:bg-[#7d8863] dark:text-[#070807] shadow-md shadow-[#595a45]/20 font-bold'
                         : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
@@ -1001,10 +1001,10 @@ function CreateClipsContent() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-blue-500" />
+                      <Layers className="w-3.5 h-3.5 text-[#595a45] dark:text-[#9ca87d]" />
                       2. Layout Template Presets
                     </label>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30 font-bold uppercase">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#595a45]/20 text-[#3a3c2d] dark:text-[#9ca87d] border border-[#595a45]/30 font-bold uppercase">
                       Wayin Style
                     </span>
                   </div>
@@ -1016,8 +1016,8 @@ function CreateClipsContent() {
                 </div>
 
                 {templateLayout === 'full_screen' && (
-                  <div className="px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
-                    <Gamepad2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <div className="px-3 py-2 rounded-xl bg-[#595a45]/10 border border-[#595a45]/30 flex items-center gap-2 text-xs text-[#3a3c2d] dark:text-[#c5cdb5]">
+                    <Gamepad2 className="w-4 h-4 text-[#595a45] dark:text-[#9ca87d] shrink-0" />
                     <span>
                       <strong>Pure Gameplay Active:</strong> Creator facecam / webcam on top is removed. The video will focus 100% on continuous full gameplay action.
                     </span>
@@ -1077,8 +1077,8 @@ function CreateClipsContent() {
                         onClick={() => setTemplateLayout(tmpl.id as any)}
                         className={`group relative rounded-2xl p-2.5 transition-all cursor-pointer flex flex-col justify-between ${
                           isSelected
-                            ? 'ring-2 ring-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/20 shadow-md shadow-emerald-500/10 border border-emerald-500'
-                            : 'border border-[var(--card-border)] bg-[var(--surface)] hover:border-blue-500/40'
+                            ? 'ring-2 ring-[#595a45] dark:ring-[#7d8863] bg-[#595a45]/10 shadow-md shadow-[#595a45]/20 border border-[#595a45]'
+                            : 'border border-[var(--card-border)] bg-[var(--surface)] hover:border-[#595a45]/40'
                         }`}
                       >
                         {/* 9:16 Miniature Screen Frame */}
@@ -1086,8 +1086,8 @@ function CreateClipsContent() {
                           {/* Selection indicator matching WayinVideo */}
                           <div className="absolute top-2 left-2 z-20">
                             {isSelected ? (
-                              <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/50">
-                                <Check className="w-3 h-3 text-black stroke-[3]" />
+                              <div className="w-5 h-5 rounded-full bg-[#595a45] dark:bg-[#7d8863] flex items-center justify-center shadow-lg">
+                                <Check className="w-3 h-3 text-white dark:text-[#070807] stroke-[3]" />
                               </div>
                             ) : (
                               <div className="w-5 h-5 rounded-full bg-black/40 border border-white/20 group-hover:border-white/40" />
@@ -1238,8 +1238,8 @@ function CreateClipsContent() {
                         onClick={() => setCaptionPreset(style.id as any)}
                         className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
                           isSelected
-                            ? 'border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-300 shadow-sm'
-                            : 'border-[var(--card-border)] bg-[var(--surface)] hover:border-zinc-700 text-[var(--text-muted)]'
+                            ? 'border-[#595a45] bg-[#595a45]/20 text-[#3a3c2d] dark:text-[#9ca87d] shadow-sm font-bold'
+                            : 'border-[var(--card-border)] bg-[var(--surface)] hover:border-[#595a45]/40 text-[var(--text-muted)]'
                         }`}
                       >
                         <div className="flex items-center justify-center gap-1">
@@ -1273,7 +1273,7 @@ function CreateClipsContent() {
                         onClick={() => setExportQuality(q.id as any)}
                         className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
                           exportQuality === q.id
-                            ? 'border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-300 font-semibold'
+                            ? 'border-[#595a45] bg-[#595a45]/20 text-[#3a3c2d] dark:text-[#9ca87d] font-bold'
                             : 'border-[var(--card-border)] bg-[var(--surface)] text-[var(--text-muted)] text-xs'
                         }`}
                       >
@@ -1297,7 +1297,7 @@ function CreateClipsContent() {
                         onClick={() => setMaxClips(cnt)}
                         className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
                           maxClips === cnt
-                            ? 'border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-300 font-semibold'
+                            ? 'border-[#595a45] bg-[#595a45]/20 text-[#3a3c2d] dark:text-[#9ca87d] font-bold'
                             : 'border-[var(--card-border)] bg-[var(--surface)] text-[var(--text-muted)] text-xs'
                         }`}
                       >
@@ -1324,7 +1324,7 @@ function CreateClipsContent() {
                         onClick={() => setDurationRange(dur.id as any)}
                         className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
                           durationRange === dur.id
-                            ? 'border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-300 font-semibold'
+                            ? 'border-[#595a45] bg-[#595a45]/20 text-[#3a3c2d] dark:text-[#9ca87d] font-bold'
                             : 'border-[var(--card-border)] bg-[var(--surface)] text-[var(--text-muted)] text-xs'
                         }`}
                       >
@@ -1340,7 +1340,7 @@ function CreateClipsContent() {
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
                   <span className="font-semibold text-zinc-800 dark:text-zinc-200">Virality Threshold Cutoff</span>
-                  <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{viralitySensitivity}%+</span>
+                  <span className="font-mono text-[#595a45] dark:text-[#9ca87d] font-bold">{viralitySensitivity}%+</span>
                 </div>
                 <input
                   type="range"
@@ -1348,7 +1348,7 @@ function CreateClipsContent() {
                   max="95"
                   value={viralitySensitivity}
                   onChange={(e) => setViralitySensitivity(Number(e.target.value))}
-                  className="w-full accent-blue-600 bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-lg appearance-none cursor-pointer"
+                  className="w-full accent-[#595a45] dark:accent-[#7d8863] bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-lg appearance-none cursor-pointer"
                 />
                 <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
                   <span>More Clips (50%)</span>
@@ -1363,9 +1363,9 @@ function CreateClipsContent() {
                   disabled={!activeVideo || isGenerating}
                   isLoading={isGenerating}
                   size="lg"
-                  className="w-full rounded-2xl py-3.5 text-sm font-black shadow-xl shadow-emerald-500/25 bg-emerald-500 hover:bg-emerald-400 text-black border-none transition-all cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full rounded-2xl py-3.5 text-sm font-black shadow-xl shadow-[#595a45]/25 bg-[#595a45] hover:bg-[#484b39] text-[#f7f8f4] dark:bg-[#7d8863] dark:hover:bg-[#8f9b72] dark:text-[#070807] border-none transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <Sparkles className="w-4 h-4 text-black stroke-[2.5]" />
+                  <Sparkles className="w-4 h-4 text-white dark:text-[#070807] stroke-[2.5]" />
                   {isGenerating
                     ? 'AI Clipping & Rendering in Progress...'
                     : 'Generate Clips'}

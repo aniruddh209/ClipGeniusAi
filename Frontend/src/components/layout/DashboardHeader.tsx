@@ -31,18 +31,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
             <span className="font-semibold text-[var(--foreground)]">ClipGenius Studio</span>
             <span>/</span>
-            <span className="text-blue-500 font-medium">Workspace</span>
+            <span className="text-[#595a45] dark:text-[#9ca87d] font-medium">Workspace</span>
           </div>
         )}
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Backend Connectivity Status Pill */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Engine Connected</span>
-        </div>
-
         {/* Global Search shortcut */}
         <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--card)] border border-[var(--card-border)] text-xs text-[var(--text-muted)]">
           <Search className="w-3.5 h-3.5 text-[var(--text-muted)]" />
@@ -57,7 +51,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           rel="noreferrer"
           className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--foreground)] px-2.5 py-1.5 rounded-xl hover:bg-[var(--card)] border border-transparent hover:border-[var(--card-border)] transition-all"
         >
-          <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
+          <ExternalLink className="w-3.5 h-3.5 text-[#595a45] dark:text-[#9ca87d]" />
           <span>API Docs</span>
         </a>
 

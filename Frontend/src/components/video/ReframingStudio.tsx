@@ -321,7 +321,7 @@ export const ReframingStudio: React.FC<ReframingStudioProps> = ({
 
                   {/* Dynamic Crop Overlay Rectangle */}
                   <div
-                    className="absolute border-2 border-blue-400 bg-blue-500/10 shadow-[0_0_20px_rgba(168,85,247,0.35)] transition-all duration-150 pointer-events-none rounded-lg flex flex-col justify-between p-2"
+                    className="absolute border-2 border-blue-400 bg-blue-500/10 shadow-[0_0_20px_rgba(89,90,69,0.35)] transition-all duration-150 pointer-events-none rounded-lg flex flex-col justify-between p-2"
                     style={cropBoxStyles}
                   >
                     <div className="flex items-center justify-between text-[10px] font-mono font-bold text-blue-300 bg-neutral-900/80 px-2 py-0.5 rounded backdrop-blur-sm self-start">

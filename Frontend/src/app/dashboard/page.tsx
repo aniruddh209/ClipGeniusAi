@@ -118,10 +118,10 @@ export default function DashboardPage() {
       <div className="px-6 sm:px-8 pt-8 space-y-8 max-w-7xl mx-auto">
         {/* 1. OVERVIEW STATISTICS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-5 border border-[var(--card-border)] bg-[var(--card)] hover:border-blue-500/40 transition-all">
+          <Card className="p-5 border border-[var(--card-border)] bg-[var(--card)] hover:border-[#595a45]/50 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-[var(--text-muted)]">Total Videos Processed</span>
-              <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-[#595a45]/15 border border-[#595a45]/30 text-[#595a45] dark:text-[#9ca87d] flex items-center justify-center">
                 <Video className="w-4 h-4" />
               </div>
             </div>
@@ -134,16 +134,16 @@ export default function DashboardPage() {
             <p className="text-[11px] text-[var(--text-muted)] mt-1">{hoursFootage} hrs total source footage</p>
           </Card>
 
-          <Card className="p-5 border border-[var(--card-border)] bg-[var(--card)] hover:border-pink-500/40 transition-all">
+          <Card className="p-5 border border-[var(--card-border)] bg-[var(--card)] hover:border-[#595a45]/50 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-[var(--text-muted)]">Viral Shorts Generated</span>
-              <div className="w-8 h-8 rounded-lg bg-pink-500/10 border border-pink-500/20 text-pink-500 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-[#7d8863]/15 border border-[#7d8863]/30 text-[#595a45] dark:text-[#9ca87d] flex items-center justify-center">
                 <Scissors className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-2xl font-extrabold text-[var(--foreground)]">{totalClips}</span>
-              <span className="text-xs text-blue-500 font-medium">9:16 Vertical</span>
+              <span className="text-xs text-[#595a45] dark:text-[#9ca87d] font-medium">9:16 Vertical</span>
             </div>
             <p className="text-[11px] text-[var(--text-muted)] mt-1">Ready for Reels, Shorts, TikTok</p>
           </Card>
@@ -164,16 +164,16 @@ export default function DashboardPage() {
             <p className="text-[11px] text-[var(--text-muted)] mt-1">Whisper & PySceneDetect scored</p>
           </Card>
 
-          <Card className="p-5 border border-[var(--card-border)] bg-[var(--card)] hover:border-blue-500/40 transition-all">
+          <Card className="p-5 border border-[var(--card-border)] bg-[var(--card)] hover:border-[#595a45]/50 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-[var(--text-muted)]">Editing Hours Saved</span>
-              <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-[#595a45]/15 border border-[#595a45]/30 text-[#595a45] dark:text-[#9ca87d] flex items-center justify-center">
                 <Clock className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-2xl font-extrabold text-[var(--foreground)]">{hoursSaved} hrs</span>
-              <span className="text-xs text-blue-500 font-medium">Auto-Cut</span>
+              <span className="text-xs text-[#595a45] dark:text-[#9ca87d] font-medium">Auto-Cut</span>
             </div>
             <p className="text-[11px] text-[var(--text-muted)] mt-1">Saved vs. manual video editing</p>
           </Card>
@@ -192,14 +192,14 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <Link href="/dashboard/projects" className="text-xs font-semibold text-blue-500 hover:text-blue-400 flex items-center gap-1">
+            <Link href="/dashboard/projects" className="text-xs font-semibold text-[#595a45] dark:text-[#9ca87d] hover:underline flex items-center gap-1">
               View All Projects <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           {isLoading ? (
             <div className="p-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-center text-xs text-[var(--text-muted)]">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500 mb-2" />
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#595a45] dark:text-[#9ca87d] mb-2" />
               Loading real clips from database...
             </div>
           ) : clips.length === 0 ? (
@@ -228,7 +228,7 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={clip.id}
-                    className="group rounded-2xl bg-[var(--card)] border border-[var(--card-border)] hover:border-blue-500/40 p-4 transition-all flex flex-col justify-between shadow-sm"
+                    className="group rounded-2xl bg-[var(--card)] border border-[var(--card-border)] hover:border-[#595a45]/50 p-4 transition-all flex flex-col justify-between shadow-sm"
                   >
                     {/* Clip Video Thumbnail & Overlay */}
                     <div className="relative rounded-xl overflow-hidden aspect-[9/16] max-h-72 w-full bg-black border border-[var(--card-border)] mb-4">
@@ -250,7 +250,7 @@ export default function DashboardPage() {
                         <span className="px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-md text-[10px] font-mono text-zinc-300">
                           9:16 Vertical
                         </span>
-                        <span className="px-2 py-0.5 rounded-md bg-blue-600 text-white text-[11px] font-extrabold flex items-center gap-1 shadow-lg shadow-blue-950/60">
+                        <span className="px-2 py-0.5 rounded-md bg-[#595a45] dark:bg-[#7d8863] text-white dark:text-[#070807] text-[11px] font-extrabold flex items-center gap-1 shadow-lg shadow-[#595a45]/30">
                           <Flame className="w-3 h-3 fill-current text-amber-300" />
                           {score}%
                         </span>
@@ -261,7 +261,7 @@ export default function DashboardPage() {
                         onClick={() => setActiveClipModal(clip)}
                         className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 cursor-pointer"
                       >
-                        <div className="w-12 h-12 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                        <div className="w-12 h-12 rounded-full bg-[#595a45]/90 dark:bg-[#7d8863]/90 text-white dark:text-[#070807] flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
                           <Play className="w-5 h-5 fill-current ml-0.5" />
                         </div>
                       </button>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
                     {/* Clip Meta */}
                     <div className="space-y-2 flex-1 flex flex-col justify-between">
                       <div>
-                        <h3 className="text-sm font-bold text-[var(--foreground)] line-clamp-1 group-hover:text-blue-500 transition-colors">
+                        <h3 className="text-sm font-bold text-[var(--foreground)] line-clamp-1 group-hover:text-[#595a45] dark:group-hover:text-[#9ca87d] transition-colors">
                           {clip.title}
                         </h3>
                         <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2 italic">
@@ -327,7 +327,7 @@ export default function DashboardPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-[var(--foreground)] flex items-center gap-2">
-              <Video className="w-4 h-4 text-blue-500" />
+              <Video className="w-4 h-4 text-[#595a45] dark:text-[#9ca87d]" />
               Source Video Projects ({videos.length})
             </h2>
 
@@ -397,7 +397,7 @@ export default function DashboardPage() {
                           <td className="px-5 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <Link href="/dashboard/create">
-                                <Button size="sm" variant="ghost" className="text-xs hover:text-blue-500">
+                                <Button size="sm" variant="ghost" className="text-xs hover:text-[#595a45] dark:hover:text-[#9ca87d]">
                                    Clip Video →
                                 </Button>
                               </Link>
@@ -433,7 +433,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between pb-3 border-b border-[var(--card-border)]">
               <div>
                 <h3 className="text-sm font-bold text-[var(--foreground)] line-clamp-1">{activeClipModal.title}</h3>
-                <span className="text-[11px] text-blue-500 font-mono">
+                <span className="text-[11px] text-[#595a45] dark:text-[#9ca87d] font-mono">
                   Virality: {Math.round(activeClipModal.virality_score || activeClipModal.overall_score || 0)}%
                 </span>
               </div>

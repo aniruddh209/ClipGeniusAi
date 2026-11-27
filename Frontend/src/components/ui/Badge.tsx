@@ -12,13 +12,13 @@ export const Badge: React.FC<BadgeProps> = ({
   ...props
 }) => {
   const variants = {
-    default: 'bg-slate-900 text-slate-300 border-slate-800',
-    success: 'bg-emerald-950/70 text-emerald-400 border-emerald-800/60',
-    warning: 'bg-amber-950/70 text-amber-400 border-amber-800/60',
-    error: 'bg-rose-950/70 text-rose-400 border-rose-800/60',
-    outline: 'bg-transparent text-slate-400 border-slate-800',
-    blue: 'bg-blue-950/80 text-blue-400 border-blue-800/70 shadow-sm shadow-blue-950/50',
-    purple: 'bg-blue-950/80 text-blue-400 border-blue-800/70 shadow-sm shadow-blue-950/50', // Alias purple to sleek blue
+    default: 'bg-[var(--surface)] text-[var(--text-muted)] border-[var(--card-border)]',
+    success: 'bg-[#595a45]/20 text-[#3a3c2d] dark:text-[#9ca87d] border-[#595a45]/30',
+    warning: 'bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-800/40',
+    error: 'bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-800/40',
+    outline: 'bg-transparent text-[var(--text-muted)] border-[var(--card-border)]',
+    blue: 'bg-[#595a45]/15 text-[#404332] dark:text-[#9ca87d] border-[#595a45]/30 font-bold',
+    purple: 'bg-[#595a45]/15 text-[#404332] dark:text-[#9ca87d] border-[#595a45]/30 font-bold',
   };
 
   return (
