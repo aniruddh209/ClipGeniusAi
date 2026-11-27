@@ -154,14 +154,9 @@ class YouTubeSourceProvider(BaseSourceProvider):
 
     async def _fetch_from_youtube_html(self, video_id: str) -> Optional[Dict[str, Any]]:
         """
-        Fetches public YouTube video watch page to parse ytInitialPlayerResponse.
         Extracts genuine duration, accurate title, author, viewCount, and streamingData formats.
+        Prioritizes official YouTube InnerTube API for instant, bot-challenge-free metadata extraction (<400ms).
         """
-        url = f"https://www.youtube.com/watch?v={video_id}"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-            "Accept-Language": "en-US,en;q=0.9",
-        }
         duration = 0.0
         title = None
         author = None
@@ -170,158 +165,167 @@ class YouTubeSourceProvider(BaseSourceProvider):
         thumbnail = f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
         description = ""
 
+        # Step 1: Query InnerTube API first (instant, guaranteed duration & title without IP blocks)
         try:
-            async with httpx.AsyncClient(timeout=12.0, follow_redirects=True) as client:
-                # 1. Try public watch page HTML
-                try:
-                    resp = await client.get(url, headers=headers)
-                    if resp.status_code == 200:
-                        html = resp.text
-                        m_player = re.search(r'ytInitialPlayerResponse\s*=\s*({.+?});(?:var|<\/script>)', html)
-                        data: Dict[str, Any] = {}
-                        if m_player:
-                            try:
-                                data = json.loads(m_player.group(1))
-                            except Exception:
-                                pass
-
-                        vd = data.get("videoDetails", {})
-                        if vd.get("lengthSeconds"):
-                            try:
-                                duration = float(vd["lengthSeconds"])
-                            except Exception:
-                                pass
-
-                        if duration <= 0:
-                            m_dur = re.search(r'itemprop="duration"\s+content="([^"]+)"', html)
-                            if m_dur:
-                                duration = parse_iso8601_duration(m_dur.group(1))
-
-                        if duration <= 0:
-                            m_sec = re.search(r'"lengthSeconds":\s*"(\d+)"', html)
-                            if m_sec:
-                                duration = float(m_sec.group(1))
-
-                        title = vd.get("title")
-                        if not title:
-                            m_title = re.search(r'<meta\s+property="og:title"\s+content="([^"]+)"', html)
-                            if m_title:
-                                title = m_title.group(1)
-
-                        author = vd.get("author")
-                        if not author:
-                            m_author = re.search(r'<meta\s+name="author"\s+content="([^"]+)"', html)
-                            if m_author:
-                                author = m_author.group(1)
-
-                        if vd.get("viewCount"):
-                            try:
-                                views = int(vd.get("viewCount"))
-                            except Exception:
-                                pass
-
-                        streaming_data = data.get("streamingData", {})
-                        raw_formats = streaming_data.get("adaptiveFormats", []) + streaming_data.get("formats", [])
-                        for f in raw_formats:
-                            mime = f.get("mimeType", "")
-                            h = f.get("height")
-                            w = f.get("width")
-                            fps = f.get("fps") or 30
-                            clen = f.get("contentLength")
-                            bitrate = f.get("bitrate") or 0
-                            sz = int(clen) if clen and str(clen).isdigit() else None
-                            itag = str(f.get("itag", ""))
-
-                            fmt_entry: Dict[str, Any] = {
-                                "format_id": itag,
-                                "height": h,
-                                "width": w,
-                                "fps": fps,
-                                "filesize": sz,
-                                "filesize_approx": sz or (int((bitrate / 8) * duration) if bitrate and duration else None),
-                                "tbr": bitrate // 1000 if bitrate else None,
-                                "vbr": bitrate // 1000 if bitrate and "video" in mime else None,
-                                "abr": bitrate // 1000 if bitrate and "audio" in mime else None,
-                                "protocol": "https"
-                            }
-
-                            if "video" in mime:
-                                fmt_entry["vcodec"] = mime.split('codecs="')[-1].split('"')[0] if 'codecs="' in mime else "avc1"
-                                fmt_entry["acodec"] = "none"
-                                formats.append(fmt_entry)
-                            elif "audio" in mime:
-                                fmt_entry["acodec"] = mime.split('codecs="')[-1].split('"')[0] if 'codecs="' in mime else "mp4a"
-                                fmt_entry["vcodec"] = "none"
-                                formats.append(fmt_entry)
-
-                        thumbs = vd.get("thumbnail", {}).get("thumbnails", [])
-                        if thumbs:
-                            thumbnail = thumbs[-1]["url"]
-                        description = vd.get("shortDescription", "")
-                except Exception as html_err:
-                    logger.warning(f"Watch page HTML fetch warning: {html_err}")
-
-                # 2. If duration or basic metadata still missing, call official YouTube InnerTube player endpoint
-                if duration <= 0 or not title:
-                    try:
-                        innertube_url = "https://www.youtube.com/youtubei/v1/player?prettyPrint=false"
-                        inner_payload = {
-                            "context": {
-                                "client": {
-                                    "clientName": "WEB",
-                                    "clientVersion": "2.20240901.01.00",
-                                    "hl": "en",
-                                    "gl": "US"
-                                }
-                            },
-                            "videoId": video_id
-                        }
-                        inner_resp = await client.post(
-                            innertube_url,
-                            json=inner_payload,
-                            headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"}
-                        )
-                        if inner_resp.status_code == 200:
-                            inner_data = inner_resp.json()
-                            inner_vd = inner_data.get("videoDetails", {})
-                            if inner_vd.get("lengthSeconds"):
-                                duration = float(inner_vd["lengthSeconds"])
-                            if not title and inner_vd.get("title"):
-                                title = inner_vd["title"]
-                            if not author and inner_vd.get("author"):
-                                author = inner_vd["author"]
-                            if not views and inner_vd.get("viewCount"):
-                                try:
-                                    views = int(inner_vd["viewCount"])
-                                except Exception:
-                                    pass
-                            inner_thumbs = inner_vd.get("thumbnail", {}).get("thumbnails", [])
-                            if inner_thumbs:
-                                thumbnail = inner_thumbs[-1]["url"]
-                            if not description:
-                                description = inner_vd.get("shortDescription", "")
-                    except Exception as inner_err:
-                        logger.warning(f"InnerTube fallback error: {inner_err}")
-
-            return {
-                "id": video_id,
-                "title": title or "YouTube Video",
-                "uploader": author or "YouTube Creator",
-                "thumbnail": thumbnail,
-                "duration": duration,
-                "view_count": views,
-                "formats": formats,
-                "description": description
+            innertube_url = "https://www.youtube.com/youtubei/v1/player?prettyPrint=false"
+            inner_payload = {
+                "context": {
+                    "client": {
+                        "clientName": "WEB",
+                        "clientVersion": "2.20240901.01.00",
+                        "hl": "en",
+                        "gl": "US"
+                    }
+                },
+                "videoId": video_id
             }
-        except Exception as e:
-            logger.warning(f"Error fetching YouTube watch page metadata for {video_id}: {e}")
-            return None
+            async with httpx.AsyncClient(timeout=6.0) as inner_client:
+                inner_resp = await inner_client.post(
+                    innertube_url,
+                    json=inner_payload,
+                    headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"}
+                )
+                if inner_resp.status_code == 200:
+                    inner_data = inner_resp.json()
+                    inner_vd = inner_data.get("videoDetails", {})
+                    if inner_vd.get("lengthSeconds"):
+                        try:
+                            duration = float(inner_vd["lengthSeconds"])
+                        except Exception:
+                            pass
+                    if inner_vd.get("title"):
+                        title = inner_vd["title"]
+                    if inner_vd.get("author"):
+                        author = inner_vd["author"]
+                    if inner_vd.get("viewCount"):
+                        try:
+                            views = int(inner_vd["viewCount"])
+                        except Exception:
+                            pass
+                    inner_thumbs = inner_vd.get("thumbnail", {}).get("thumbnails", [])
+                    if inner_thumbs:
+                        thumbnail = inner_thumbs[-1]["url"]
+                    if inner_vd.get("shortDescription"):
+                        description = inner_vd["shortDescription"]
+        except Exception as inner_err:
+            logger.warning(f"InnerTube query error: {inner_err}")
+
+        # Step 2: Query public watch page HTML to parse adaptiveFormats and exact stream byte lengths
+        try:
+            url = f"https://www.youtube.com/watch?v={video_id}"
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+                "Accept-Language": "en-US,en;q=0.9",
+            }
+            async with httpx.AsyncClient(timeout=4.0, follow_redirects=True) as client:
+                resp = await client.get(url, headers=headers)
+                if resp.status_code == 200:
+                    html = resp.text
+                    m_player = re.search(r'ytInitialPlayerResponse\s*=\s*({.+?});(?:var|<\/script>)', html)
+                    data: Dict[str, Any] = {}
+                    if m_player:
+                        try:
+                            data = json.loads(m_player.group(1))
+                        except Exception:
+                            pass
+
+                    vd = data.get("videoDetails", {})
+                    if duration <= 0 and vd.get("lengthSeconds"):
+                        try:
+                            duration = float(vd["lengthSeconds"])
+                        except Exception:
+                            pass
+
+                    if duration <= 0:
+                        m_dur = re.search(r'itemprop="duration"\s+content="([^"]+)"', html)
+                        if m_dur:
+                            duration = parse_iso8601_duration(m_dur.group(1))
+
+                    if duration <= 0:
+                        m_sec = re.search(r'"lengthSeconds":\s*"(\d+)"', html)
+                        if m_sec:
+                            duration = float(m_sec.group(1))
+
+                    if not title:
+                        title = vd.get("title")
+                    if not title:
+                        m_title = re.search(r'<meta\s+property="og:title"\s+content="([^"]+)"', html)
+                        if m_title:
+                            title = m_title.group(1)
+
+                    if not author:
+                        author = vd.get("author")
+                    if not author:
+                        m_author = re.search(r'<meta\s+name="author"\s+content="([^"]+)"', html)
+                        if m_author:
+                            author = m_author.group(1)
+
+                    if not views and vd.get("viewCount"):
+                        try:
+                            views = int(vd.get("viewCount"))
+                        except Exception:
+                            pass
+
+                    streaming_data = data.get("streamingData", {})
+                    raw_formats = streaming_data.get("adaptiveFormats", []) + streaming_data.get("formats", [])
+                    for f in raw_formats:
+                        mime = f.get("mimeType", "")
+                        h = f.get("height")
+                        w = f.get("width")
+                        fps = f.get("fps") or 30
+                        clen = f.get("contentLength")
+                        bitrate = f.get("bitrate") or 0
+                        sz = int(clen) if clen and str(clen).isdigit() else None
+                        itag = str(f.get("itag", ""))
+
+                        fmt_entry: Dict[str, Any] = {
+                            "format_id": itag,
+                            "height": h,
+                            "width": w,
+                            "fps": fps,
+                            "filesize": sz,
+                            "filesize_approx": sz or (int((bitrate / 8) * duration) if bitrate and duration else None),
+                            "tbr": bitrate // 1000 if bitrate else None,
+                            "vbr": bitrate // 1000 if bitrate and "video" in mime else None,
+                            "abr": bitrate // 1000 if bitrate and "audio" in mime else None,
+                            "protocol": "https"
+                        }
+
+                        if "video" in mime:
+                            fmt_entry["vcodec"] = mime.split('codecs="')[-1].split('"')[0] if 'codecs="' in mime else "avc1"
+                            fmt_entry["acodec"] = "none"
+                            formats.append(fmt_entry)
+                        elif "audio" in mime:
+                            fmt_entry["acodec"] = mime.split('codecs="')[-1].split('"')[0] if 'codecs="' in mime else "mp4a"
+                            fmt_entry["vcodec"] = "none"
+                            formats.append(fmt_entry)
+
+                    thumbs = vd.get("thumbnail", {}).get("thumbnails", [])
+                    if thumbs:
+                        thumbnail = thumbs[-1]["url"]
+                    if not description:
+                        description = vd.get("shortDescription", "")
+        except Exception as html_err:
+            logger.warning(f"Watch page HTML fetch warning: {html_err}")
+
+        return {
+            "id": video_id,
+            "title": title or "YouTube Video",
+            "uploader": author or "YouTube Creator",
+            "thumbnail": thumbnail,
+            "duration": duration,
+            "view_count": views,
+            "formats": formats,
+            "description": description
+        }
 
     async def analyze(self, raw_url: str) -> SourceAnalysisResult:
         clean_url = sanitize_media_url(raw_url)
         video_id = self.extract_video_id(clean_url)
         if not video_id:
             raise ValueError("Could not extract a valid YouTube video ID from the provided URL.")
+
+        real_dur = 0.0
 
         # Phase 1: Try official YouTube Data API v3 & watch page HTML in parallel
         api_item_task = asyncio.create_task(self._fetch_from_youtube_data_api(video_id))
@@ -425,6 +429,21 @@ class YouTubeSourceProvider(BaseSourceProvider):
             try:
                 oembed_data = await self._fetch_from_oembed(clean_url)
                 real_dur = (html_info.get("duration") if html_info else 0.0) or 0.0
+                if real_dur <= 0:
+                    try:
+                        innertube_url = "https://www.youtube.com/youtubei/v1/player?prettyPrint=false"
+                        inner_payload = {
+                            "context": {"client": {"clientName": "WEB", "clientVersion": "2.20240901.01.00", "hl": "en", "gl": "US"}},
+                            "videoId": video_id
+                        }
+                        async with httpx.AsyncClient(timeout=5.0) as cl:
+                            ir = await cl.post(innertube_url, json=inner_payload, headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"})
+                            if ir.status_code == 200:
+                                ivd = ir.json().get("videoDetails", {})
+                                if ivd.get("lengthSeconds"):
+                                    real_dur = float(ivd["lengthSeconds"])
+                    except Exception:
+                        pass
                 stream_info = {
                     "id": video_id,
                     "title": (oembed_data.get("title") if oembed_data else None) or (html_info.get("title") if html_info else "YouTube Video"),
@@ -495,7 +514,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
             channel_name = stream_info.get("uploader") or stream_info.get("channel") or (html_info.get("uploader") if html_info else None) or (oembed_data.get("author_name") if oembed_data else "YouTube Creator")
             channel_id = stream_info.get("channel_id")
             channel_url = stream_info.get("channel_url") or (oembed_data.get("author_url") if oembed_data else None)
-            duration = float(stream_info.get("duration") or (html_info.get("duration") if html_info else 0) or 0)
+            duration = float(stream_info.get("duration") or (html_info.get("duration") if html_info else 0) or real_dur or 0)
             published_date = stream_info.get("upload_date")
             if published_date and len(published_date) == 8:
                 published_date = f"{published_date[:4]}-{published_date[4:6]}-{published_date[6:8]}T00:00:00Z"
