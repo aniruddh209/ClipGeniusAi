@@ -46,6 +46,11 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION}...")
     settings.DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
+    cookies_content = os.getenv("YOUTUBE_COOKIES")
+    if cookies_content:
+        cookie_file = settings.BASE_DIR / "cookies.txt"
+        cookie_file.write_text(cookies_content.strip())
+        logger.info(f"Loaded YouTube cookies from YOUTUBE_COOKIES ({len(cookies_content)} bytes)")
     await connect_to_mongo()
     await ensure_bgutil_running()
     await downloader_manager.initialize()

@@ -172,13 +172,9 @@ class YouTubeSourceProvider(BaseSourceProvider):
             "no_warnings": True,
             "skip_download": True,
             "socket_timeout": 20,
-            "http_headers": {
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-                "Accept-Language": "en-US,en;q=0.9",
-            },
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["android", "ios", "web", "mweb"]
+                    "player_client": ["android", "ios", "mweb"]
                 }
             }
         }
@@ -204,10 +200,6 @@ class YouTubeSourceProvider(BaseSourceProvider):
                     "no_warnings": True,
                     "skip_download": True,
                     "socket_timeout": 20,
-                    "http_headers": {
-                        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-                        "Accept-Language": "en-US,en;q=0.9",
-                    },
                     "extractor_args": {
                         "youtube": {
                             "player_client": ["android", "ios"]
@@ -227,7 +219,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
             probe_error = e
             logger.warning(f"yt-dlp stream info probe encountered error: {e}")
 
-        # If yt-dlp failed to obtain formats, raise clean descriptive error
+        # If yt-dlp failed to obtain formats due to cloud datacenter bot challenge, fall back to oEmbed + standard format tiers
         if not stream_info or not stream_info.get("formats"):
             err_msg = str(probe_error) if probe_error else "Could not load video streams"
             err_lower = err_msg.lower()
@@ -235,7 +227,36 @@ class YouTubeSourceProvider(BaseSourceProvider):
                 raise ValueError("This YouTube video is unavailable or has been removed. Please check the URL.")
             elif "private" in err_lower:
                 raise ValueError("This YouTube video is private and cannot be downloaded.")
-            elif "sign in" in err_lower:
+
+            logger.info(f"Attempting public YouTube oEmbed fallback for {clean_url}...")
+            try:
+                import urllib.request
+                import json
+                oembed_url = f"https://www.youtube.com/oembed?url={clean_url}&format=json"
+                req = urllib.request.Request(oembed_url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=5.0) as resp:
+                    if resp.status == 200:
+                        oembed_data = json.loads(resp.read().decode("utf-8"))
+                        stream_info = {
+                            "id": video_id,
+                            "title": oembed_data.get("title") or "YouTube Video",
+                            "uploader": oembed_data.get("author_name") or "YouTube Creator",
+                            "thumbnail": oembed_data.get("thumbnail_url") or f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg",
+                            "duration": 600,
+                            "view_count": 0,
+                            "formats": [
+                                {"format_id": "bestvideo[height<=1080]+bestaudio/best[height<=1080]/18/best", "height": 1080, "width": 1920, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
+                                {"format_id": "bestvideo[height<=720]+bestaudio/best[height<=720]/18/best", "height": 720, "width": 1280, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
+                                {"format_id": "18/best[height<=360]/best", "height": 360, "width": 640, "ext": "mp4", "vcodec": "avc1", "acodec": "mp4a", "protocol": "https"},
+                            ]
+                        }
+            except Exception as oe:
+                logger.warning(f"oEmbed fallback error: {oe}")
+
+        if not stream_info or not stream_info.get("formats"):
+            err_msg = str(probe_error) if probe_error else "Could not load video streams"
+            err_lower = err_msg.lower()
+            if "sign in" in err_lower:
                 raise ValueError("YouTube requires sign-in verification for this video.")
             else:
                 raise ValueError(f"Could not load media streams for this video: {err_msg[:120]}")
