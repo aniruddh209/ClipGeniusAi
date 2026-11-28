@@ -470,3 +470,40 @@ async def clip_downloaded_video(task_id: str):
         "message": "Video successfully imported into AI Clipper studio",
         "video": video_doc
     }
+
+@router.post("/debug-dl")
+async def debug_download(payload: StartDownloadRequest):
+    import traceback
+    import yt_dlp
+    from app.services.sources.youtube import resolve_youtube_cookies
+    
+    clean_url = payload.url
+    opts = {
+        "format": payload.format_id,
+        "outtmpl": "/tmp/debug_%(id)s.%(ext)s",
+        "quiet": False,
+        "verbose": True,
+        "js_runtimes": {},
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["visionos"]
+            }
+        },
+        "download_ranges": yt_dlp.utils.download_range_func(None, [(0, 1)]),
+    }
+    cookie_path = resolve_youtube_cookies()
+    if cookie_path:
+        opts["cookiefile"] = cookie_path
+
+    try:
+        def _run():
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                return ydl.download([clean_url])
+        rc = await asyncio.to_thread(_run)
+        return {"success": True, "returncode": rc}
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
