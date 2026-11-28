@@ -197,7 +197,7 @@ class VideoDownloader:
             "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "android"]
+                    "player_client": ["tv_samsung", "android"]
                 }
             },
         }
@@ -226,7 +226,7 @@ class VideoDownloader:
                     "http_chunk_size": 10485760,
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["tv_samsung", "visionos", "android"]
+                            "player_client": ["tv_samsung", "android"]
                         }
                     },
                 }
@@ -359,7 +359,7 @@ class VideoDownloader:
             "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "android"]
+                    "player_client": ["tv_samsung", "android"]
                 }
             },
         }
@@ -440,7 +440,7 @@ class VideoDownloader:
             "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "android"]
+                    "player_client": ["tv_samsung", "android"]
                 }
             },
             "postprocessors": [{
@@ -554,7 +554,7 @@ class VideoDownloader:
             "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "android"]
+                    "player_client": ["tv_samsung", "android"]
                 }
             },
         }

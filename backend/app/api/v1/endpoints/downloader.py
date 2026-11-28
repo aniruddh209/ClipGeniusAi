@@ -563,7 +563,7 @@ async def debug_download(payload: StartDownloadRequest):
         "js_runtimes": {},
         "extractor_args": {
             "youtube": {
-                "player_client": ["visionos"]
+                "player_client": ["tv_samsung", "android"]
             }
         },
         "download_ranges": yt_dlp.utils.download_range_func(None, [(0, 1)]),

@@ -394,7 +394,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
                 "js_runtimes": {},
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["tv_samsung", "visionos", "android"]
+                        "player_client": ["tv_samsung", "android"]
                     }
                 }
             }

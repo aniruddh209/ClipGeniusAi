@@ -257,7 +257,7 @@ class DownloaderManager:
             "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "android"]
+                    "player_client": ["tv_samsung", "android"]
                 }
             }
         }
@@ -727,7 +727,7 @@ class DownloaderManager:
             "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "android"],
+                    "player_client": ["tv_samsung", "android"],
                 }
             },
         }
@@ -737,7 +737,7 @@ class DownloaderManager:
             ydl_opts["cookiefile"] = cookie_path
             ydl_opts["extractor_args"] = {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "android", "web"]
+                    "player_client": ["tv_samsung", "android", "web"]
                 }
             }
 
@@ -955,9 +955,9 @@ class DownloaderManager:
                 if attempt < max_attempts - 1:
                     logger.warning(f"Download attempt {attempt + 1} encountered glitch ({err_msg[:80]}). Switching client for attempt {attempt + 2}...")
                     if attempt == 0:
-                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["tv_samsung", "android"]}}
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["tv_samsung"]}}
                     elif attempt == 1:
-                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["android", "tv_samsung"]}}
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["tv_samsung", "android"]}}
                     elif attempt == 2:
                         ydl_opts["extractor_args"] = {"youtube": {"player_client": ["tv_samsung"]}}
                         ydl_opts["format"] = "bestvideo+bestaudio/best"
