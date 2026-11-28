@@ -38,8 +38,7 @@ import {
   Apple,
   Folder,
   CheckSquare,
-  Square,
-  Cookie
+  Square
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { VideoAnalysisResult, VideoFormatOption, DownloadTask } from '@/types';
@@ -48,7 +47,6 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { MacOSExportModal } from '@/components/video/MacOSExportModal';
 import { FileDetailsModal } from '@/components/video/FileDetailsModal';
-import { YouTubeAuthModal } from '@/components/video/YouTubeAuthModal';
 
 function VideoDownloaderContent() {
   const router = useRouter();
@@ -82,7 +80,6 @@ function VideoDownloaderContent() {
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [exportModalTask, setExportModalTask] = useState<DownloadTask | null>(null);
   const [detailsModalTask, setDetailsModalTask] = useState<DownloadTask | null>(null);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [deleteConfirmState, setDeleteConfirmState] = useState<{
     isOpen: boolean;
     taskIds: string[];
@@ -491,15 +488,6 @@ function VideoDownloaderContent() {
                 </span>
               )}
             </button>
-
-            <button
-              onClick={() => setIsAuthModalOpen(true)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 border border-[#232F24] bg-[#141B15] hover:bg-[#1C251D] text-zinc-300 hover:text-white cursor-pointer ml-1"
-              title="Configure YouTube Cookies for Cloud 4K/1080p Downloads"
-            >
-              <Cookie className="w-3.5 h-3.5 text-[#A3E635]" />
-              <span>YouTube Cookies</span>
-            </button>
           </div>
         </div>
       </div>
@@ -581,7 +569,6 @@ function VideoDownloaderContent() {
                           <p className="font-semibold text-rose-300">Tips to resolve this:</p>
                           <ul className="list-disc list-inside space-y-0.5 text-[var(--text-muted)]">
                             <li>Check that the YouTube link is valid and publicly accessible (not private or removed).</li>
-                            <li>If YouTube has an age restriction or bot challenge on this video, place a Netscape <code className="text-emerald-400 bg-black/40 px-1 py-0.2 rounded font-mono">cookies.txt</code> in the project folder to authorize downloads.</li>
                             <li>You can also paste any direct video URL (MP4, WebM, MOV) or use the <strong>AI Clipper</strong> direct uploader.</li>
                           </ul>
                         </div>
@@ -1538,15 +1525,6 @@ function VideoDownloaderContent() {
                               <span>{task.error_message}</span>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              {(task.error_message.toLowerCase().includes('cookie') || task.error_message.toLowerCase().includes('bot') || task.error_message.toLowerCase().includes('sign in')) && (
-                                <button
-                                  onClick={() => setIsAuthModalOpen(true)}
-                                  className="px-2.5 py-1 rounded-lg bg-[#A3E635] hover:bg-[#bef264] text-[#080A08] font-bold text-[10px] cursor-pointer flex items-center gap-1 shadow-sm"
-                                >
-                                  <Cookie className="w-3 h-3" />
-                                  <span>Connect Cookies</span>
-                                </button>
-                              )}
                               <button
                                 onClick={() => handleResume(task.task_id)}
                                 className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-semibold cursor-pointer shrink-0"
@@ -1827,16 +1805,6 @@ function VideoDownloaderContent() {
           </div>
         </div>
       )}
-
-      {/* YouTube Cookies Authentication Modal */}
-      <YouTubeAuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onSuccess={() => {
-          showNotification('YouTube cookies saved successfully! Cloud downloads are now authorized.', 'success');
-          fetchTasks();
-        }}
-      />
     </div>
   );
 }

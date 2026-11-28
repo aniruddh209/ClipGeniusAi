@@ -257,7 +257,7 @@ class DownloaderManager:
             "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["visionos"]
+                    "player_client": ["tv_samsung", "visionos", "android"]
                 }
             }
         }
@@ -282,7 +282,7 @@ class DownloaderManager:
                 "js_runtimes": {},
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["visionos"],
+                        "player_client": ["android", "tv_samsung"],
                     }
                 },
             }
@@ -727,7 +727,7 @@ class DownloaderManager:
             "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["visionos"],
+                    "player_client": ["tv_samsung", "visionos", "android"],
                 }
             },
         }
@@ -737,11 +737,13 @@ class DownloaderManager:
             ydl_opts["cookiefile"] = cookie_path
             ydl_opts["extractor_args"] = {
                 "youtube": {
-                    "player_client": ["tv_samsung", "web"]
+                    "player_client": ["tv_samsung", "visionos", "android", "web"]
                 }
             }
 
-        # If audio format chosen, configure audio extraction
+        # Build resilient cascading format to guarantee download never aborts on single stream glitch
+        requested_fmt = task.get("format_id", "")
+        res = task.get("resolution", "")
         if ext in ["mp3", "m4a"]:
             ydl_opts["format"] = "bestaudio/best"
             ydl_opts["postprocessors"] = [{
@@ -750,6 +752,21 @@ class DownloaderManager:
                 "preferredquality": "320" if ext == "mp3" else "192",
             }]
         else:
+            if "2160" in requested_fmt or "2160p" in res or "4k" in res.lower():
+                cascade = f"{requested_fmt}/bestvideo[height=2160]+bestaudio/bestvideo[height<=2160]+bestaudio/bestvideo[height<=1440]+bestaudio/bestvideo+bestaudio/best"
+            elif "1440" in requested_fmt or "1440p" in res or "2k" in res.lower():
+                cascade = f"{requested_fmt}/bestvideo[height=1440]+bestaudio/bestvideo[height<=1440]+bestaudio/bestvideo[height<=1080]+bestaudio/bestvideo+bestaudio/best"
+            elif "1080" in requested_fmt or "1080p" in res:
+                cascade = f"{requested_fmt}/bestvideo[height=1080]+bestaudio/bestvideo[height<=1080]+bestaudio/bestvideo[height<=720]+bestaudio/bestvideo+bestaudio/best"
+            elif "720" in requested_fmt or "720p" in res:
+                cascade = f"{requested_fmt}/bestvideo[height=720]+bestaudio/bestvideo[height<=720]+bestaudio/bestvideo+bestaudio/best"
+            elif "480" in requested_fmt or "480p" in res:
+                cascade = f"{requested_fmt}/bestvideo[height=480]+bestaudio/bestvideo[height<=480]+bestaudio/bestvideo+bestaudio/best"
+            elif "360" in requested_fmt or "360p" in res:
+                cascade = f"{requested_fmt}/bestvideo[height=360]+bestaudio/bestvideo[height<=360]+bestaudio/bestvideo+bestaudio/best"
+            else:
+                cascade = f"{requested_fmt}/bestvideo+bestaudio/best"
+            ydl_opts["format"] = cascade
             ydl_opts["merge_output_format"] = ext
 
         max_attempts = 4
@@ -938,14 +955,13 @@ class DownloaderManager:
                 if attempt < max_attempts - 1:
                     logger.warning(f"Download attempt {attempt + 1} encountered glitch ({err_msg[:80]}). Switching client for attempt {attempt + 2}...")
                     if attempt == 0:
-                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["visionos"]}}
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["tv_samsung", "android"]}}
                     elif attempt == 1:
-                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["visionos"]}}
-                        ydl_opts["format"] = f"{task['format_id']}/bestvideo+bestaudio/best"
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["android", "tv_samsung"]}}
                     elif attempt == 2:
-                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["visionos"]}}
-                        ydl_opts["format"] = "best[height<=1080]/bestvideo+bestaudio/best"
-                    time.sleep(2)
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["tv_samsung"]}}
+                        ydl_opts["format"] = "bestvideo+bestaudio/best"
+                    time.sleep(1.5)
                     continue
 
                 # Check if this is a disk full or I/O error
@@ -1007,10 +1023,8 @@ class DownloaderManager:
                             t["status"] = "interrupted"
                             t["speed_formatted"] = "Interrupted"
                             t["eta_formatted"] = "Interrupted"
-                            if "sign in" in err_lower or "bot" in err_lower:
-                                t["error_message"] = "YouTube bot check detected on cloud IP. Click 'Connect YouTube Cookies' to authorize high-speed cloud downloads."
-                            else:
-                                t["error_message"] = f"Download interrupted ({err_msg[:80]}). Partial download saved safely ({format_bytes(saved_bytes)}). Ready to resume."
+                            clean_err = err_msg.split("\n")[0][:100]
+                            t["error_message"] = f"Download interrupted ({clean_err}). Partial download saved safely ({format_bytes(saved_bytes)}). Ready to resume."
                             t["updated_at"] = datetime.now(timezone.utc).isoformat()
                     self._sync_save_task(self._tasks[task_id])
                     return
