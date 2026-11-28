@@ -584,3 +584,39 @@ async def debug_download(payload: StartDownloadRequest):
             "error": str(e),
             "traceback": traceback.format_exc()
         }
+
+@router.post("/probe-clients")
+async def probe_clients(payload: Dict[str, Any]):
+    import yt_dlp
+    url = payload.get("url", "https://www.youtube.com/watch?v=e4B2DwSqEZg")
+    candidate_clients = [
+        ["tv_samsung"],
+        ["android"],
+        ["mweb"],
+        ["tv"],
+        ["tv_simply"],
+        ["tv_downgraded"],
+        ["web_embedded"],
+        ["android_vr"],
+        ["ios"],
+        ["web_creator"],
+    ]
+    results = {}
+    for c in candidate_clients:
+        name = "+".join(c)
+        opts = {
+            "quiet": True,
+            "no_warnings": True,
+            "extractor_args": {"youtube": {"player_client": c}},
+        }
+        try:
+            def _extract(opts_arg=opts):
+                with yt_dlp.YoutubeDL(opts_arg) as ydl:
+                    return ydl.extract_info(url, download=False)
+            info = await asyncio.to_thread(_extract)
+            fmts = len(info.get("formats", []))
+            heights = sorted(list(set(f.get("height") for f in info.get("formats", []) if f.get("height"))))
+            results[name] = {"success": True, "formats_count": fmts, "heights": heights, "title": info.get("title", "")[:40]}
+        except Exception as e:
+            results[name] = {"success": False, "error": str(e).split("\n")[0][:120]}
+    return results
