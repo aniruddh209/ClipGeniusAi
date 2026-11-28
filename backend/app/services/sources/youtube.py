@@ -1,8 +1,13 @@
 import os
+import sys
 import re
 import json
 import base64
 import asyncio
+import shutil
+import platform
+import urllib.request
+import zipfile
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List, Optional
@@ -131,6 +136,59 @@ def resolve_youtube_cookies() -> Optional[str]:
                 pass
 
     return None
+
+def ensure_deno_runtime() -> Optional[str]:
+    """Ensures Deno is available on disk to allow yt-dlp to solve YouTube JS challenges."""
+    found = shutil.which("deno")
+    if found:
+        return found
+    candidates = [
+        Path("/opt/render/.deno/bin/deno"),
+        Path("/tmp/bin/deno"),
+        Path.home() / ".deno/bin/deno"
+    ]
+    for c in candidates:
+        if c.exists() and os.access(c, os.X_OK):
+            parent_str = str(c.parent)
+            if parent_str not in os.environ.get("PATH", ""):
+                os.environ["PATH"] = f"{parent_str}:{os.environ.get('PATH', '')}"
+            return str(c)
+
+    if sys.platform.startswith("linux"):
+        target_dir = Path("/tmp/bin")
+        target_dir.mkdir(parents=True, exist_ok=True)
+        deno_bin = target_dir / "deno"
+        if not (deno_bin.exists() and os.access(deno_bin, os.X_OK)):
+            try:
+                logger.info("Provisioning standalone Deno JS challenge engine on cloud server...")
+                zip_path = target_dir / "deno.zip"
+                urllib.request.urlretrieve(
+                    "https://github.com/denoland/deno/releases/download/v2.1.2/deno-x86_64-unknown-linux-gnu.zip",
+                    str(zip_path)
+                )
+                with zipfile.ZipFile(str(zip_path), "r") as z:
+                    z.extract("deno", path=str(target_dir))
+                deno_bin.chmod(0o755)
+                zip_path.unlink(missing_ok=True)
+                logger.info(f"Deno JS engine successfully provisioned at {deno_bin}")
+            except Exception as e:
+                logger.warning(f"Could not auto-provision Deno engine: {e}")
+
+        if deno_bin.exists() and os.access(deno_bin, os.X_OK):
+            target_str = str(target_dir)
+            if target_str not in os.environ.get("PATH", ""):
+                os.environ["PATH"] = f"{target_str}:{os.environ.get('PATH', '')}"
+            return str(deno_bin)
+    return None
+
+def get_yt_js_runtimes() -> Dict[str, Any]:
+    deno = ensure_deno_runtime()
+    if deno:
+        return {"deno": {"path": deno}}
+    node = shutil.which("node")
+    if node:
+        return {"node": {"path": node}}
+    return {}
 
 def parse_iso8601_duration(duration_str: str) -> float:
     """
@@ -385,16 +443,17 @@ class YouTubeSourceProvider(BaseSourceProvider):
 
         # Concurrent Execution: Consent Watch Page, InnerTube, oEmbed, and yt-dlp probe
         def _sync_probe():
+            runtimes = get_yt_js_runtimes()
             opts = {
                 "extract_flat": False,
                 "quiet": True,
                 "no_warnings": True,
                 "skip_download": True,
                 "socket_timeout": 15,
-                "js_runtimes": {},
+                "js_runtimes": runtimes,
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["tv_samsung", "android"]
+                        "player_client": ["web", "tv_samsung", "android"] if runtimes else ["tv_samsung", "android"]
                     }
                 }
             }

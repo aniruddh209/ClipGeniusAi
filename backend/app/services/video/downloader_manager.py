@@ -16,7 +16,7 @@ from app.core.config import settings
 from app.core.logging import logger
 from app.core.database import get_database
 from app.services.video.downloader import sanitize_media_url
-from app.services.sources.youtube import resolve_youtube_cookies
+from app.services.sources.youtube import resolve_youtube_cookies, get_yt_js_runtimes
 
 FFMPEG_LOCATION = shutil.which("ffmpeg") or ("/opt/homebrew/bin/ffmpeg" if os.path.exists("/opt/homebrew/bin/ffmpeg") else "ffmpeg")
 
@@ -247,6 +247,7 @@ class DownloaderManager:
         clean_url = sanitize_media_url(raw_url)
         cookie_path = resolve_youtube_cookies()
 
+        runtimes = get_yt_js_runtimes()
         ydl_opts = {
             "extract_flat": False,
             "quiet": True,
@@ -254,10 +255,10 @@ class DownloaderManager:
             "skip_download": True,
             "socket_timeout": 20,
             "ffmpeg_location": FFMPEG_LOCATION,
-            "js_runtimes": {},
+            "js_runtimes": runtimes,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "android"]
+                    "player_client": ["web", "tv_samsung", "android"] if runtimes else ["tv_samsung", "android"]
                 }
             }
         }
@@ -707,6 +708,7 @@ class DownloaderManager:
                         t["status"] = "processing"
                         t["speed_formatted"] = "Finishing & Muxing..."
 
+        runtimes = get_yt_js_runtimes()
         ydl_opts: Dict[str, Any] = {
             "format": task["format_id"],
             "outtmpl": outtmpl,
@@ -724,10 +726,10 @@ class DownloaderManager:
             "keepvideo": False,
             "nopart": False,
             "buffersize": 32768,
-            "js_runtimes": {},
+            "js_runtimes": runtimes,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "android"],
+                    "player_client": ["web", "tv_samsung", "android"] if runtimes else ["tv_samsung", "android"],
                 }
             },
         }

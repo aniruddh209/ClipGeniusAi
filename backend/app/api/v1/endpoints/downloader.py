@@ -552,18 +552,19 @@ async def clear_cookies():
 async def debug_download(payload: StartDownloadRequest):
     import traceback
     import yt_dlp
-    from app.services.sources.youtube import resolve_youtube_cookies
+    from app.services.sources.youtube import resolve_youtube_cookies, get_yt_js_runtimes
     
     clean_url = payload.url
+    runtimes = get_yt_js_runtimes()
     opts = {
         "format": payload.format_id,
         "outtmpl": "/tmp/debug_%(id)s.%(ext)s",
         "quiet": False,
         "verbose": True,
-        "js_runtimes": {},
+        "js_runtimes": runtimes,
         "extractor_args": {
             "youtube": {
-                "player_client": ["tv_samsung", "android"]
+                "player_client": ["web", "tv_samsung", "android"] if runtimes else ["tv_samsung", "android"]
             }
         },
         "download_ranges": yt_dlp.utils.download_range_func(None, [(0, 1)]),
