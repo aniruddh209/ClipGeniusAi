@@ -1025,7 +1025,10 @@ class DownloaderManager:
                             t["status"] = "interrupted"
                             t["speed_formatted"] = "Interrupted"
                             t["eta_formatted"] = "Interrupted"
-                            clean_err = err_msg.split("\n")[0][:100]
+                            if any(x in err_lower for x in ["bot", "sign in", "sign-in"]):
+                                clean_err = "YouTube blocked cloud datacenter IP. Residential IP required (run locally on Mac)."
+                            else:
+                                clean_err = err_msg.split("\n")[0][:100]
                             t["error_message"] = f"Download interrupted ({clean_err}). Partial download saved safely ({format_bytes(saved_bytes)}). Ready to resume."
                             t["updated_at"] = datetime.now(timezone.utc).isoformat()
                     self._sync_save_task(self._tasks[task_id])

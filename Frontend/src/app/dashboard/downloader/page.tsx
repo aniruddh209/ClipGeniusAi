@@ -38,7 +38,9 @@ import {
   Apple,
   Folder,
   CheckSquare,
-  Square
+  Square,
+  Laptop,
+  Server
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { VideoAnalysisResult, VideoFormatOption, DownloadTask } from '@/types';
@@ -55,6 +57,7 @@ function VideoDownloaderContent() {
 
   const [activeTab, setActiveTab] = useState<'downloader' | 'history'>(initialTab);
   const [urlInput, setUrlInput] = useState<string>('');
+  const [isCloudDeployment, setIsCloudDeployment] = useState<boolean>(false);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<VideoAnalysisResult | null>(null);
@@ -180,13 +183,41 @@ function VideoDownloaderContent() {
     }
   };
 
-  // Sync tab with URL if param changes
+  // Detect environment (Cloud vs Local Mac)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const h = window.location.hostname;
+      setIsCloudDeployment(!h.includes('localhost') && !h.includes('127.0.0.1'));
+    }
+  }, []);
+
+  // Sync tab and auto-fill / auto-analyze URL if param changes
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     if (tabParam === 'history') {
       setActiveTab('history');
     } else {
       setActiveTab('downloader');
+    }
+
+    const urlParam = searchParams.get('url');
+    if (urlParam && urlParam !== urlInput) {
+      setUrlInput(urlParam);
+      setIsAnalyzing(true);
+      setAnalysisError(null);
+      api.analyzeDownloaderUrl(urlParam).then((res) => {
+        setAnalysisResult(res);
+        const qualities = res.confirmed_qualities || res.formats || [];
+        const rec = qualities.find((f) => f.recommended) || qualities[0];
+        if (rec) {
+          setSelectedFormat(rec);
+          setSelectedExt(rec.ext);
+        }
+      }).catch((e: any) => {
+        setAnalysisError(e.message || 'Could not analyze video stream');
+      }).finally(() => {
+        setIsAnalyzing(false);
+      });
     }
   }, [searchParams]);
 
@@ -494,6 +525,51 @@ function VideoDownloaderContent() {
 
       {/* Main Content Area */}
       <div className="flex-1 px-6 py-8 max-w-7xl mx-auto w-full space-y-8">
+        {/* Environment Status Banner */}
+        {isCloudDeployment ? (
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-300 shrink-0">
+                <Server className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm text-amber-100">Cloud Hosting Active (Render Datacenter)</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 uppercase border border-amber-500/30">Notice</span>
+                </div>
+                <p className="text-xs text-amber-200/80 leading-relaxed">
+                  YouTube blocks cloud datacenter servers from streaming video anonymously. For unrestricted <strong>4K / 1080p high-speed downloads</strong> directly to your Mac with <strong>zero bot checks and zero cookies</strong>, switch to your local Mac engine.
+                </p>
+              </div>
+            </div>
+            <a
+              href={`http://localhost:3001/dashboard/downloader${urlInput ? `?url=${encodeURIComponent(urlInput)}` : ''}`}
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-black text-xs font-bold transition flex items-center gap-2 shrink-0 shadow-lg shadow-[var(--color-primary)]/20"
+            >
+              <Laptop className="w-4 h-4" />
+              <span>Launch Local Mac App (http://localhost:3001)</span>
+            </a>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3.5 text-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+            <div className="flex items-center gap-3 text-xs">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+              <div>
+                <span className="font-bold text-emerald-100">Local Mac Residential Engine Active</span>
+                <span className="text-emerald-300/80 ml-2">• Direct High-Speed 4K / Full HD Unlocked • Zero Bot Checks • Zero Cookies</span>
+              </div>
+            </div>
+            <span className="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-mono border border-emerald-500/30">
+              macOS Engine :8001
+            </span>
+          </div>
+        )}
+
         {activeTab === 'downloader' ? (
           <>
             {/* FIRST PHASE: YOUTUBE VIDEO ANALYSIS INPUT */}
@@ -564,13 +640,21 @@ function VideoDownloaderContent() {
                     <div className="flex-1 space-y-1.5">
                       <p className="font-bold text-rose-200">Analysis Error</p>
                       <p className="text-rose-300/90 text-xs leading-relaxed">{analysisError}</p>
-                      {(analysisError.toLowerCase().includes('sign-in') || analysisError.toLowerCase().includes('bot') || analysisError.toLowerCase().includes('unavailable')) && (
-                        <div className="mt-2 pt-2 border-t border-rose-500/20 text-[11px] text-zinc-300 space-y-1">
-                          <p className="font-semibold text-rose-300">Tips to resolve this:</p>
-                          <ul className="list-disc list-inside space-y-0.5 text-[var(--text-muted)]">
-                            <li>Check that the YouTube link is valid and publicly accessible (not private or removed).</li>
-                            <li>You can also paste any direct video URL (MP4, WebM, MOV) or use the <strong>AI Clipper</strong> direct uploader.</li>
-                          </ul>
+                      {(isCloudDeployment || analysisError.toLowerCase().includes('sign-in') || analysisError.toLowerCase().includes('bot') || analysisError.toLowerCase().includes('unavailable')) && (
+                        <div className="mt-2 pt-2 border-t border-rose-500/20 text-[11px] text-zinc-300 space-y-2">
+                          <p className="font-semibold text-rose-300">Fast 1-Click Resolution:</p>
+                          <p className="text-zinc-400 text-xs">
+                            YouTube enforces bot verification on cloud datacenter IPs (Render). Your local Mac engine downloads this stream with zero blocks.
+                          </p>
+                          <a
+                            href={`http://localhost:3001/dashboard/downloader?url=${encodeURIComponent(urlInput)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-black font-bold text-xs transition shadow"
+                          >
+                            <Laptop className="w-4 h-4" />
+                            <span>Download on Local Mac (http://localhost:3001)</span>
+                          </a>
                         </div>
                       )}
                     </div>
@@ -1519,12 +1603,30 @@ function VideoDownloaderContent() {
 
                         {/* Message for Interrupted or Failed tasks */}
                         {isInterrupted && task.error_message && (
-                          <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-400" />
-                              <span>{task.error_message}</span>
+                          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-400 mt-0.5" />
+                              <div>
+                                <span className="font-medium text-amber-200">{task.error_message}</span>
+                                {(task.error_message.toLowerCase().includes('bot') || task.error_message.toLowerCase().includes('cloud') || task.error_message.toLowerCase().includes('sign in') || isCloudDeployment) && (
+                                  <p className="text-[10px] text-amber-300/70 mt-0.5">
+                                    Cloud datacenter IP restricted by YouTube. Run directly on your Mac for instant 4K download.
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-2 shrink-0">
+                              {(task.error_message.toLowerCase().includes('bot') || task.error_message.toLowerCase().includes('cloud') || task.error_message.toLowerCase().includes('sign in') || isCloudDeployment) && (
+                                <a
+                                  href={`http://localhost:3001/dashboard/downloader?url=${encodeURIComponent(task.url || '')}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="px-3 py-1.5 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-black font-bold text-xs flex items-center gap-1.5 transition shadow"
+                                >
+                                  <Laptop className="w-3.5 h-3.5" />
+                                  <span>Download on Local Mac</span>
+                                </a>
+                              )}
                               <button
                                 onClick={() => handleResume(task.task_id)}
                                 className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-semibold cursor-pointer shrink-0"
@@ -1536,9 +1638,31 @@ function VideoDownloaderContent() {
                         )}
 
                         {isFailed && task.error_message && (
-                          <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[11px] text-rose-300 flex items-center gap-2">
-                            <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-400" />
-                            <span>{task.error_message}</span>
+                          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-[11px] text-rose-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-400 mt-0.5" />
+                              <div>
+                                <span className="font-medium text-rose-200">{task.error_message}</span>
+                                {(task.error_message.toLowerCase().includes('bot') || task.error_message.toLowerCase().includes('cloud') || task.error_message.toLowerCase().includes('sign in') || isCloudDeployment) && (
+                                  <p className="text-[10px] text-rose-300/70 mt-0.5">
+                                    Cloud datacenter IP restricted by YouTube. Run directly on your Mac for instant 4K download.
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {(task.error_message.toLowerCase().includes('bot') || task.error_message.toLowerCase().includes('cloud') || task.error_message.toLowerCase().includes('sign in') || isCloudDeployment) && (
+                                <a
+                                  href={`http://localhost:3001/dashboard/downloader?url=${encodeURIComponent(task.url || '')}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="px-3 py-1.5 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-black font-bold text-xs flex items-center gap-1.5 transition shadow"
+                                >
+                                  <Laptop className="w-3.5 h-3.5" />
+                                  <span>Download on Local Mac</span>
+                                </a>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
