@@ -197,7 +197,7 @@ class VideoDownloader:
             "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_embedded", "android_creator"]
+                    "player_client": ["visionos", "web_embedded"]
                 }
             },
         }
@@ -226,7 +226,7 @@ class VideoDownloader:
                     "http_chunk_size": 10485760,
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["tv_embedded", "web_embedded", "android_creator"]
+                            "player_client": ["visionos", "web_embedded", "mweb"]
                         }
                     },
                 }
@@ -359,7 +359,7 @@ class VideoDownloader:
             "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_embedded", "android_creator"]
+                    "player_client": ["visionos", "web_embedded"]
                 }
             },
         }
@@ -440,7 +440,7 @@ class VideoDownloader:
             "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_embedded", "android_creator"]
+                    "player_client": ["visionos", "web_embedded"]
                 }
             },
             "postprocessors": [{
@@ -554,7 +554,7 @@ class VideoDownloader:
             "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_embedded", "android_creator"]
+                    "player_client": ["visionos", "web_embedded"]
                 }
             },
         }
