@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.core.logging import logger
 from app.services.storage.file_manager import file_manager
 from app.services.video.ffmpeg_editor import ffmpeg_editor
+from app.services.sources.youtube import resolve_youtube_cookies
 
 FFMPEG_LOCATION = shutil.which("ffmpeg") or ("/opt/homebrew/bin/ffmpeg" if os.path.exists("/opt/homebrew/bin/ffmpeg") else "ffmpeg")
 
@@ -196,10 +197,14 @@ class VideoDownloader:
             "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "mweb", "android"]
+                    "player_client": ["tv_embedded", "android_creator"]
                 }
             },
         }
+
+        cookie_path = resolve_youtube_cookies()
+        if cookie_path:
+            ydl_opts["cookiefile"] = cookie_path
 
         def _sync_download():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -354,10 +359,14 @@ class VideoDownloader:
             "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "mweb", "android"]
+                    "player_client": ["tv_embedded", "android_creator"]
                 }
             },
         }
+
+        cookie_path = resolve_youtube_cookies()
+        if cookie_path:
+            ydl_opts["cookiefile"] = cookie_path
 
         # Check for cookies file
         cookie_candidates = [
@@ -431,7 +440,7 @@ class VideoDownloader:
             "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "mweb", "android"]
+                    "player_client": ["tv_embedded", "android_creator"]
                 }
             },
             "postprocessors": [{
@@ -545,10 +554,14 @@ class VideoDownloader:
             "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "mweb", "android"]
+                    "player_client": ["tv_embedded", "android_creator"]
                 }
             },
         }
+
+        cookie_path = resolve_youtube_cookies()
+        if cookie_path:
+            ydl_opts["cookiefile"] = cookie_path
 
         cookie_candidates = [
             settings.BASE_DIR / "cookies.txt",

@@ -16,6 +16,7 @@ from app.core.config import settings
 from app.core.logging import logger
 from app.core.database import get_database
 from app.services.video.downloader import sanitize_media_url
+from app.services.sources.youtube import resolve_youtube_cookies
 
 FFMPEG_LOCATION = shutil.which("ffmpeg") or ("/opt/homebrew/bin/ffmpeg" if os.path.exists("/opt/homebrew/bin/ffmpeg") else "ffmpeg")
 
@@ -244,19 +245,21 @@ class DownloaderManager:
         Extracts rich metadata and selectable quality streams without downloading
         """
         clean_url = sanitize_media_url(raw_url)
-        cookie_path = None
-        for cand in [settings.BASE_DIR / "cookies.txt", Path.cwd() / "cookies.txt", Path.home() / ".config" / "yt-dlp" / "cookies.txt"]:
-            if cand.exists() and cand.is_file() and cand.stat().st_size > 0:
-                cookie_path = str(cand)
-                break
+        cookie_path = resolve_youtube_cookies()
 
         ydl_opts = {
             "extract_flat": False,
             "quiet": True,
             "no_warnings": True,
             "skip_download": True,
-            "socket_timeout": 30,
+            "socket_timeout": 20,
             "ffmpeg_location": FFMPEG_LOCATION,
+            "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["tv_embedded", "android_creator"]
+                }
+            }
         }
         if cookie_path:
             ydl_opts["cookiefile"] = cookie_path
@@ -274,12 +277,12 @@ class DownloaderManager:
                 "quiet": True,
                 "no_warnings": True,
                 "skip_download": True,
-                "socket_timeout": 30,
+                "socket_timeout": 20,
                 "ffmpeg_location": FFMPEG_LOCATION,
                 "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["tv_samsung", "visionos", "mweb", "android"],
+                        "player_client": ["tv_embedded", "android_creator"],
                     }
                 },
             }
@@ -724,22 +727,14 @@ class DownloaderManager:
             "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv_samsung", "visionos", "mweb", "android"],
+                    "player_client": ["tv_embedded", "android_creator"],
                 }
             },
         }
 
-        cookie_candidates = [
-            settings.BASE_DIR / "cookies.txt",
-            settings.BASE_DIR.parent / "cookies.txt",
-            Path("/tmp/cookies.txt"),
-            Path.cwd() / "cookies.txt",
-            Path.home() / ".config" / "yt-dlp" / "cookies.txt"
-        ]
-        for cand in cookie_candidates:
-            if cand.exists() and cand.is_file() and cand.stat().st_size > 0:
-                ydl_opts["cookiefile"] = str(cand)
-                break
+        cookie_path = resolve_youtube_cookies()
+        if cookie_path:
+            ydl_opts["cookiefile"] = cookie_path
 
         # If audio format chosen, configure audio extraction
         if ext in ["mp3", "m4a"]:
@@ -938,9 +933,12 @@ class DownloaderManager:
                 if attempt < max_attempts - 1:
                     logger.warning(f"Download attempt {attempt + 1} encountered glitch ({err_msg[:80]}). Switching client for attempt {attempt + 2}...")
                     if attempt == 0:
-                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["mweb", "android"]}}
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["tv_embedded", "android_creator"]}}
                     elif attempt == 1:
-                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["android", "ios"]}}
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["android_creator", "mweb"]}}
+                        ydl_opts["format"] = f"{task['format_id']}/bestvideo+bestaudio/best"
+                    elif attempt == 2:
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["web_embedded", "tv_embedded"]}}
                         ydl_opts["format"] = "bestvideo+bestaudio/best"
                     time.sleep(2)
                     continue

@@ -7,7 +7,7 @@ from pathlib import Path
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "ClipGenius AI"
-    VERSION: str = "1.1.0"
+    VERSION: str = "1.2.0"
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
@@ -106,6 +106,7 @@ class Settings(BaseSettings):
 
     # Integrations
     YOUTUBE_API_KEY: Optional[str] = None
+    YOUTUBE_COOKIES: Optional[str] = None
 
     class Config:
         env_file = ".env"
