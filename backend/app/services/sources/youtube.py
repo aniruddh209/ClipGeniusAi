@@ -204,7 +204,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
             "X-YouTube-Client-Version": "2.20240901.01.00",
         }
         try:
-            async with httpx.AsyncClient(timeout=4.0) as client:
+            async with httpx.AsyncClient(timeout=12.0) as client:
                 res = await client.post(innertube_url, json=payload, headers=headers)
                 if res.status_code == 200:
                     data = res.json()
@@ -231,9 +231,12 @@ class YouTubeSourceProvider(BaseSourceProvider):
                         "thumbnail": thumb_url,
                         "description": vd.get("shortDescription", "")
                     }
+                else:
+                    logger.warning(f"InnerTube status code {res.status_code} for {video_id}: {res.text[:120]}")
+                    return {"inner_error": f"HTTP {res.status_code}"}
         except Exception as e:
             logger.warning(f"InnerTube player request error for {video_id}: {e}")
-        return None
+            return {"inner_error": str(e)}
 
     async def _fetch_from_oembed(self, url: str) -> Optional[Dict[str, Any]]:
         """
@@ -292,7 +295,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
                 "quiet": True,
                 "no_warnings": True,
                 "skip_download": True,
-                "socket_timeout": 8,
+                "socket_timeout": 15,
                 "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
                 "extractor_args": {
                     "youtube": {
@@ -308,7 +311,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
                     return ydl.extract_info(clean_url, download=False)
             except Exception as e:
                 logger.warning(f"Primary embed yt-dlp probe error for {clean_url}: {e}")
-                return None
+                return {"probe_error": str(e)}
 
         innertube_task = asyncio.create_task(self._fetch_from_innertube(video_id))
         oembed_task = asyncio.create_task(self._fetch_from_oembed(clean_url))
@@ -387,7 +390,18 @@ class YouTubeSourceProvider(BaseSourceProvider):
 
         channel_id = (probe_info.get("channel_id") if probe_info else None) or (api_item.get("snippet", {}).get("channelId") if api_item else None)
         channel_url = (oembed_info.get("author_url") if oembed_info else None) or (f"https://www.youtube.com/channel/{channel_id}" if channel_id else f"https://www.youtube.com/results?search_query={channel_name}")
-        description = (probe_info.get("description") if probe_info else "") or (innertube_info.get("description") if innertube_info else "") or ""
+        # Reconcile Description
+        debug_errs = []
+        if innertube_info and innertube_info.get("inner_error"):
+            debug_errs.append(f"inner:{innertube_info['inner_error']}")
+        elif not innertube_info:
+            debug_errs.append("inner:none")
+        if probe_info and probe_info.get("probe_error"):
+            debug_errs.append(f"probe:{probe_info['probe_error']}")
+        elif not probe_info:
+            debug_errs.append("probe:none")
+
+        description = (probe_info.get("description") if probe_info and not probe_info.get("probe_error") else "") or (innertube_info.get("description") if innertube_info and not innertube_info.get("inner_error") else "") or " | ".join(debug_errs)
         tags = (probe_info.get("tags") if probe_info else []) or (api_item.get("snippet", {}).get("tags", []) if api_item else [])
 
         # Build Confirmed Quality Options (4K, 2K, 1080p, 720p, 480p, 360p, MP3)
