@@ -7,7 +7,7 @@ from pathlib import Path
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "ClipGenius AI"
-    VERSION: str = "1.2.6"
+    VERSION: str = "1.2.7"
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True

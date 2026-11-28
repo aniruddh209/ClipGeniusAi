@@ -638,6 +638,41 @@ class ApiClient {
     return res.json();
   }
 
+  // --- YouTube Cookie Authentication API ---
+  async getYouTubeCookieStatus(): Promise<{ configured: boolean; path: string | null; size_bytes: number; message: string }> {
+    const res = await fetch(`${this.baseUrl}/downloader/cookies/status`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      return { configured: false, path: null, size_bytes: 0, message: 'Could not fetch cookie status' };
+    }
+    return res.json();
+  }
+
+  async saveYouTubeCookies(cookiesText: string): Promise<{ success: boolean; message: string; path?: string }> {
+    const res = await fetch(`${this.baseUrl}/downloader/cookies/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cookies_text: cookiesText }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to save cookies');
+    }
+    return res.json();
+  }
+
+  async clearYouTubeCookies(): Promise<{ success: boolean }> {
+    const res = await fetch(`${this.baseUrl}/downloader/cookies/clear`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Failed to clear cookies');
+    }
+    return res.json();
+  }
+
   async batchDownloaderAction(
     action: 'pause_all' | 'resume_all' | 'download_all' | 'retry_failed' | 'cancel_all' | 'clear_completed'
   ): Promise<DownloadTask[]> {

@@ -471,6 +471,83 @@ async def clip_downloaded_video(task_id: str):
         "video": video_doc
     }
 
+class CookiePayload(BaseModel):
+    cookies_text: str
+
+@router.get("/cookies/status")
+async def get_cookie_status():
+    """
+    Returns the current YouTube cookie authorization status
+    """
+    from app.services.sources.youtube import resolve_youtube_cookies
+    cpath = resolve_youtube_cookies()
+    if cpath and os.path.exists(cpath):
+        size = os.path.getsize(cpath)
+        return {
+            "configured": True,
+            "path": cpath,
+            "size_bytes": size,
+            "message": "YouTube authentication cookies are active and verified. Cloud downloads are unlocked."
+        }
+    return {
+        "configured": False,
+        "path": None,
+        "size_bytes": 0,
+        "message": "No YouTube cookies configured. Cloud datacenter IPs may encounter YouTube bot checks."
+    }
+
+@router.post("/cookies/save")
+async def save_cookies(payload: CookiePayload):
+    """
+    Saves YouTube Netscape cookies to disk and authorizes all cloud downloads
+    """
+    from app.services.sources.youtube import resolve_youtube_cookies
+    txt = payload.cookies_text.strip()
+    if not txt:
+        raise HTTPException(status_code=400, detail="Cookie content cannot be empty.")
+
+    # Check for basic Netscape format or token presence
+    has_tab = "\t" in txt
+    has_token = any(k in txt for k in ["LOGIN_INFO", "SID", "HSID", "SSID", "SAPISID", "APISID", "SOCS", "CONSENT"])
+    if not has_tab and not has_token:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid cookie format. Please paste exported Netscape cookies from YouTube."
+        )
+
+    # Ensure target files exist
+    target_path = Path(settings.BASE_DIR) / "cookies.txt"
+    try:
+        target_path.write_text(txt, encoding="utf-8")
+    except Exception as e:
+        logger.error(f"Failed to write to {target_path}: {e}")
+
+    try:
+        Path("/tmp/youtube_cookies.txt").write_text(txt, encoding="utf-8")
+    except Exception as e:
+        logger.warning(f"Failed to write to /tmp/youtube_cookies.txt: {e}")
+
+    return {
+        "success": True,
+        "message": "YouTube cookies successfully saved! Cloud downloads are now authorized.",
+        "path": str(target_path)
+    }
+
+@router.delete("/cookies/clear")
+async def clear_cookies():
+    """
+    Clears saved YouTube cookies
+    """
+    cleared = []
+    for p in [Path(settings.BASE_DIR) / "cookies.txt", Path("/tmp/youtube_cookies.txt")]:
+        if p.exists():
+            try:
+                p.unlink()
+                cleared.append(str(p))
+            except Exception:
+                pass
+    return {"success": True, "cleared": cleared}
+
 @router.post("/debug-dl")
 async def debug_download(payload: StartDownloadRequest):
     import traceback

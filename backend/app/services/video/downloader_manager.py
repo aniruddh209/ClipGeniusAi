@@ -735,6 +735,11 @@ class DownloaderManager:
         cookie_path = resolve_youtube_cookies()
         if cookie_path:
             ydl_opts["cookiefile"] = cookie_path
+            ydl_opts["extractor_args"] = {
+                "youtube": {
+                    "player_client": ["tv_samsung", "web"]
+                }
+            }
 
         # If audio format chosen, configure audio extraction
         if ext in ["mp3", "m4a"]:
@@ -1003,7 +1008,7 @@ class DownloaderManager:
                             t["speed_formatted"] = "Interrupted"
                             t["eta_formatted"] = "Interrupted"
                             if "sign in" in err_lower or "bot" in err_lower:
-                                t["error_message"] = f"Download error ({err_msg[:120]})"
+                                t["error_message"] = "YouTube bot check detected on cloud IP. Click 'Connect YouTube Cookies' to authorize high-speed cloud downloads."
                             else:
                                 t["error_message"] = f"Download interrupted ({err_msg[:80]}). Partial download saved safely ({format_bytes(saved_bytes)}). Ready to resume."
                             t["updated_at"] = datetime.now(timezone.utc).isoformat()
