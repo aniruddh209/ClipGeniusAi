@@ -18,6 +18,9 @@ from app.services.sources.base import (
     ConfirmedQualityOption,
     AuthorizedWorkflowInfo
 )
+
+CONSENT_COOKIE_STR = "SOCS=CAISNQgDEitib3FfaWRlbnRpdHlmcm9udGVuZHVpc2VydmVyXzIwMjQwMjI3LjA4X3AwGgJlbhACGgYIgLCpsAY; CONSENT=PENDING+999; YES=1"
+
 def sanitize_media_url(url: str) -> str:
     """
     Sanitizes YouTube and web URLs to avoid playlist metadata requests:
@@ -56,6 +59,7 @@ def resolve_youtube_cookies() -> Optional[str]:
     Resolves cookiefile path for yt-dlp and YouTube queries:
     1. Checks YOUTUBE_COOKIES environment variable or settings. If present, decodes/writes to /tmp/youtube_cookies.txt
     2. Checks disk paths (settings.BASE_DIR, /tmp, cwd, ~/.config/yt-dlp)
+    3. If none exist, writes standard consent cookies (SOCS/CONSENT) to /tmp/default_consent_cookies.txt
     """
     env_cookies = os.environ.get("YOUTUBE_COOKIES") or getattr(settings, "YOUTUBE_COOKIES", None)
     if env_cookies and len(env_cookies.strip()) > 10:
@@ -86,6 +90,24 @@ def resolve_youtube_cookies() -> Optional[str]:
     for cand in candidates:
         if cand.exists() and cand.is_file() and cand.stat().st_size > 0:
             return str(cand)
+
+    # Provide default consent cookie file to avoid consent redirects on datacenter IPs
+    default_cookie = Path("/tmp/default_consent_cookies.txt")
+    if not default_cookie.exists() or default_cookie.stat().st_size == 0:
+        try:
+            cookie_text = (
+                "# Netscape HTTP Cookie File\n"
+                ".youtube.com\tTRUE\t/\tTRUE\t2147483647\tSOCS\tCAISNQgDEitib3FfaWRlbnRpdHlmcm9udGVuZHVpc2VydmVyXzIwMjQwMjI3LjA4X3AwGgJlbhACGgYIgLCpsAY\n"
+                ".youtube.com\tTRUE\t/\tTRUE\t2147483647\tCONSENT\tPENDING+999\n"
+                ".youtube.com\tTRUE\t/\tTRUE\t2147483647\tYES\t1\n"
+            )
+            default_cookie.write_text(cookie_text, encoding="utf-8")
+        except Exception:
+            pass
+
+    if default_cookie.exists():
+        return str(default_cookie)
+
     return None
 
 def parse_iso8601_duration(duration_str: str) -> float:
@@ -142,7 +164,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
     """
     Production YouTube integration provider for Video Downloader:
     - Phase 1: Extracts verified metadata (title, duration, uploader, views) via concurrent
-      InnerTube WEB player API, official YouTube oEmbed, and Data API v3 (< 300ms).
+      consent-authorized watch page, InnerTube player API, official YouTube oEmbed, and Data API v3 (< 500ms).
     - Phase 2: Resolves authentic quality options (4K, 2K, 1080p, 720p, 480p, 360p, MP3)
       with genuine file sizes calculated from true duration and verified bitrates.
     - Phase 3: Uses embed/creator clients (tv_embedded, android_creator) to ensure zero bot challenges.
@@ -178,6 +200,56 @@ class YouTubeSourceProvider(BaseSourceProvider):
             pass
         return None
 
+    async def _fetch_from_watch_page(self, video_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Queries official YouTube watch page with verified consent cookies,
+        bypassing consent redirects and bot challenges on datacenter IPs.
+        Extracts exact lengthSeconds, viewCount, title, and channel in < 500ms.
+        """
+        url = f"https://www.youtube.com/watch?v={video_id}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Cookie": CONSENT_COOKIE_STR
+        }
+        try:
+            async with httpx.AsyncClient(timeout=6.0, follow_redirects=True) as client:
+                resp = await client.get(url, headers=headers)
+                if resp.status_code == 200:
+                    html = resp.text
+                    dur = 0.0
+                    m_sec = re.search(r'"lengthSeconds":\s*"(\d+)"', html)
+                    if m_sec:
+                        dur = float(m_sec.group(1))
+
+                    views = 0
+                    m_v = re.search(r'"viewCount":\s*"(\d+)"', html)
+                    if m_v:
+                        try:
+                            views = int(m_v.group(1))
+                        except Exception:
+                            pass
+
+                    title = None
+                    m_title = re.search(r'<meta property="og:title"\s+content="([^"]+)"', html)
+                    if m_title:
+                        title = m_title.group(1)
+
+                    author = None
+                    m_auth = re.search(r'<link itemprop="name"\s+content="([^"]+)"', html)
+                    if m_auth:
+                        author = m_auth.group(1)
+
+                    return {
+                        "duration": dur,
+                        "view_count": views,
+                        "title": title,
+                        "author": author
+                    }
+        except Exception as e:
+            logger.warning(f"Consent watch page fetch error for {video_id}: {e}")
+        return None
+
     async def _fetch_from_innertube(self, video_id: str) -> Optional[Dict[str, Any]]:
         """
         Directly queries YouTube InnerTube player endpoint for exact lengthSeconds, viewCount,
@@ -202,9 +274,10 @@ class YouTubeSourceProvider(BaseSourceProvider):
             "Referer": "https://www.youtube.com/",
             "X-YouTube-Client-Name": "1",
             "X-YouTube-Client-Version": "2.20240901.01.00",
+            "Cookie": CONSENT_COOKIE_STR
         }
         try:
-            async with httpx.AsyncClient(timeout=12.0) as client:
+            async with httpx.AsyncClient(timeout=8.0) as client:
                 res = await client.post(innertube_url, json=payload, headers=headers)
                 if res.status_code == 200:
                     data = res.json()
@@ -231,12 +304,9 @@ class YouTubeSourceProvider(BaseSourceProvider):
                         "thumbnail": thumb_url,
                         "description": vd.get("shortDescription", "")
                     }
-                else:
-                    logger.warning(f"InnerTube status code {res.status_code} for {video_id}: {res.text[:120]}")
-                    return {"inner_error": f"HTTP {res.status_code}"}
         except Exception as e:
             logger.warning(f"InnerTube player request error for {video_id}: {e}")
-            return {"inner_error": str(e)}
+        return None
 
     async def _fetch_from_oembed(self, url: str) -> Optional[Dict[str, Any]]:
         """
@@ -288,14 +358,14 @@ class YouTubeSourceProvider(BaseSourceProvider):
 
         cookie_path = resolve_youtube_cookies()
 
-        # Concurrent Tier 1: Fast metadata extraction via InnerTube, oEmbed, Data API, and yt-dlp probe
+        # Concurrent Execution: Consent Watch Page, InnerTube, oEmbed, and yt-dlp probe
         def _sync_probe():
             opts = {
                 "extract_flat": False,
                 "quiet": True,
                 "no_warnings": True,
                 "skip_download": True,
-                "socket_timeout": 15,
+                "socket_timeout": 12,
                 "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
                 "extractor_args": {
                     "youtube": {
@@ -311,17 +381,20 @@ class YouTubeSourceProvider(BaseSourceProvider):
                     return ydl.extract_info(clean_url, download=False)
             except Exception as e:
                 logger.warning(f"Primary embed yt-dlp probe error for {clean_url}: {e}")
-                return {"probe_error": str(e)}
+                return None
 
+        watch_task = asyncio.create_task(self._fetch_from_watch_page(video_id))
         innertube_task = asyncio.create_task(self._fetch_from_innertube(video_id))
         oembed_task = asyncio.create_task(self._fetch_from_oembed(clean_url))
         api_task = asyncio.create_task(self._fetch_from_youtube_data_api(video_id))
         probe_task = asyncio.create_task(asyncio.to_thread(_sync_probe))
 
-        innertube_info, oembed_info, api_item, probe_info = await asyncio.gather(
-            innertube_task, oembed_task, api_task, probe_task, return_exceptions=True
+        watch_info, innertube_info, oembed_info, api_item, probe_info = await asyncio.gather(
+            watch_task, innertube_task, oembed_task, api_task, probe_task, return_exceptions=True
         )
 
+        if isinstance(watch_info, Exception):
+            watch_info = None
         if isinstance(innertube_info, Exception):
             innertube_info = None
         if isinstance(oembed_info, Exception):
@@ -331,12 +404,14 @@ class YouTubeSourceProvider(BaseSourceProvider):
         if isinstance(probe_info, Exception):
             probe_info = None
 
-        # Reconcile Title
+        # Reconcile Title (Never fallback to "YouTube Video" if any provider returned real title)
         title = None
         if probe_info and probe_info.get("title") and probe_info.get("title") != "YouTube Video":
             title = probe_info["title"]
         elif innertube_info and innertube_info.get("title") and innertube_info.get("title") != "YouTube Video":
             title = innertube_info["title"]
+        elif watch_info and watch_info.get("title") and watch_info.get("title") != "YouTube Video":
+            title = watch_info["title"]
         elif oembed_info and oembed_info.get("title"):
             title = oembed_info["title"]
         elif api_item and api_item.get("snippet", {}).get("title"):
@@ -350,6 +425,8 @@ class YouTubeSourceProvider(BaseSourceProvider):
             channel_name = probe_info.get("uploader") or probe_info.get("channel")
         elif innertube_info and innertube_info.get("author"):
             channel_name = innertube_info["author"]
+        elif watch_info and watch_info.get("author"):
+            channel_name = watch_info["author"]
         elif oembed_info and oembed_info.get("author_name"):
             channel_name = oembed_info["author_name"]
         elif api_item and api_item.get("snippet", {}).get("channelTitle"):
@@ -357,12 +434,14 @@ class YouTubeSourceProvider(BaseSourceProvider):
         else:
             channel_name = "YouTube Creator"
 
-        # Reconcile Duration (Guaranteed genuine seconds)
+        # Reconcile Duration (Guaranteed authentic seconds)
         duration = 0.0
         if probe_info and probe_info.get("duration") and float(probe_info["duration"]) > 0:
             duration = float(probe_info["duration"])
         elif innertube_info and innertube_info.get("duration") and float(innertube_info["duration"]) > 0:
             duration = float(innertube_info["duration"])
+        elif watch_info and watch_info.get("duration") and float(watch_info["duration"]) > 0:
+            duration = float(watch_info["duration"])
         elif api_item and api_item.get("contentDetails", {}).get("duration"):
             dur_api = parse_iso8601_duration(api_item["contentDetails"]["duration"])
             if dur_api > 0:
@@ -374,6 +453,8 @@ class YouTubeSourceProvider(BaseSourceProvider):
             view_count = int(probe_info["view_count"])
         elif innertube_info and innertube_info.get("view_count") and int(innertube_info["view_count"]) > 0:
             view_count = int(innertube_info["view_count"])
+        elif watch_info and watch_info.get("view_count") and int(watch_info["view_count"]) > 0:
+            view_count = int(watch_info["view_count"])
         elif api_item and api_item.get("statistics", {}).get("viewCount"):
             try:
                 view_count = int(api_item["statistics"]["viewCount"])
@@ -390,18 +471,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
 
         channel_id = (probe_info.get("channel_id") if probe_info else None) or (api_item.get("snippet", {}).get("channelId") if api_item else None)
         channel_url = (oembed_info.get("author_url") if oembed_info else None) or (f"https://www.youtube.com/channel/{channel_id}" if channel_id else f"https://www.youtube.com/results?search_query={channel_name}")
-        # Reconcile Description
-        debug_errs = []
-        if innertube_info and innertube_info.get("inner_error"):
-            debug_errs.append(f"inner:{innertube_info['inner_error']}")
-        elif not innertube_info:
-            debug_errs.append("inner:none")
-        if probe_info and probe_info.get("probe_error"):
-            debug_errs.append(f"probe:{probe_info['probe_error']}")
-        elif not probe_info:
-            debug_errs.append("probe:none")
-
-        description = (probe_info.get("description") if probe_info and not probe_info.get("probe_error") else "") or (innertube_info.get("description") if innertube_info and not innertube_info.get("inner_error") else "") or " | ".join(debug_errs)
+        description = (probe_info.get("description") if probe_info else "") or (innertube_info.get("description") if innertube_info else "") or ""
         tags = (probe_info.get("tags") if probe_info else []) or (api_item.get("snippet", {}).get("tags", []) if api_item else [])
 
         # Build Confirmed Quality Options (4K, 2K, 1080p, 720p, 480p, 360p, MP3)

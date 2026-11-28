@@ -1002,7 +1002,10 @@ class DownloaderManager:
                             t["status"] = "interrupted"
                             t["speed_formatted"] = "Interrupted"
                             t["eta_formatted"] = "Interrupted"
-                            t["error_message"] = f"Download interrupted ({err_msg[:80]}). Partial download saved safely ({format_bytes(saved_bytes)}). Ready to resume."
+                            if "sign in" in err_lower or "bot" in err_lower:
+                                t["error_message"] = "YouTube bot check detected on cloud IP. To authorize high-speed downloads on cloud servers, please set YOUTUBE_COOKIES in Render or place cookies.txt."
+                            else:
+                                t["error_message"] = f"Download interrupted ({err_msg[:80]}). Partial download saved safely ({format_bytes(saved_bytes)}). Ready to resume."
                             t["updated_at"] = datetime.now(timezone.utc).isoformat()
                     self._sync_save_task(self._tasks[task_id])
                     return
