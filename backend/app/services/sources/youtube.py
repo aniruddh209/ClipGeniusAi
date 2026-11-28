@@ -213,7 +213,7 @@ class YouTubeSourceProvider(BaseSourceProvider):
             "Cookie": CONSENT_COOKIE_STR
         }
         try:
-            async with httpx.AsyncClient(timeout=6.0, follow_redirects=True) as client:
+            async with httpx.AsyncClient(timeout=8.0, follow_redirects=True) as client:
                 resp = await client.get(url, headers=headers)
                 if resp.status_code == 200:
                     html = resp.text
@@ -244,11 +244,14 @@ class YouTubeSourceProvider(BaseSourceProvider):
                         "duration": dur,
                         "view_count": views,
                         "title": title,
-                        "author": author
+                        "author": author,
+                        "debug": f"watch_200_len{len(html)}_dur{dur}"
                     }
+                else:
+                    return {"debug": f"watch_status_{resp.status_code}"}
         except Exception as e:
             logger.warning(f"Consent watch page fetch error for {video_id}: {e}")
-        return None
+            return {"debug": f"watch_exc_{str(e)[:60]}"}
 
     async def _fetch_from_innertube(self, video_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -471,7 +474,21 @@ class YouTubeSourceProvider(BaseSourceProvider):
 
         channel_id = (probe_info.get("channel_id") if probe_info else None) or (api_item.get("snippet", {}).get("channelId") if api_item else None)
         channel_url = (oembed_info.get("author_url") if oembed_info else None) or (f"https://www.youtube.com/channel/{channel_id}" if channel_id else f"https://www.youtube.com/results?search_query={channel_name}")
-        description = (probe_info.get("description") if probe_info else "") or (innertube_info.get("description") if innertube_info else "") or ""
+        debug_trace = []
+        if watch_info and watch_info.get("debug"):
+            debug_trace.append(watch_info["debug"])
+        elif not watch_info:
+            debug_trace.append("watch_none")
+        if innertube_info and innertube_info.get("inner_error"):
+            debug_trace.append(f"inner_err:{innertube_info['inner_error']}")
+        elif not innertube_info:
+            debug_trace.append("inner_none")
+        if probe_info and probe_info.get("probe_error"):
+            debug_trace.append(f"probe_err:{probe_info['probe_error'][:50]}")
+        elif not probe_info:
+            debug_trace.append("probe_none")
+
+        description = (probe_info.get("description") if probe_info and not probe_info.get("probe_error") else "") or (innertube_info.get("description") if innertube_info and not innertube_info.get("inner_error") else "") or " | ".join(debug_trace)
         tags = (probe_info.get("tags") if probe_info else []) or (api_item.get("snippet", {}).get("tags", []) if api_item else [])
 
         # Build Confirmed Quality Options (4K, 2K, 1080p, 720p, 480p, 360p, MP3)
