@@ -194,10 +194,10 @@ class VideoDownloader:
             "ffmpeg_location": FFMPEG_LOCATION,
             "socket_timeout": 45,
             "http_chunk_size": 10485760,
-            "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
+            "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["visionos", "web_embedded"]
+                    "player_client": ["visionos"]
                 }
             },
         }
@@ -226,7 +226,7 @@ class VideoDownloader:
                     "http_chunk_size": 10485760,
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["visionos", "web_embedded", "mweb"]
+                            "player_client": ["visionos"]
                         }
                     },
                 }
@@ -356,10 +356,10 @@ class VideoDownloader:
             "skip_download": True,
             "socket_timeout": 30,
             "ffmpeg_location": FFMPEG_LOCATION,
-            "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
+            "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["visionos", "web_embedded"]
+                    "player_client": ["visionos"]
                 }
             },
         }
@@ -437,10 +437,10 @@ class VideoDownloader:
             "no_warnings": True,
             "socket_timeout": 30,
             "ffmpeg_location": FFMPEG_LOCATION,
-            "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
+            "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["visionos", "web_embedded"]
+                    "player_client": ["visionos"]
                 }
             },
             "postprocessors": [{
@@ -551,10 +551,10 @@ class VideoDownloader:
             "prefer_ffmpeg": True,
             "ffmpeg_location": FFMPEG_LOCATION,
             "socket_timeout": 35,
-            "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
+            "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["visionos", "web_embedded"]
+                    "player_client": ["visionos"]
                 }
             },
         }

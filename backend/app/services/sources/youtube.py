@@ -391,10 +391,10 @@ class YouTubeSourceProvider(BaseSourceProvider):
                 "no_warnings": True,
                 "skip_download": True,
                 "socket_timeout": 15,
-                "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
+                "js_runtimes": {},
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["visionos", "web_embedded"]
+                        "player_client": ["visionos"]
                     }
                 }
             }

@@ -254,10 +254,10 @@ class DownloaderManager:
             "skip_download": True,
             "socket_timeout": 20,
             "ffmpeg_location": FFMPEG_LOCATION,
-            "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
+            "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["visionos", "web_embedded"]
+                    "player_client": ["visionos"]
                 }
             }
         }
@@ -279,10 +279,10 @@ class DownloaderManager:
                 "skip_download": True,
                 "socket_timeout": 20,
                 "ffmpeg_location": FFMPEG_LOCATION,
-                "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
+                "js_runtimes": {},
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["visionos", "mweb"],
+                        "player_client": ["visionos"],
                     }
                 },
             }
@@ -724,10 +724,10 @@ class DownloaderManager:
             "keepvideo": False,
             "nopart": False,
             "buffersize": 32768,
-            "js_runtimes": {"node": {}, "deno": {}, "quickjs": {}},
+            "js_runtimes": {},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["visionos", "web_embedded"],
+                    "player_client": ["visionos"],
                 }
             },
         }
@@ -933,13 +933,13 @@ class DownloaderManager:
                 if attempt < max_attempts - 1:
                     logger.warning(f"Download attempt {attempt + 1} encountered glitch ({err_msg[:80]}). Switching client for attempt {attempt + 2}...")
                     if attempt == 0:
-                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["visionos", "web_embedded"]}}
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["visionos"]}}
                     elif attempt == 1:
-                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["visionos", "mweb"]}}
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["visionos"]}}
                         ydl_opts["format"] = f"{task['format_id']}/bestvideo+bestaudio/best"
                     elif attempt == 2:
-                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["web_embedded", "mweb"]}}
-                        ydl_opts["format"] = "bestvideo+bestaudio/best"
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["visionos"]}}
+                        ydl_opts["format"] = "best[height<=1080]/bestvideo+bestaudio/best"
                     time.sleep(2)
                     continue
 
